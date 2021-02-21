@@ -1,1 +1,64 @@
+Population:
+ - List/vector Individuals
 
+Individual:
+ - Genome/Chromosome/Representation
+ - Fitness (Set to Unknown or some fitness measures)
+  - Number of components, each component known/unknown?
+ - How to serialize these? MPI only?
+  - some construction to allow scatter/gather? Genome would use a memory
+    context, from which it would get pointers for data? Similar for Fitness?
+
+PopulationFitnessCalculation: MPI, threads, OpenCL/Async
+ - multiple populations possible
+
+IndividualFitnessCalculation:
+ - sync/async (OpenCL?)
+ - start on new generation; some context?
+
+SortedPopulation:
+ - single fitness sort, non-dominated sets
+
+PopulationCrossover:
+ - takes SortedPopulation as input, produces new population as output
+ - selects individuals to be combined -> how many?
+ - append to population? To allow cloning?
+GenomeCrossover:
+ - combines two genomes
+
+PopulationMutation:
+ - determine which genomes need mutation
+
+GenomeMutation:
+ - apply mutation to genome
+
+GeneticAlgorithm (DefaultGeneticAlgorithm)
+
+ - initialize population
+ - calculate fitness 
+ - loop:
+   - sort
+    - sorted population callback
+    - abstract sort and new population? parent selection instead?
+   - update best, check if done 
+   - newpopulation, clone & crossover, mutations
+   - calculate fitness
+   - prune (if crossover creates too many, keep best? keep random?)
+
+Some things to consider:
+ - age of individual
+ - more than two parents
+ - niching
+ - some further feedback from fitness calculation, like scale factor in
+   lensing GA
+   - adjust genome based on this
+ - further structure on population? do use some kind of proximity?
+ - fewer children than population size, replace some of the parent population
+ - selection like in own GA, based on sorted population and prob factor beta
+ - fitness proportionate selection
+ - representations/crossover for permutations
+
+Example problems:
+ - Beam from Keane 1996
+ - Eight Queens problem
+ - Knapsack problem
