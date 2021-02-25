@@ -1,4 +1,5 @@
 #include "population.h"
+#include "floatvectorgenomefitness.h"
 #include <vector>
 #include <iostream>
 #include <typeinfo>
@@ -20,103 +21,6 @@
 
 using namespace std;
 using namespace errut;
-
-template<class Base>
-class FloatVector : public Base
-{
-public:
-	FloatVector(size_t n = 0) : m_values(n) { }
-	FloatVector(size_t n, float initValue) : m_values(n, initValue) { }
-	~FloatVector() { }
-
-	vector<float> &getValues() { return m_values; }
-	const vector<float> &getValues() const { return m_values; }
-
-	string toString() const override
-	{
-		stringstream ss;
-
-		ss << "[";
-		for (auto x : m_values)
-			ss << " " << x;
-		ss << " ]";
-		return ss.str();
-	}
-
-	bool_t MPI_BroadcastLayout(int root, MPI_Comm communicator) override
-	{
-		int num = m_values.size();
-		MPI_Bcast(&num, 1, MPI_INT, root, communicator);
-		m_values.resize(num);
-		return true;
-	}
-
-	bool_t MPI_ISend(int dest, int tag, MPI_Comm communicator, MPI_Request *pRequest) const override
-	{
-		// TODO: does this work when m_values.size() == 0? Should it?
-
-		// Master and helper should already know the genome layout, no need to send the
-		// number of values first
-		MPI_Isend(m_values.data(), m_values.size(), MPI_FLOAT, dest, tag, communicator, pRequest);
-		return true;
-	}
-
-	bool_t MPI_IRecv(int src, int tag, MPI_Comm communicator, MPI_Request *pRequest) override
-	{
-		// cerr << "Receiving " << m_values.size() << " floats" << endl;
-		MPI_Irecv(m_values.data(), m_values.size(), MPI_FLOAT, src, tag, communicator, pRequest);
-		return true;
-	}
-
-	template<class Derived>
-	shared_ptr<Derived> createCopy(bool copyContents = true) const
-	{
-		auto g = make_shared<Derived>(m_values.size());
-		if (copyContents && m_values.size() > 0)
-		{
-			assert(m_values.size() == g->m_values.size());
-			memcpy(g->m_values.data(), m_values.data(), sizeof(float)*m_values.size());
-		}
-		return g;
-	}
-protected:
-	vector<float> m_values;
-};
-
-class FloatVectorGenome : public FloatVector<Genome>
-{
-public:
-	FloatVectorGenome(size_t n = 0) : FloatVector<Genome>(n) { }
-	FloatVectorGenome(size_t n, float initValue) : FloatVector<Genome>(n, initValue) { }
-	~FloatVectorGenome() { }
-
-	shared_ptr<Genome> createCopy(bool copyContents = true) const override
-	{
-		return FloatVector<Genome>::createCopy<FloatVectorGenome>(copyContents);
-	}	
-};
-
-class FloatVectorFitness : public FloatVector<Fitness>
-{
-public:
-	FloatVectorFitness(size_t n = 0) : FloatVector<Fitness>(n, 0) { }
-	~FloatVectorFitness() { }
-
-	string toString() const override
-	{
-		if (!isCalculated())
-			return "?";
-		return FloatVector<Fitness>::toString();
-	}
-
-	shared_ptr<Fitness> createCopy(bool copyContents = true) const override
-	{
-		auto g = FloatVector<Fitness>::createCopy<FloatVectorFitness>(copyContents);
-		if (copyContents && isCalculated())
-			g->setCalculated();
-		return g;
-	}
-};
 
 class DummyGenomeFitnessCalculation : public GenomeFitnessCalculation
 {
