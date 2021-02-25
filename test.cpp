@@ -1,4 +1,4 @@
-#include "genomefitness.h"
+#include "population.h"
 #include <vector>
 #include <iostream>
 #include <typeinfo>
@@ -21,12 +21,13 @@
 using namespace std;
 using namespace errut;
 
-class FloatValuesGenome : public Genome
+template<class Base>
+class FloatVector : public Base
 {
 public:
-	FloatValuesGenome(size_t n = 0) : m_values(n) { }
-	FloatValuesGenome(size_t n, float initValue) : m_values(n, initValue) { }
-	~FloatValuesGenome() { }
+	FloatVector(size_t n = 0) : m_values(n) { }
+	FloatVector(size_t n, float initValue) : m_values(n, initValue) { }
+	~FloatVector() { }
 
 	vector<float> &getValues() { return m_values; }
 	const vector<float> &getValues() const { return m_values; }
@@ -42,18 +43,6 @@ public:
 		return ss.str();
 	}
 
-	shared_ptr<Genome> createCopy(bool copyContents = true) const override
-	{
-		shared_ptr<FloatValuesGenome> g = make_shared<FloatValuesGenome>(m_values.size());
-		if (copyContents && m_values.size() > 0)
-		{
-			assert(m_values.size() == g->m_values.size());
-			memcpy(g->m_values.data(), m_values.data(), sizeof(float)*m_values.size());
-		}
-
-		return g;
-	}
-	
 	bool_t MPI_BroadcastLayout(int root, MPI_Comm communicator) override
 	{
 		int num = m_values.size();
@@ -78,78 +67,55 @@ public:
 		MPI_Irecv(m_values.data(), m_values.size(), MPI_FLOAT, src, tag, communicator, pRequest);
 		return true;
 	}
-private:
-	vector<float> m_values;
-};
 
-class FloatValuesFitness : public Fitness
-{
-public:
-	FloatValuesFitness(size_t n = 0) : m_values(n, 0) { }
-	~FloatValuesFitness() { }
-
-	vector<float> &getValues() { return m_values; }
-	const vector<float> &getValues() const { return m_values; }
-
-	// TODO: how to avoid this copy-paste code?
-	shared_ptr<Fitness> createCopy(bool copyContents = true) const override
+	template<class Derived>
+	shared_ptr<Derived> createCopy(bool copyContents = true) const
 	{
-		shared_ptr<FloatValuesFitness> g = make_shared<FloatValuesFitness>(m_values.size());
+		auto g = make_shared<Derived>(m_values.size());
 		if (copyContents && m_values.size() > 0)
 		{
 			assert(m_values.size() == g->m_values.size());
 			memcpy(g->m_values.data(), m_values.data(), sizeof(float)*m_values.size());
 		}
-
-		if (copyContents && isCalculated())
-			g->setCalculated();
-
 		return g;
 	}
-
-	// TODO: same
-	string toString() const override
-	{
-		stringstream ss;
-
-		ss << "[";
-		for (auto x : m_values)
-			ss << " " << x;
-		ss << " ]";
-		return ss.str();
-	}
-
-private:
+protected:
 	vector<float> m_values;
 };
 
-class Individual
+class FloatVectorGenome : public FloatVector<Genome>
 {
 public:
-	Individual(shared_ptr<Genome> genome, shared_ptr<Fitness> fitness)
-		: m_genome(genome), m_fitness(fitness) { }
-//private:
-	shared_ptr<Genome> m_genome;
-	shared_ptr<Fitness> m_fitness;
+	FloatVectorGenome(size_t n = 0) : FloatVector<Genome>(n) { }
+	FloatVectorGenome(size_t n, float initValue) : FloatVector<Genome>(n, initValue) { }
+	~FloatVectorGenome() { }
+
+	shared_ptr<Genome> createCopy(bool copyContents = true) const override
+	{
+		return FloatVector<Genome>::createCopy<FloatVectorGenome>(copyContents);
+	}	
 };
 
-// Do we need this? Just a typedef perhaps?
-class Population
+class FloatVectorFitness : public FloatVector<Fitness>
 {
 public:
-	Population() { }
-	~Population() { }
+	FloatVectorFitness(size_t n = 0) : FloatVector<Fitness>(n, 0) { }
+	~FloatVectorFitness() { }
 
-	vector<shared_ptr<Individual>> m_individuals;
-};
+	string toString() const override
+	{
+		if (!isCalculated())
+			return "?";
+		return FloatVector<Fitness>::toString();
+	}
 
-class PopulationFitnessCalculation
-{
-public:
-	PopulationFitnessCalculation() { }
-	virtual ~PopulationFitnessCalculation() { }
-
-	virtual bool_t calculatePopulationFitness(const vector<shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
+	shared_ptr<Fitness> createCopy(bool copyContents = true) const override
+	{
+		auto g = FloatVector<Fitness>::createCopy<FloatVectorFitness>(copyContents);
+		if (copyContents && isCalculated())
+			g->setCalculated();
+		return g;
+	}
 };
 
 class DummyGenomeFitnessCalculation : public GenomeFitnessCalculation
@@ -160,10 +126,10 @@ public:
 	bool_t pollCalculate(const Genome &genome, Fitness &fitness)
 	{
 		// TODO: move checking code to separate routine
-		const FloatValuesGenome *pGenome = dynamic_cast<const FloatValuesGenome *>(&genome);
+		const FloatVectorGenome *pGenome = dynamic_cast<const FloatVectorGenome *>(&genome);
 		if (!pGenome)
 			return "Genome is not of expected type";
-		FloatValuesFitness *pFitness = dynamic_cast<FloatValuesFitness *>(&fitness);
+		FloatVectorFitness *pFitness = dynamic_cast<FloatVectorFitness *>(&fitness);
 		if (!pFitness)
 			return "Fitness is not of expected type";
 
@@ -179,7 +145,10 @@ class SingleThreadedPopulationFitnessCalculation : public PopulationFitnessCalcu
 {
 public:
 	SingleThreadedPopulationFitnessCalculation(shared_ptr<GenomeFitnessCalculation> genomeFitCalc)
-		: m_genomeFitnessCalculation(genomeFitCalc) { }
+		: m_genomeFitnessCalculation(genomeFitCalc)
+	{ 
+	}
+
 	~SingleThreadedPopulationFitnessCalculation() { }
 	bool_t calculatePopulationFitness(const vector<shared_ptr<Population>> &populations) override;
 private:
@@ -188,6 +157,9 @@ private:
 
 bool_t SingleThreadedPopulationFitnessCalculation::calculatePopulationFitness(const vector<shared_ptr<Population>> &populations)
 {
+	if (!m_genomeFitnessCalculation.get())
+		return "No genome fitness calculation has been set";
+
 	// First, initialize the calculations
 	for (auto &pop : populations)
 		for (auto &i : pop->m_individuals)
@@ -217,14 +189,15 @@ bool_t SingleThreadedPopulationFitnessCalculation::calculatePopulationFitness(co
 	return true;
 }
 
-// TODO: set comminicator
+// TODO: set communicator
 class MPIPopulationFitnessCalculation : public PopulationFitnessCalculation
 {
 public:
 	MPIPopulationFitnessCalculation();
 	~MPIPopulationFitnessCalculation();
 
-	// Layout will be exchanged between master and helpers
+	// Layout will be exchanged between master and helpers, should be called
+	// at same time at master and helpers
 	bool_t init(const Genome &referenceGenome,
 			    const Fitness &referenceFitness,
 				shared_ptr<PopulationFitnessCalculation> &popCalc); // Need reference genome/fitness to be able to serialize it
@@ -258,6 +231,8 @@ bool_t MPIPopulationFitnessCalculation::init(const Genome &referenceGenome, cons
 	bool_t r = m_referenceGenome->MPI_BroadcastLayout(0, MPI_COMM_WORLD);
 	if (!r)
 		return "Error broadcasting genome layout: " + r.getErrorString();
+	if (!(r = m_referenceFitness->MPI_BroadcastLayout(0, MPI_COMM_WORLD)))
+		return "Error broadcasting fitness layout: " + r.getErrorString();
 
 	return true;
 }
@@ -270,9 +245,13 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness(const vector<
 {
 	if (!m_referenceGenome.get() || !m_referenceFitness.get())
 		return "Reference genome or fitness not set";
+	if (!m_localPopulationFitnessCalculation.get())
+		return "Local fitness calculation not set";
 	
 	int mpiSize = 0;
 	MPI_Comm_size(MPI_COMM_WORLD, &mpiSize);
+
+	// TODO: check reference fitness type/layout against population?
 
 	m_localPop->m_individuals.clear();
 	vector<vector<pair<Genome *, Fitness *>>> helperGenomes(mpiSize); // TODO: use a reusable array
@@ -328,8 +307,29 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness(const vector<
 	MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
 	
 	// Do our own work
+	auto r = m_localPopulationFitnessCalculation->calculatePopulationFitness({ m_localPop });
+	if (!r)
+		return "Error in local fitness calculation: " + r.getErrorString();
 
+	// TODO: check calculation flags in localpop?
+	
 	// Receive the calculations
+	requests.clear();
+	for (int helper = 0 ; helper < (int)helperGenomes.size() ; helper++)
+	{
+		auto &partHelperGenoms = helperGenomes[helper];
+		for (int individual = 0 ; individual < (int)partHelperGenoms.size() ; individual++)
+		{
+			Fitness *pFitness = partHelperGenoms[individual].second;
+			assert(pFitness);
+
+			pFitness->MPI_IRecv(helper, individual, MPI_COMM_WORLD, getNextRequest());
+			pFitness->setCalculated();
+			cerr << "Starting receive for " << helper << "," << individual << endl;
+		}
+	}
+
+	MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
 
 	return true;
 }
@@ -338,6 +338,8 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness_MPIHelper()
 {
 	if (!m_referenceGenome.get() || !m_referenceFitness.get())
 		return "Reference genome or fitness not set";
+	if (!m_localPopulationFitnessCalculation.get())
+		return "Local fitness calculation not set";
 
 	int numGenomes = 0;
 	MPI_Recv(&numGenomes, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -377,6 +379,19 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness_MPIHelper()
 		return "Error in local fitness calculation: " + r.getErrorString();
 
 	// Send fitness results back
+	for (int individual = 0 ; individual < (int)helperGenomes.size() ; individual++)
+	{
+		Fitness *pFitness = helperGenomes[individual].second;
+		if (!(r = pFitness->MPI_ISend(0, individual, MPI_COMM_WORLD, &requests[individual])))
+			return "Error sending back fitness: " + r.getErrorString();
+		
+		cerr << "Sending back fitness for " << individual << ": " << pFitness->toString() << endl;
+
+		pFitness->setCalculated(false); // Already clear flag again
+	}
+
+	MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
+	
 	return true;
 }
 
@@ -385,13 +400,13 @@ int main_master(int argc, char *argv[])
 	cerr << "Master" << endl;
 
 	MPIPopulationFitnessCalculation calc;
-	shared_ptr<DummyGenomeFitnessCalculation> genomeCalc;
+	shared_ptr<DummyGenomeFitnessCalculation> genomeCalc = make_shared<DummyGenomeFitnessCalculation>();
 	shared_ptr<PopulationFitnessCalculation> localCalc = make_shared<SingleThreadedPopulationFitnessCalculation>(genomeCalc);
 
 	int numFloatGenome = 16;
 	int numFloatFitness = 2;
-	FloatValuesGenome genome(numFloatGenome);
-	FloatValuesFitness fitness(numFloatFitness);
+	FloatVectorGenome genome(numFloatGenome);
+	FloatVectorFitness fitness(numFloatFitness);
 
 	auto r = calc.init(genome, fitness, localCalc);
 	if (!r)
@@ -403,8 +418,8 @@ int main_master(int argc, char *argv[])
 	shared_ptr<Population> pop = make_shared<Population>();
 	for (int i = 0 ; i < 32 ; i++)
 		pop->m_individuals.push_back(make_shared<Individual>(
-					make_shared<FloatValuesGenome>(numFloatGenome, i),
-					make_shared<FloatValuesFitness>(numFloatFitness))); 
+					make_shared<FloatVectorGenome>(numFloatGenome, i),
+					make_shared<FloatVectorFitness>(numFloatFitness))); 
 
 	r = calc.calculatePopulationFitness({ pop });
 	if (!r)
@@ -425,10 +440,11 @@ int main_helper(int argc, char *argv[])
 	cerr << "Helper" << endl;
 
 	MPIPopulationFitnessCalculation calc;
-	shared_ptr<DummyGenomeFitnessCalculation> genomeCalc;
+	shared_ptr<DummyGenomeFitnessCalculation> genomeCalc = make_shared<DummyGenomeFitnessCalculation>();
 	shared_ptr<PopulationFitnessCalculation> localCalc = make_shared<SingleThreadedPopulationFitnessCalculation>(genomeCalc);
-	FloatValuesGenome genome; // should not now exact layout here, just type
-	FloatValuesFitness fitness; // same
+	
+	FloatVectorGenome genome; // should not now exact layout here, just type
+	FloatVectorFitness fitness; // same
 
 	auto r = calc.init(genome, fitness, localCalc);
 	if (!r)

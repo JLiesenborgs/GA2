@@ -13,7 +13,6 @@ public:
 	virtual std::string toString() const { return "?"; };
 
 	virtual errut::bool_t MPI_BroadcastLayout(int root, MPI_Comm communicator) { return "Not implemented"; }
-
 	virtual errut::bool_t MPI_ISend(int dest, int tag, MPI_Comm communicator, MPI_Request *pRequest) const { return "Not implemented"; }
 	virtual errut::bool_t MPI_IRecv(int src, int tag, MPI_Comm communicator, MPI_Request *pRequest) { return "Not implemented"; }
 };
@@ -27,6 +26,10 @@ public:
 	virtual std::string toString() const { return "?"; };
 	bool isCalculated() const { return m_calculated; }
 	void setCalculated(bool v = true) { m_calculated = v; }
+
+	virtual errut::bool_t MPI_BroadcastLayout(int root, MPI_Comm communicator) { return "Not implemented"; }
+	virtual errut::bool_t MPI_ISend(int dest, int tag, MPI_Comm communicator, MPI_Request *pRequest) const { return "Not implemented"; }
+	virtual errut::bool_t MPI_IRecv(int src, int tag, MPI_Comm communicator, MPI_Request *pRequest) { return "Not implemented"; }
 protected:
 	bool m_calculated;
 };
