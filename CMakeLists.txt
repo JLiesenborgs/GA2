@@ -36,11 +36,18 @@ find_package(MPI REQUIRED) # TODO: for now it's required
 list(APPEND MOGAL2_LINK_LIBS "${MPI_LIBRARIES}")
 list(APPEND MOGAL2_EXTERNAL_INCLUDES "${MPI_INCLUDE_PATH}")
 
+find_package(Threads REQUIRED)
+list(APPEND MOGAL2_LINK_LIBS "${CMAKE_THREAD_LIBS_INIT}")
 
 list(APPEND MOGAL2_INTERNAL_INCLUDES "${PROJECT_BINARY_DIR}/src/")
 apply_include_paths("${MOGAL_INTERNAL_INCLUDES}")
 apply_include_paths("${MOGAL_EXTERNAL_INCLUDES}")
-add_executable(testcode test.cpp floatvectorgenomefitness.cpp
+
+add_executable(mpitest mpitest.cpp floatvectorgenomefitness.cpp
 						mpipopulationfitnesscalculation.cpp
 						singlethreadedpopulationfitnesscalculation.cpp)
-target_link_libraries(testcode "${MOGAL2_LINK_LIBS}")
+target_link_libraries(mpitest "${MOGAL2_LINK_LIBS}")
+
+add_executable(threadtest threadtest.cpp floatvectorgenomefitness.cpp
+                          multithreadedpopulationfitnesscalculation.cpp)
+target_link_libraries(threadtest "${MOGAL2_LINK_LIBS}")
