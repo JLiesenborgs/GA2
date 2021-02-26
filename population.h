@@ -30,6 +30,7 @@ public:
 	PopulationFitnessCalculation() { }
 	virtual ~PopulationFitnessCalculation() { }
 
+	// TODO: all populations should have exactly the same genomes! (ie same number of floats)
 	virtual errut::bool_t calculatePopulationFitness(const std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
 };
 
