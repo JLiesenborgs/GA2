@@ -30,6 +30,10 @@ public:
 	PopulationFitnessCalculation() { }
 	virtual ~PopulationFitnessCalculation() { }
 
+	// This function can be called eg on first generation, to check that the types etc
+	// are in order. This can then skip some checks in calculatePopulationFitness
+	virtual errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
+
 	// TODO: all populations should have exactly the same genomes! (ie same number of floats)
 	virtual errut::bool_t calculatePopulationFitness(const std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
 };

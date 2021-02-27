@@ -12,6 +12,13 @@ SingleThreadedPopulationFitnessCalculation::~SingleThreadedPopulationFitnessCalc
 {
 }
 
+bool_t SingleThreadedPopulationFitnessCalculation::check(const vector<shared_ptr<Population>> &populations)
+{
+	if (!m_genomeFitnessCalculation.get())
+		return "No genome fitness calculation has been set";
+	return true;
+}
+
 bool_t SingleThreadedPopulationFitnessCalculation::calculatePopulationFitness(const vector<shared_ptr<Population>> &populations)
 {
 	if (!m_genomeFitnessCalculation.get())

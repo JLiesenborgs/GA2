@@ -40,9 +40,32 @@ bool_t MPIPopulationFitnessCalculation::init(const Genome &referenceGenome, cons
 	return true;
 }
 
+bool_t MPIPopulationFitnessCalculation::check(const std::vector<std::shared_ptr<Population>> &populations)
+{
+	if (!m_referenceGenome.get() || !m_referenceFitness.get())
+		return "Reference genome or fitness not set";
+	if (!m_localPopulationFitnessCalculation.get())
+		return "Local fitness calculation not set";
+	
+	for (auto &pop : populations)
+	{
+		for (auto &i : pop->m_individuals)
+		{
+			string popGenomeType = typeid(*(i->m_genome.get())).name();
+			string refGenomeType = typeid(*(m_referenceGenome.get())).name();
+			if (popGenomeType != refGenomeType)
+				return "Genome in population is of different type than reference genome (" + popGenomeType + " != " + refGenomeType +  ")";
+
+			string popFitnessType = typeid(*(i->m_fitness.get())).name();
+			string refFitnessType = typeid(*(m_referenceFitness.get())).name();
+			if (popFitnessType != refFitnessType)
+				return "Fitness in population is of different type than reference fitness (" + popFitnessType + " != " + refFitnessType +  ")";
+		}
+	}
+	return true;
+}
+
 // TODO: send/check genome/fitness type, to make sure helper is using correct types
-// TODO: check edge case if no genomes need to be calculated
-//       helpers should be signalled to end their helper routine
 bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness(const vector<shared_ptr<Population>> &populations)
 {
 	if (!m_referenceGenome.get() || !m_referenceFitness.get())

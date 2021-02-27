@@ -54,6 +54,13 @@ private:
     mutex m_mut;
 };
 
+errut::bool_t MultiThreadedPopulationFitnessCalculation::check(const std::vector<std::shared_ptr<Population>> &populations)
+{
+	if (m_threadGenomeCalculations.size() < 1)
+		return "Need at least one thread";
+	return true;
+}
+
 bool_t MultiThreadedPopulationFitnessCalculation::calculatePopulationFitness(const vector<shared_ptr<Population>> &populations)
 {
 	// TODO: use actual thread pool

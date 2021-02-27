@@ -19,6 +19,7 @@ public:
                 MPI_Comm communicator,
                 int root);
 
+	errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) override;
 	errut::bool_t calculatePopulationFitness(const std::vector<std::shared_ptr<Population>> &populations) override;
 	errut::bool_t calculatePopulationFitness_MPIHelper(); // should be called at same time as calculatePopulationFitness
 private:

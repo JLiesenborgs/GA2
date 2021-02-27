@@ -48,5 +48,3 @@ public:
 	virtual errut::bool_t pollCalculate(const Genome &genome, Fitness &fitness) { return "Not implemented in base class"; }
 };
 
-
-

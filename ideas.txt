@@ -24,7 +24,7 @@ PopulationCrossover:
  - selects individuals to be combined -> how many?
  - append to population? To allow cloning?
 GenomeCrossover:
- - combines two genomes
+ - combines two or more genomes 
 
 PopulationMutation:
  - determine which genomes need mutation
