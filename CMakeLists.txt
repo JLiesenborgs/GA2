@@ -43,11 +43,11 @@ list(APPEND MOGAL2_INTERNAL_INCLUDES "${PROJECT_BINARY_DIR}/src/")
 apply_include_paths("${MOGAL_INTERNAL_INCLUDES}")
 apply_include_paths("${MOGAL_EXTERNAL_INCLUDES}")
 
-add_executable(mpitest mpitest.cpp floatvectorgenomefitness.cpp
+add_executable(mpitest mpitest.cpp vectorgenomefitness.cpp
 						mpipopulationfitnesscalculation.cpp
 						singlethreadedpopulationfitnesscalculation.cpp)
 target_link_libraries(mpitest "${MOGAL2_LINK_LIBS}")
 
-add_executable(threadtest threadtest.cpp floatvectorgenomefitness.cpp
+add_executable(threadtest threadtest.cpp vectorgenomefitness.cpp
                           multithreadedpopulationfitnesscalculation.cpp)
 target_link_libraries(threadtest "${MOGAL2_LINK_LIBS}")

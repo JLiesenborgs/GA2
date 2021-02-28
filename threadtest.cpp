@@ -1,5 +1,5 @@
 #include "multithreadedpopulationfitnesscalculation.h"
-#include "floatvectorgenomefitness.h"
+#include "vectorgenomefitness.h"
 #include <vector>
 #include <iostream>
 #include <typeinfo>

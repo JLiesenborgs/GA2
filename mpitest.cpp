@@ -1,4 +1,4 @@
-#include "floatvectorgenomefitness.h"
+#include "vectorgenomefitness.h"
 #include "mpipopulationfitnesscalculation.h"
 #include "singlethreadedpopulationfitnesscalculation.h"
 #include <vector>
