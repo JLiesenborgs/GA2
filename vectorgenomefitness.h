@@ -2,6 +2,7 @@
 
 #include "valuevector.h"
 #include "genomefitness.h"
+#include <cassert>
 
 template<class T>
 class VectorGenome : public ValueVector<Genome, float>
@@ -23,6 +24,16 @@ class VectorFitness : public ValueVector<Fitness, float>
 public:
 	VectorFitness(size_t n = 0) : ValueVector(n, 0) { }
 	~VectorFitness() { }
+
+	bool isFitterThan(const Fitness &otherFitness, int objectiveNumber) const override
+	{
+		assert(objectiveNumber >= 0 && objectiveNumber < (int)m_values.size());
+		const VectorFitness<T> &otherVectorFitness = static_cast<const VectorFitness<T> &>(otherFitness);
+		
+		if (m_values[objectiveNumber] < otherVectorFitness.m_values[objectiveNumber])
+			return true;
+		return false;
+	}
 
 	std::string toString() const override
 	{
