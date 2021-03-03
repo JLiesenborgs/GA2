@@ -45,6 +45,21 @@ GeneticAlgorithm (DefaultGeneticAlgorithm)
    - calculate fitness
    - prune (if crossover creates too many, keep best? keep random?)
 
+basic process:
+ - init = create initial pop
+ - calc fitness
+ - loop:
+  - create new population
+  - calc fitness
+
+-> in core Evolutionary Alg:
+ - initPop & updatePop step functions
+ - Externally, fitness calc should then be called
+  - this way, it's easy to create separate versions for mpi/non-mpi
+
+-> some kind of geneticalgstep function/class?
+
+
 Some things to consider:
  - age of individual
  - more than two parents

@@ -4,6 +4,7 @@
 #include <vector>
 
 // TODO: record parents?
+// TODO: generation of creation? To allow age?
 class Individual
 {
 public:

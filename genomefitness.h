@@ -49,6 +49,14 @@ public:
 	
 	// Return type says if something went wrong; fitness.isCalculated marks when done
 	// May need multiple calls, to make async behaviour possible
-	virtual errut::bool_t pollCalculate(const Genome &genome, Fitness &fitness) { return "Not implemented in base class"; }
+	virtual errut::bool_t pollCalculate(const Genome &genome, Fitness &fitness)
+	{
+		auto r = calculate(genome, fitness);
+		fitness.setCalculated();
+		return r;
+	}
+
+	// Convenience function for sync operation
+	virtual errut::bool_t calculate(const Genome &genome, Fitness &fitness) { return "Not implemented"; }
 };
 

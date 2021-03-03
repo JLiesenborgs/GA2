@@ -42,12 +42,24 @@ public:
 	virtual errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
 	// This is in-place, must reset isCalculated flag if changed
 	// Idea is to apply a GenomeMutation operator to every individual
-	// TODO: should we consider multiple populations here?
 	virtual errut::bool_t mutate(const std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
 };
 
 // TODO: PopulationCrossover ?
 // allow in-place? some children that overwrite older parents?
+class PopulationCrossover
+{
+public:
+	PopulationCrossover() { }
+	virtual ~PopulationCrossover() { }
+
+	virtual errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
+	// The populations are overwritten, if the old one is still needed it should
+	// be stored externally
+	// This is in-place, must reset isCalculated flag if changed
+	// Idea is to apply a GenomeMutation operator to every individual
+	virtual errut::bool_t createNewPopulations(std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
+};
 
 class ParentSelection // Don't think we need some kind of check, shouldn't depend on type of genome
 {
@@ -57,3 +69,4 @@ public:
 	// TODO: should we consider multiple populations instead?
 	virtual errut::bool_t selectParents(const Population &pop, std::vector<const Genome *> &parents) { return "Not implemented in base class"; }
 };
+

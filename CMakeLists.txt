@@ -49,5 +49,9 @@ add_executable(mpitest mpitest.cpp vectorgenomefitness.cpp
 target_link_libraries(mpitest "${MOGAL2_LINK_LIBS}")
 
 add_executable(threadtest threadtest.cpp vectorgenomefitness.cpp
-                          multithreadedpopulationfitnesscalculation.cpp)
+						  multithreadedpopulationfitnesscalculation.cpp)
 target_link_libraries(threadtest "${MOGAL2_LINK_LIBS}")
+
+add_executable(gatest gatest.cpp vectorgenomefitness.cpp
+			   singlethreadedpopulationfitnesscalculation.cpp)
+target_link_libraries(gatest "${MOGAL2_LINK_LIBS}")
