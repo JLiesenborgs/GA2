@@ -3,7 +3,6 @@
 #include "singlethreadedpopulationfitnesscalculation.h"
 #include <vector>
 #include <iostream>
-#include <typeinfo>
 #include <sstream>
 #include <cstring>
 #include <cassert>

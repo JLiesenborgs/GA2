@@ -27,15 +27,23 @@ public:
 	bool isCalculated() const { return m_calculated; }
 	void setCalculated(bool v = true) { m_calculated = v; }
 
-	// Using just a bool for speed - will be used in sorting functions
-	// TODO: perhaps some kind of FitnessComparison operator is better?
-	virtual bool isFitterThan(const Fitness &otherFitness, int objectiveNumber) const { return false; } // Implement this
-
 	virtual errut::bool_t MPI_BroadcastLayout(int root, MPI_Comm communicator) { return "Not implemented"; }
 	virtual errut::bool_t MPI_ISend(int dest, int tag, MPI_Comm communicator, MPI_Request *pRequest) const { return "Not implemented"; }
 	virtual errut::bool_t MPI_IRecv(int src, int tag, MPI_Comm communicator, MPI_Request *pRequest) { return "Not implemented"; }
 protected:
 	bool m_calculated;
+};
+
+class FitnessComparison
+{
+public:
+	FitnessComparison() { }
+	virtual ~FitnessComparison() { }
+
+	virtual errut::bool_t check(const Fitness &f) const { return "Not implemented in base class"; }
+	// Using just a bool for speed - will be used in sorting functions
+	// TODO: perhaps some kind of FitnessComparison operator is better?
+	virtual bool isFitterThan(const Fitness &first, const Fitness &second, int objectiveNumber) const { return false; } // Implement this
 };
 
 class GenomeFitnessCalculation

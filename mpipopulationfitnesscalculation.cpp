@@ -1,6 +1,7 @@
 #include "mpipopulationfitnesscalculation.h"
 #include <iostream>
 #include <cassert>
+#include <typeinfo>
 
 using namespace errut;
 using namespace std;

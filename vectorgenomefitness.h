@@ -25,16 +25,6 @@ public:
 	VectorFitness(size_t n = 0) : ValueVector(n, 0) { }
 	~VectorFitness() { }
 
-	bool isFitterThan(const Fitness &otherFitness, int objectiveNumber) const override
-	{
-		assert(objectiveNumber >= 0 && objectiveNumber < (int)m_values.size());
-		const VectorFitness<T> &otherVectorFitness = static_cast<const VectorFitness<T> &>(otherFitness);
-		
-		if (m_values[objectiveNumber] < otherVectorFitness.m_values[objectiveNumber])
-			return true;
-		return false;
-	}
-
 	std::string toString() const override
 	{
 		if (!isCalculated())
@@ -48,6 +38,38 @@ public:
 		if (copyContents && isCalculated())
 			g->setCalculated();
 		return g;
+	}
+};
+
+template<class T, bool minimum = true>
+class VectorFitnessComparison : public FitnessComparison
+{
+public:
+	VectorFitnessComparison() { }
+	~VectorFitnessComparison() { }
+
+	errut::bool_t check(const Fitness &f) const override
+	{
+		const VectorFitness<T> *pVf = dynamic_cast<const VectorFitness<T>*>(&f);
+		if (pVf)
+		 	return true;
+
+		return "Different fitness type than expected: " + std::string(typeid(f).name());
+	}
+
+	bool isFitterThan(const Fitness &first, const Fitness &second, int objectiveNumber) const override
+	{
+		const VectorFitness<T> &f1 = static_cast<const VectorFitness<T> &>(first);
+		const VectorFitness<T> &f2 = static_cast<const VectorFitness<T> &>(second);
+
+		const std::vector<T> &v1 = f1.getValues();
+		const std::vector<T> &v2 = f2.getValues();
+		assert(objectiveNumber >= 0 && objectiveNumber < (int)v1.size());
+		assert(v1.size() == v2.size());
+
+		if (minimum)
+			return (v1[objectiveNumber] < v2[objectiveNumber]);
+		return (v1[objectiveNumber] > v2[objectiveNumber]);
 	}
 };
 
