@@ -6,11 +6,53 @@
 #include "singlethreadedpopulationfitnesscalculation.h"
 #include "simplesortedpopulation.h"
 #include "rankparentselection.h"
+#include "singlethreadedpopulationmutation.h"
+#include "singlethreadedpopulationcrossover.h"
 #include <cassert>
 #include <iostream>
 
 using namespace errut;
 using namespace std;
+
+// TODO: elitism
+
+template<class T>
+class VectorGenomeUniformMutation : public GenomeMutation
+{
+public:
+    VectorGenomeUniformMutation(double mutationFraction, T minValue, T maxValue, std::shared_ptr<RandomNumberGenerator> &rng)
+        :  m_mutationFraction(mutationFraction), m_min(minValue), m_max(maxValue), m_rng(rng) { }
+    ~VectorGenomeUniformMutation() { }
+
+	errut::bool_t check(const Genome &genome) override
+    {
+        const VectorGenome<T> *pGenome = dynamic_cast<const VectorGenome<T>*>(&genome);
+        if (!pGenome)
+            return "Genome is not of the expected type";
+        return true;
+    }
+
+	errut::bool_t mutate(Genome &genome, bool &isChanged) override
+    {
+        VectorGenome<T> &g = dynamic_cast<VectorGenome<T>&>(genome);
+        vector<T> &v = g.getValues();
+    
+        for (auto &x : v)
+        {
+            // TODO: can we do this without as many random numbers? Floats? Generate indices first by some other means?
+            if (m_rng->getRandomDouble() < m_mutationFraction)
+            {
+                x = m_rng->getRandomDouble(m_min, m_max);
+                isChanged = true;
+            }
+        }
+        return true;
+    }
+private:
+    std::shared_ptr<RandomNumberGenerator> m_rng;
+    double m_mutationFraction;
+    double m_min, m_max;
+};
 
 class GeneticAlgorithm
 {
@@ -24,6 +66,8 @@ protected:
     shared_ptr<Genome> createInitialGenome();
     shared_ptr<Fitness> createEmptyFitness();
     shared_ptr<FitnessComparison> getFitnessComparison();
+    shared_ptr<PopulationMutation> getPopulationMutation();
+    shared_ptr<PopulationCrossover> getPopulationCrossover();
 
     shared_ptr<RandomNumberGenerator> m_rng;
     shared_ptr<PopulationFitnessCalculation> m_fitnessCalc;
@@ -39,24 +83,14 @@ GeneticAlgorithm::~GeneticAlgorithm()
 {
 }
 
-void printPopulation(const Population &population)
-{
-    cout << "Population: " << endl;
-    for (auto &i : population.m_individuals)
-        cout << i->m_genome->toString() << ": " << i->m_fitness->toString() << endl;
-    cout << endl;
-}
-
 bool_t GeneticAlgorithm::run(size_t popSize)
 {
     auto population = make_shared<Population>();
     auto newPopulation = make_shared<Population>();
     auto refFitness = createEmptyFitness();
-    auto fitnessComparison = getFitnessComparison();
-
-    bool_t r = fitnessComparison->check(*refFitness);
-    if (!r)
-        return "Error checking fitness comparison: " + r.getErrorString();
+    auto popMutation = getPopulationMutation();
+    auto popCross = getPopulationCrossover();
+    bool_t r;
 
     for (size_t i = 0 ; i < popSize ; i++)
     {
@@ -66,60 +100,41 @@ bool_t GeneticAlgorithm::run(size_t popSize)
     }
 
     if (!(r = m_fitnessCalc->calculatePopulationFitness({population})))
-        return "Error calculating fitness: " + r.getErrorString();
-
-    SimpleSortedPopulation sorter(fitnessComparison);
-    RankParentSelection selection(2.5, m_rng);
-    UniformVectorGenomeCrossover<float> crossOver(m_rng, false);
-    vector<shared_ptr<Genome>> parents, offspring;
+        return "Error calculating fitness: " + r.getErrorString();    
 
     for (int generation = 0 ; generation < 100 ; generation++)
     {        
         cout << "Generation " << generation << ": " << endl;
-        printPopulation(*population);
+        population->print();
 
         if (generation == 0)
         {
-            if (!(r = sorter.check(*population)))
-                return "Error checking parent selection prepocessor: " + r.getErrorString();
+            if (!(r = popCross->check({population})))
+                return "Error in population crossover check: " + r.getErrorString();
         }
 
-        if (!(r = sorter.processPopulation(population)))
-            return "Error in sort: " + r.getErrorString();
+        if (!(r = popCross->createNewPopulation(population)))
+            return "Error creating new population: " + r.getErrorString();
 
-        cout << "Generation " << generation << " (sorted): " << endl;
-        printPopulation(*population);
-
-        newPopulation->m_individuals.clear();
-        for (size_t i = 0 ; i < popSize ; i++)
+        if (generation == 0)
         {
-            if (!(r = selection.selectParents(sorter, parents)))
-                return "Error in parent selection: " + r.getErrorString();
-
-            if (generation == 0)
-            {
-                if (!(r = crossOver.check(parents))) // TODO: only for first generation
-                    return "Error in crossover check: " + r.getErrorString();
-            }
-
-            if (!(r = crossOver.generateOffspring(parents, offspring)))
-                return "Error generating offspring: " + r.getErrorString();
-
-            for (auto &g : offspring)
-            {
-                auto f = refFitness->createCopy(false);
-                newPopulation->m_individuals.push_back(make_shared<Individual>(g, f));
-            }
+            if (!(r = popMutation->check({population})))
+                return "Error checking mutation: " + r.getErrorString();
         }
+        if (!(r = popMutation->mutate({population})))
+            return "Error in mutation: " + r.getErrorString();
 
-        std::swap(newPopulation, population);
         if (!(r = m_fitnessCalc->calculatePopulationFitness({population})))
             return "Error calculating fitness: " + r.getErrorString();
 
-        // TODO: somehow check that all fitness values have been calculated
+        // TODO: remove excess genomes?
+
+        // TODO: elitism
+
+        // TODO: somehow check that all fitness values have been calculated??
     }
 
-    printPopulation(*population);
+    population->print();
 
     return true;
 }
@@ -137,9 +152,20 @@ shared_ptr<Fitness> GeneticAlgorithm::createEmptyFitness()
     return make_shared<FloatVectorFitness>(1);
 }
 
-shared_ptr<FitnessComparison> GeneticAlgorithm::getFitnessComparison()
+shared_ptr<PopulationMutation> GeneticAlgorithm::getPopulationMutation()
 {
-    return make_shared<VectorFitnessComparison<float>>();
+    return make_shared<SingleThreadedPopulationMutation>(make_shared<VectorGenomeUniformMutation<float>>(0.1, 0, 1, m_rng));
+}
+
+shared_ptr<PopulationCrossover> GeneticAlgorithm::getPopulationCrossover()
+{
+    return make_shared<SingleThreadedPopulationCrossover>(
+        0.1,
+        make_shared<SimpleSortedPopulation>(make_shared<VectorFitnessComparison<float>>()),
+        make_shared<RankParentSelection>(2.5, m_rng),
+        make_shared<UniformVectorGenomeCrossover<float>>(m_rng, false),
+        m_rng
+    );
 }
 
 class TestFitnessCalculation : public GenomeFitnessCalculation

@@ -49,7 +49,7 @@ public:
 class PopulationCrossover
 {
 public:
-	PopulationCrossover() { }
+	PopulationCrossover() { m_tmp.resize(1); }
 	virtual ~PopulationCrossover() { }
 
 	virtual errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
@@ -58,6 +58,15 @@ public:
 	// This is in-place, must reset isCalculated flag if changed
 	// Idea is to apply a GenomeMutation operator to every individual
 	virtual errut::bool_t createNewPopulations(std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
+	virtual errut::bool_t createNewPopulation(std::shared_ptr<Population> &population)
+	{
+		m_tmp[0] = population;
+		auto r = createNewPopulations(m_tmp);
+		std::swap(m_tmp[0], population);
+		return r;
+	}
+private:
+	std::vector<std::shared_ptr<Population>> m_tmp;
 };
 
 // Something to give ParentSelection as input, e.g. a simple sorted population,

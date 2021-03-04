@@ -56,5 +56,8 @@ add_executable(gatest gatest.cpp vectorgenomefitness.cpp
 			   singlethreadedpopulationfitnesscalculation.cpp
 			   mersennerandomnumbergenerator.cpp
 			   simplesortedpopulation.cpp
-			   rankparentselection.cpp)
+			   rankparentselection.cpp
+			   singlethreadedpopulationmutation.cpp
+			   singlethreadedpopulationcrossover.cpp  
+			   )
 target_link_libraries(gatest "${MOGAL2_LINK_LIBS}")

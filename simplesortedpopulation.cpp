@@ -15,7 +15,13 @@ SimpleSortedPopulation::~SimpleSortedPopulation()
 
 bool_t SimpleSortedPopulation::check(const Population &population)
 {
-    // TODO: do we need to check something here?
+    FitnessComparison &cmp = *m_fitnessComp;
+    for (auto &i : population.m_individuals)
+    {
+        bool_t r = cmp.check(*i->m_fitness);
+        if (!r)
+            return "Error in fitness comparison check: " + r.getErrorString();
+    }
     return true; 
 }
 

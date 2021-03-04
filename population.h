@@ -2,6 +2,7 @@
 
 #include "genomefitness.h"
 #include <vector>
+#include <iostream>
 
 // TODO: record parents?
 // TODO: generation of creation? To allow age?
@@ -21,6 +22,15 @@ class Population
 public:
 	Population() { }
 	~Population() { }
+	void print() const
+	{
+		using namespace std;
+
+		cout << "Population: " << endl;
+	    for (auto &i : m_individuals)
+    	    cout << i->m_genome->toString() << ": " << i->m_fitness->toString() << endl;
+    	cout << endl;
+	}
 
 	std::vector<std::shared_ptr<Individual>> m_individuals;
 };
