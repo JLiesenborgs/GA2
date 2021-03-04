@@ -1,6 +1,7 @@
 #pragma once
 
 #include "genomefitness.h"
+#include "population.h"
 #include <vector>
 
 class GenomeCrossover
@@ -59,13 +60,27 @@ public:
 	virtual errut::bool_t createNewPopulations(std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
 };
 
+// Something to give ParentSelection as input, e.g. a simple sorted population,
+// a non-dominated sorted population
+class SelectionPopulation
+{
+public:
+	SelectionPopulation() { }
+	virtual ~SelectionPopulation() { }
+
+	virtual errut::bool_t check(const Population &population) { return "Not implemented in base class"; }
+	
+	// May change population! (e.g sort it immediately)
+	virtual errut::bool_t processPopulation(std::shared_ptr<Population> &population) { return "Not implemented in base class"; }
+};
+
 class ParentSelection // Don't think we need some kind of check, shouldn't depend on type of genome
 {
 public:
 	ParentSelection() { }
 	virtual ~ParentSelection() { }
 	
-	// TODO: should we consider multiple populations instead?
-	virtual errut::bool_t selectParents(const Population &pop, std::vector<std::shared_ptr<Genome>> &parents) { return "Not implemented in base class"; }
+	virtual errut::bool_t check(const SelectionPopulation &pop) { return "Not implemented in base class"; }
+	virtual errut::bool_t selectParents(const SelectionPopulation &pop, std::vector<std::shared_ptr<Genome>> &parents) { return "Not implemented in base class"; }
 };
 

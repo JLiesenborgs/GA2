@@ -4,87 +4,13 @@
 #include "mersennerandomnumbergenerator.h"
 #include "uniformvectorgenomecrossover.h"
 #include "singlethreadedpopulationfitnesscalculation.h"
-#include <random>
-#include <cmath>
+#include "simplesortedpopulation.h"
+#include "rankparentselection.h"
 #include <cassert>
 #include <iostream>
-#include <algorithm>
 
 using namespace errut;
 using namespace std;
-
-// For a one-objective scenario
-class SimpleSortedPopulation
-{
-public:
-    SimpleSortedPopulation(std::shared_ptr<FitnessComparison> fitComp,
-        int objectiveNumber = 0) : m_objectiveNumber(objectiveNumber), m_fitnessComp(fitComp) { }
-    virtual ~SimpleSortedPopulation() { }
-
-    void setObjectiveNumber(int objectiveNumber) { m_objectiveNumber = objectiveNumber; }
-    
-    // In place!
-    bool_t sortPopulation(Population &population);
-private:
-    int m_objectiveNumber;
-    std::shared_ptr<FitnessComparison> m_fitnessComp;
-};
-
-bool_t SimpleSortedPopulation::sortPopulation(Population &population)
-{
-    FitnessComparison &cmp = *m_fitnessComp;
-    const int N = m_objectiveNumber;
-    auto comp = [&cmp, N](auto &i1, auto &i2)
-    {
-        return cmp.isFitterThan(*i1->m_fitness, *i2->m_fitness, N);
-    };
-
-    sort(population.m_individuals.begin(), population.m_individuals.end(), comp);
-    return true;
-}
-
-class RankParentSelection : public ParentSelection
-{
-public:
-    RankParentSelection(double beta, shared_ptr<RandomNumberGenerator> rng) : m_beta(beta), m_rng(rng) { }
-    ~RankParentSelection() { }
-
-    // TODO: what to use as input here? Just a population? Sorted population is needed
-    //       what with non-dominated sort?
-    //       we don't need sorting for all kinds of selection mechanisms
-    //       seems that an other kind of input is needed, and a check will be needed then
-    bool_t selectParents(const Population &pop, std::vector<std::shared_ptr<Genome>> &parents) override
-    {
-        int popSize = (int)pop.m_individuals.size();
-        if (popSize < 2)
-            return "Not enough population members";
-        
-        auto getIndex = [this, popSize]()
-        {
-            double x = m_rng->getRandomDouble();
-            double y = 1.0-std::pow(x, 1.0/(1.0+m_beta));
-            int idx = (int)(y*(double)popSize);
-            if (idx >= popSize)
-                return popSize-1; // Population size is at least one
-            return idx;
-        };
-
-        int idx1 = getIndex();
-        int idx2 = getIndex();
-
-        if (idx1 == idx2)
-            idx2 = (idx1+1)%popSize;
-
-        parents.resize(2);
-        parents[0] = pop.m_individuals[idx1]->m_genome;
-        parents[1] = pop.m_individuals[idx2]->m_genome;
-
-        return true;
-    }
-private:
-    const double m_beta;
-    shared_ptr<RandomNumberGenerator> m_rng;
-};
 
 class GeneticAlgorithm
 {
@@ -152,7 +78,13 @@ bool_t GeneticAlgorithm::run(size_t popSize)
         cout << "Generation " << generation << ": " << endl;
         printPopulation(*population);
 
-        if (!(r = sorter.sortPopulation(*population)))
+        if (generation == 0)
+        {
+            if (!(r = sorter.check(*population)))
+                return "Error checking parent selection prepocessor: " + r.getErrorString();
+        }
+
+        if (!(r = sorter.processPopulation(population)))
             return "Error in sort: " + r.getErrorString();
 
         cout << "Generation " << generation << " (sorted): " << endl;
@@ -161,7 +93,7 @@ bool_t GeneticAlgorithm::run(size_t popSize)
         newPopulation->m_individuals.clear();
         for (size_t i = 0 ; i < popSize ; i++)
         {
-            if (!(r = selection.selectParents(*population, parents)))
+            if (!(r = selection.selectParents(sorter, parents)))
                 return "Error in parent selection: " + r.getErrorString();
 
             if (generation == 0)
