@@ -72,8 +72,13 @@ Some things to consider:
  - selection like in own GA, based on sorted population and prob factor beta
  - fitness proportionate selection
  - representations/crossover for permutations
+ - 
 
 Example problems:
  - Beam from Keane 1996
  - Eight Queens problem
  - Knapsack problem
+ - graph k-colouring problem
+ - moving optimum ES
+   experiment,http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.35.8073
+
