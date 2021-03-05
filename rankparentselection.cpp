@@ -53,14 +53,15 @@ bool_t RankParentSelection::selectParents(const SelectionPopulation &pop, std::v
         return idx;
     };
 
-    int idx1 = getSetIndex();
-    int idx2 = getSetIndex();
-    int genomeIdx1 = getGenomeIndex(idx1);
-    int genomeIdx2 = getGenomeIndex(idx2);
+    for (auto &p : parents)
+    {
+        int setIdx = getSetIndex();
+        int genomeIdx = getGenomeIndex(setIdx);
 
-    parents.resize(2);
-    parents[0] = ndPop.getGenome(idx1, genomeIdx1);
-    parents[1] = ndPop.getGenome(idx1, genomeIdx2);
+        p = ndPop.getGenome(setIdx, genomeIdx);
+    }
+
+    // TODO: something to prevent inbreeding?
 
     return true;
 }

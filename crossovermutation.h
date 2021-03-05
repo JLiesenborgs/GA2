@@ -7,9 +7,11 @@
 class GenomeCrossover
 {
 public:
-	GenomeCrossover() { }
+	GenomeCrossover(size_t numParents = 2) : m_numParents(numParents) { }
 	virtual ~GenomeCrossover() { }
 
+	void setNumberOfParents(size_t n) { m_numParents = n; }
+	size_t getNumberOfParents() const { return m_numParents; }
 	// This function is intended to check number and type of parents, so that
 	// e.g. no dynamic cast is needed in generateOffspring itself, the number
 	// of parents and their type is assumed to be checked
@@ -17,6 +19,8 @@ public:
 
 	virtual errut::bool_t generateOffspring(const std::vector<std::shared_ptr<Genome>> &parents,
 	                                        std::vector<std::shared_ptr<Genome>> &generatedOffspring) { return "Not implemented in base class"; }
+private:
+	int m_numParents;
 };
 
 class GenomeMutation
@@ -90,6 +94,7 @@ public:
 	virtual ~ParentSelection() { }
 	
 	virtual errut::bool_t check(const SelectionPopulation &pop) { return "Not implemented in base class"; }
+	// The length of 'parents' describes the number of parents that should be
 	virtual errut::bool_t selectParents(const SelectionPopulation &pop, std::vector<std::shared_ptr<Genome>> &parents) { return "Not implemented in base class"; }
 };
 
