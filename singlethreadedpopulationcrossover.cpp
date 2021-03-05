@@ -45,17 +45,16 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(vector<shared_ptr<
 
     for (auto &population : populations)
     {
-        assert(population->m_individuals.size() > 0);
-        auto &refFitness = population->m_individuals[0]->m_fitness;
-
         // Here, some pruning could take place
         if (!(r = m_selectionPop->processPopulation(population, targetPopulationSize)))
             return "Error in selection preprocessing: " + r.getErrorString();
 
+        assert(population->m_individuals.size() > 0);
+        auto refFitness = population->m_individuals[0]->m_fitness;
+
         auto newPopulation = make_shared<Population>();
         
         // TODO: allow something else here? Different sizes?
-
         const size_t popSize = (int)population->m_individuals.size();
         for (size_t i = 0 ; i < popSize ; i++)
         {
