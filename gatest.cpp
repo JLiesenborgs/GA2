@@ -149,6 +149,10 @@ bool_t GeneticAlgorithm::run(size_t popSize, size_t maxPopulationSize)
 
     population->print();
 
+    cout << "Best are: " << endl;
+    for (auto &i : popCross->getBestIndividuals())
+        cout << i->toString() << endl;
+
     return true;
 }
 

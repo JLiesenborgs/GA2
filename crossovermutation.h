@@ -89,8 +89,13 @@ public:
 		std::swap(m_tmp[0], population);
 		return r;
 	}
+
+	// This is the main class that creates new populations/individuals, this
+	// should also be the access point to keep track of the best ones
+	virtual const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const { return m_emptyBest; }
 private:
 	std::vector<std::shared_ptr<Population>> m_tmp;
+	const std::vector<std::shared_ptr<Individual>> m_emptyBest;
 };
 
 // Something to give ParentSelection as input, e.g. a simple sorted population,
@@ -106,6 +111,10 @@ public:
 	// May change population! (e.g sort it immediately)
 	// target population size is to allow pruning
 	virtual errut::bool_t processPopulation(std::shared_ptr<Population> &population, int targetPopulationSize) { return "Not implemented in base class"; }
+
+	virtual const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const { return m_emptyBest; }
+private:
+	const std::vector<std::shared_ptr<Individual>> m_emptyBest;
 };
 
 class ParentSelection // Don't think we need some kind of check, shouldn't depend on type of genome

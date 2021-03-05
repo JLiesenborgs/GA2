@@ -6,6 +6,7 @@
 class SimpleSortedPopulation : public NDSortedPopulation
 {
 public:
+    // TODO: add some kind of pruning operator
     SimpleSortedPopulation(std::shared_ptr<FitnessComparison> fitComp, int objectiveNumber = 0);
     ~SimpleSortedPopulation();
 
@@ -23,8 +24,11 @@ public:
         assert(s >= 0 && s < (int)m_lastPopulation->m_individuals.size());
         return m_lastPopulation->m_individuals[s]->m_genome;
     };
+
+    const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const { return m_best; }
 private:
     int m_objectiveNumber;
     std::shared_ptr<FitnessComparison> m_fitnessComp;
     std::shared_ptr<Population> m_lastPopulation;
+    std::vector<std::shared_ptr<Individual>> m_best;
 };

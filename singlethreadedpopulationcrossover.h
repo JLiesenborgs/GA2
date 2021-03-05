@@ -15,6 +15,14 @@ public:
     
     errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) override;
 	errut::bool_t createNewPopulation(std::vector<std::shared_ptr<Population>> &populations, int targetPopulationSize) override;
+
+    const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const override
+    {
+        // Here, the SelectionPopulation is the one that inspects the population after
+        // The fitnesses have all been calculated, so it should be the one to track
+        // the best
+        return m_selectionPop->getBestIndividuals();
+    }
 private:
     double m_cloneFraction;
     std::shared_ptr<SelectionPopulation> m_selectionPop;

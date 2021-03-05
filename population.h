@@ -11,6 +11,12 @@ class Individual
 public:
 	Individual(std::shared_ptr<Genome> genome, std::shared_ptr<Fitness> fitness)
 		: m_genome(genome), m_fitness(fitness) { }
+
+	std::string toString() const
+	{
+		return m_genome->toString() + ": " + m_fitness->toString();
+	}
+	
 //private:
 	std::shared_ptr<Genome> m_genome;
 	std::shared_ptr<Fitness> m_fitness;
@@ -28,7 +34,7 @@ public:
 
 		cout << "Population: " << endl;
 	    for (auto &i : m_individuals)
-    	    cout << i->m_genome->toString() << ": " << i->m_fitness->toString() << endl;
+    	    cout << i->toString() << endl;
     	cout << endl;
 	}
 

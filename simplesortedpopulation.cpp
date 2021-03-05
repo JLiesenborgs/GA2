@@ -37,5 +37,19 @@ bool_t SimpleSortedPopulation::processPopulation(shared_ptr<Population> &populat
     };
 
     sort(population->m_individuals.begin(), population->m_individuals.end(), comp);
+
+    // TODO: pruning if larger than target size
+
+    assert(population->m_individuals.size() > 0);
+    auto &i = population->m_individuals.front();
+    if (m_best.size() > 0)
+    {
+        auto &best = m_best[0];
+        if (cmp.isFitterThan(*i->m_fitness, *best->m_fitness, N))
+            m_best[0] = i; // TODO: is this safe? should we make a copy?
+    }
+    else
+        m_best.push_back(i); // TODO: is this safe? should we make a copy?
+    
     return true;
 }
