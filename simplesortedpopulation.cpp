@@ -31,6 +31,7 @@ bool_t SimpleSortedPopulation::processPopulation(shared_ptr<Population> &populat
 
     FitnessComparison &cmp = *m_fitnessComp;
     const int N = m_objectiveNumber;
+
     auto comp = [&cmp, N](auto &i1, auto &i2)
     {
         return cmp.isFitterThan(*i1->m_fitness, *i2->m_fitness, N);
@@ -38,7 +39,8 @@ bool_t SimpleSortedPopulation::processPopulation(shared_ptr<Population> &populat
 
     sort(population->m_individuals.begin(), population->m_individuals.end(), comp);
 
-    // TODO: pruning if larger than target size
+    // TODO: allow more complex pruning?
+    population->m_individuals.resize(targetPopulationSize);
 
     assert(population->m_individuals.size() > 0);
     auto &i = population->m_individuals.front();
@@ -50,6 +52,6 @@ bool_t SimpleSortedPopulation::processPopulation(shared_ptr<Population> &populat
     }
     else
         m_best.push_back(i); // TODO: is this safe? should we make a copy?
-    
+
     return true;
 }

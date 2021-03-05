@@ -6,7 +6,7 @@
 class SimpleSortedPopulation : public NDSortedPopulation
 {
 public:
-    // TODO: add some kind of pruning operator
+    // TODO: add some kind of pruning operator?
     SimpleSortedPopulation(std::shared_ptr<FitnessComparison> fitComp, int objectiveNumber = 0);
     ~SimpleSortedPopulation();
 
