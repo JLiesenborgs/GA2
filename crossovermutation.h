@@ -40,12 +40,27 @@ public:
 class PopulationMutation
 {
 public:
-	PopulationMutation() { }
+	PopulationMutation() { m_tmp.resize(1); }
 	virtual ~PopulationMutation() { }
+
+	// Convenience functions
+	virtual errut::bool_t check(const std::shared_ptr<Population> &population)
+	{
+		m_tmp[0] = population;
+		return check(m_tmp);
+	}
+	virtual errut::bool_t mutate(std::shared_ptr<Population> &population)
+	{
+		m_tmp[0] = population;
+		return mutate(m_tmp);
+	}
+
 	virtual errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
 	// This is in-place, must reset isCalculated flag if changed
 	// Idea is to apply a GenomeMutation operator to every individual
 	virtual errut::bool_t mutate(const std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
+private:
+	std::vector<std::shared_ptr<Population>> m_tmp;
 };
 
 // TODO: PopulationCrossover ?
@@ -56,16 +71,21 @@ public:
 	PopulationCrossover() { m_tmp.resize(1); }
 	virtual ~PopulationCrossover() { }
 
-	virtual errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
+	virtual errut::bool_t check(const std::shared_ptr<Population> &population)
+	{
+		m_tmp[0] = population;
+	 	return check(m_tmp);
+	}
+	virtual errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations){ return "Not implemented in base class"; }
 	// The populations are overwritten, if the old one is still needed it should
 	// be stored externally
 	// This is in-place, must reset isCalculated flag if changed
 	// Idea is to apply a GenomeMutation operator to every individual
-	virtual errut::bool_t createNewPopulations(std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
-	virtual errut::bool_t createNewPopulation(std::shared_ptr<Population> &population)
+	virtual errut::bool_t createNewPopulation(std::vector<std::shared_ptr<Population>> &populations, int targetPopulationSize) { return "Not implemented in base class"; }
+	virtual errut::bool_t createNewPopulation(std::shared_ptr<Population> &population, int targetPopulationSize)
 	{
 		m_tmp[0] = population;
-		auto r = createNewPopulations(m_tmp);
+		auto r = createNewPopulation(m_tmp, targetPopulationSize);
 		std::swap(m_tmp[0], population);
 		return r;
 	}
@@ -84,7 +104,8 @@ public:
 	virtual errut::bool_t check(const Population &population) { return "Not implemented in base class"; }
 	
 	// May change population! (e.g sort it immediately)
-	virtual errut::bool_t processPopulation(std::shared_ptr<Population> &population) { return "Not implemented in base class"; }
+	// target population size is to allow pruning
+	virtual errut::bool_t processPopulation(std::shared_ptr<Population> &population, int targetPopulationSize) { return "Not implemented in base class"; }
 };
 
 class ParentSelection // Don't think we need some kind of check, shouldn't depend on type of genome

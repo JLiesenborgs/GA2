@@ -34,7 +34,8 @@ bool_t SingleThreadedPopulationCrossover::check(const vector<shared_ptr<Populati
     return true;
 }
 
-bool_t SingleThreadedPopulationCrossover::createNewPopulations(vector<shared_ptr<Population>> &populations)
+bool_t SingleThreadedPopulationCrossover::createNewPopulation(vector<shared_ptr<Population>> &populations,
+                                                              int targetPopulationSize)
 {
     bool_t r;
     vector<shared_ptr<Genome>> parents, cloneParent, offspring;
@@ -47,7 +48,8 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulations(vector<shared_ptr
         assert(population->m_individuals.size() > 0);
         auto &refFitness = population->m_individuals[0]->m_fitness;
 
-        if (!(r = m_selectionPop->processPopulation(population)))
+        // Here, some pruning could take place
+        if (!(r = m_selectionPop->processPopulation(population, targetPopulationSize)))
             return "Error in selection preprocessing: " + r.getErrorString();
 
         auto newPopulation = make_shared<Population>();

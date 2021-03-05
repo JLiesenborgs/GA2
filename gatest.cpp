@@ -61,7 +61,7 @@ public:
         shared_ptr<PopulationFitnessCalculation> calc);
     virtual ~GeneticAlgorithm();
 
-    bool_t run(size_t popSize);
+    bool_t run(size_t popSize, size_t maxPopulationSize = 0);
 protected:
     shared_ptr<Genome> createInitialGenome();
     shared_ptr<Fitness> createEmptyFitness();
@@ -83,7 +83,10 @@ GeneticAlgorithm::~GeneticAlgorithm()
 {
 }
 
-bool_t GeneticAlgorithm::run(size_t popSize)
+// Note that the population size does not need to be constant throughout the loop,
+// more could arise so that their fitness is calculated. This is why the population
+// size is passed on to the populationcrossover
+bool_t GeneticAlgorithm::run(size_t popSize, size_t maxPopulationSize)
 {
     auto population = make_shared<Population>();
     auto newPopulation = make_shared<Population>();
@@ -91,6 +94,9 @@ bool_t GeneticAlgorithm::run(size_t popSize)
     auto popMutation = getPopulationMutation();
     auto popCross = getPopulationCrossover();
     bool_t r;
+
+    if (maxPopulationSize == 0)
+        maxPopulationSize = popSize;
 
     for (size_t i = 0 ; i < popSize ; i++)
     {
@@ -109,29 +115,36 @@ bool_t GeneticAlgorithm::run(size_t popSize)
 
         if (generation == 0)
         {
-            if (!(r = popCross->check({population})))
+            if (!(r = popCross->check(population)))
                 return "Error in population crossover check: " + r.getErrorString();
         }
 
-        if (!(r = popCross->createNewPopulation(population)))
+        if (!(r = popCross->createNewPopulation(population, popSize)))
             return "Error creating new population: " + r.getErrorString();
+
+        if (population->m_individuals.size() > maxPopulationSize)
+            return "Population size (" + to_string(population->m_individuals.size()) + ") exceeds maximum (" + to_string(maxPopulationSize) + ")";
 
         if (generation == 0)
         {
-            if (!(r = popMutation->check({population})))
+            if (!(r = popMutation->check(population)))
                 return "Error checking mutation: " + r.getErrorString();
         }
-        if (!(r = popMutation->mutate({population})))
+        if (!(r = popMutation->mutate(population)))
             return "Error in mutation: " + r.getErrorString();
 
         if (!(r = m_fitnessCalc->calculatePopulationFitness({population})))
             return "Error calculating fitness: " + r.getErrorString();
 
-        // TODO: remove excess genomes?
+        // TODO: remove excess genomes? -> should probably be done in the selectionpopulation,
+        //       where there's information about relative performance of the genomes
 
-        // TODO: elitism
+        // TODO: elitism -> also needs what's best, perhaps the selectionpopulation is
+        //       the way to track this?
 
         // TODO: somehow check that all fitness values have been calculated??
+        //       some calculation postprocessor? Might also be a good way to
+        //       store the scale factor from own GA into the genome
     }
 
     population->print();

@@ -25,7 +25,7 @@ bool_t SimpleSortedPopulation::check(const Population &population)
     return true; 
 }
 
-bool_t SimpleSortedPopulation::processPopulation(shared_ptr<Population> &population)
+bool_t SimpleSortedPopulation::processPopulation(shared_ptr<Population> &population, int targetPopulationSize)
 {
     m_lastPopulation = population;
 
