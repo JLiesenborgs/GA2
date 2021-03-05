@@ -61,7 +61,7 @@ public:
         shared_ptr<PopulationFitnessCalculation> calc);
     virtual ~GeneticAlgorithm();
 
-    bool_t run(size_t popSize, size_t maxPopulationSize = 0);
+    bool_t run(size_t popSize, size_t minPopulationSize = 0, size_t maxPopulationSize = 0);
 protected:
     shared_ptr<Genome> createInitialGenome();
     shared_ptr<Fitness> createEmptyFitness();
@@ -86,7 +86,7 @@ GeneticAlgorithm::~GeneticAlgorithm()
 // Note that the population size does not need to be constant throughout the loop,
 // more could arise so that their fitness is calculated. This is why the population
 // size is passed on to the populationcrossover
-bool_t GeneticAlgorithm::run(size_t popSize, size_t maxPopulationSize)
+bool_t GeneticAlgorithm::run(size_t popSize, size_t minPopulationSize, size_t maxPopulationSize)
 {
     auto population = make_shared<Population>();
     auto newPopulation = make_shared<Population>();
@@ -122,14 +122,18 @@ bool_t GeneticAlgorithm::run(size_t popSize, size_t maxPopulationSize)
         if (!(r = popCross->createNewPopulation(population, popSize)))
             return "Error creating new population: " + r.getErrorString();
 
-        if (population->m_individuals.size() > maxPopulationSize)
-            return "Population size (" + to_string(population->m_individuals.size()) + ") exceeds maximum (" + to_string(maxPopulationSize) + ")";
+        const size_t curPopSize = population->m_individuals.size();
+        if (curPopSize > maxPopulationSize)
+            return "Population size (" + to_string(curPopSize) + ") exceeds maximum (" + to_string(maxPopulationSize) + ")";
+        if (curPopSize < minPopulationSize)
+            return "Population size (" + to_string(curPopSize) + ") is less than minimum (" + to_string(minPopulationSize) + ")";
 
         if (generation == 0)
         {
             if (!(r = popMutation->check(population)))
                 return "Error checking mutation: " + r.getErrorString();
         }
+
         if (!(r = popMutation->mutate(population)))
             return "Error in mutation: " + r.getErrorString();
 
@@ -171,7 +175,8 @@ shared_ptr<Fitness> GeneticAlgorithm::createEmptyFitness()
 
 shared_ptr<PopulationMutation> GeneticAlgorithm::getPopulationMutation()
 {
-    return make_shared<SingleThreadedPopulationMutation>(make_shared<VectorGenomeUniformMutation<float>>(0.1, 0, 1, m_rng));
+    return make_shared<SingleThreadedPopulationMutation>(
+        make_shared<VectorGenomeUniformMutation<float>>(0.2, 0, 1, m_rng));
 }
 
 shared_ptr<PopulationCrossover> GeneticAlgorithm::getPopulationCrossover()
@@ -212,13 +217,19 @@ public:
 int main(int argc, char const *argv[])
 {
     random_device rd;
-    shared_ptr<RandomNumberGenerator> rng = make_shared<MersenneRandomNumberGenerator>(rd());
+    unsigned int seed = rd();
+    if (argc > 1)
+        seed = atoi(argv[1]);
+    
+    cout << "Seed: " << seed << endl;
+    shared_ptr<RandomNumberGenerator> rng = make_shared<MersenneRandomNumberGenerator>(seed);
 
     shared_ptr<SingleThreadedPopulationFitnessCalculation> calc = make_shared<SingleThreadedPopulationFitnessCalculation>(
         make_shared<TestFitnessCalculation>()
     );
     
     GeneticAlgorithm ga { rng, calc };
+    //auto r = ga.run(16, 0, 32);
     auto r = ga.run(16);
     if (!r)
     {
