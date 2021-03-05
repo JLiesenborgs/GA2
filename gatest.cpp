@@ -4,6 +4,7 @@
 #include "mersennerandomnumbergenerator.h"
 #include "uniformvectorgenomecrossover.h"
 #include "singlethreadedpopulationfitnesscalculation.h"
+#include "multithreadedpopulationfitnesscalculation.h"
 #include "simplesortedpopulation.h"
 #include "rankparentselection.h"
 #include "singlethreadedpopulationmutation.h"
@@ -134,14 +135,12 @@ bool_t GeneticAlgorithm::run(size_t popSize, size_t minPopulationSize, size_t ma
                 return "Error checking mutation: " + r.getErrorString();
         }
 
+        // TODO: how best to skip mutation on introduced elitist solutions?
         if (!(r = popMutation->mutate(population)))
             return "Error in mutation: " + r.getErrorString();
 
         if (!(r = m_fitnessCalc->calculatePopulationFitness({population})))
             return "Error calculating fitness: " + r.getErrorString();
-
-        // TODO: remove excess genomes? -> should probably be done in the selectionpopulation,
-        //       where there's information about relative performance of the genomes
 
         // TODO: elitism -> also needs what's best, perhaps the selectionpopulation is
         //       the way to track this?
@@ -216,6 +215,7 @@ public:
 
 int main(int argc, char const *argv[])
 {
+    bool_t r;
     random_device rd;
     unsigned int seed = rd();
     if (argc > 1)
@@ -224,13 +224,27 @@ int main(int argc, char const *argv[])
     cout << "Seed: " << seed << endl;
     shared_ptr<RandomNumberGenerator> rng = make_shared<MersenneRandomNumberGenerator>(seed);
 
+#if 0
     shared_ptr<SingleThreadedPopulationFitnessCalculation> calc = make_shared<SingleThreadedPopulationFitnessCalculation>(
         make_shared<TestFitnessCalculation>()
     );
+#else
+    shared_ptr<MultiThreadedPopulationFitnessCalculation> calc = make_shared<MultiThreadedPopulationFitnessCalculation>();
+    r = calc->initThreadPool({
+        make_shared<TestFitnessCalculation>(),
+        make_shared<TestFitnessCalculation>(),
+        make_shared<TestFitnessCalculation>(),
+        make_shared<TestFitnessCalculation>() });
+    if (!r)
+    {
+        cerr << "Couldn't init thread based fitness calculator: " << r.getErrorString() << endl;
+        return -1;
+    }
+#endif
     
     GeneticAlgorithm ga { rng, calc };
-    //auto r = ga.run(16, 0, 32);
-    auto r = ga.run(16);
+    //r = ga.run(16, 0, 32);
+    r = ga.run(16);
     if (!r)
     {
         cerr << "Error running GA: " << r.getErrorString() << endl;
