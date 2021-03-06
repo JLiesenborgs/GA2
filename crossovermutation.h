@@ -47,12 +47,16 @@ public:
 	virtual errut::bool_t check(const std::shared_ptr<Population> &population)
 	{
 		m_tmp[0] = population;
-		return check(m_tmp);
+		auto r = check(m_tmp);
+		m_tmp[0] = nullptr;
+		return r;
 	}
 	virtual errut::bool_t mutate(std::shared_ptr<Population> &population)
 	{
 		m_tmp[0] = population;
-		return mutate(m_tmp);
+		auto r = mutate(m_tmp);
+		m_tmp[0] = nullptr;
+		return r;
 	}
 
 	virtual errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
@@ -74,7 +78,9 @@ public:
 	virtual errut::bool_t check(const std::shared_ptr<Population> &population)
 	{
 		m_tmp[0] = population;
-	 	return check(m_tmp);
+		auto r = check(m_tmp);
+		m_tmp[0] = nullptr; // Don't keep a reference to this object
+		return r;
 	}
 	virtual errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations){ return "Not implemented in base class"; }
 	// The populations are overwritten, if the old one is still needed it should
@@ -87,6 +93,7 @@ public:
 		m_tmp[0] = population;
 		auto r = createNewPopulation(m_tmp, targetPopulationSize);
 		std::swap(m_tmp[0], population);
+		m_tmp[0] = nullptr; // Don't keep a reference to this object 
 		return r;
 	}
 
