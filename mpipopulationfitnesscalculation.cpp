@@ -6,7 +6,7 @@
 using namespace errut;
 using namespace std;
 
-MPIPopulationFitnessCalculation::MPIPopulationFitnessCalculation(const std::shared_ptr<MPIEventDistributor> &mpiDist)
+MPIPopulationFitnessCalculation::MPIPopulationFitnessCalculation(const std::weak_ptr<MPIEventDistributor> &mpiDist)
 	: m_evtDist(mpiDist)
 {
 }
@@ -16,7 +16,7 @@ MPIPopulationFitnessCalculation::~MPIPopulationFitnessCalculation()
 }
 
 bool_t MPIPopulationFitnessCalculation::init(const Genome &referenceGenome, const Fitness &referenceFitness,
-											 shared_ptr<PopulationFitnessCalculation> &popCalc,
+											 shared_ptr<PopulationFitnessCalculation> popCalc,
 											 MPI_Comm communicator, int root)
 {
 	int size = 0;
@@ -75,8 +75,8 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness(const vector<
 	if (!m_localPopulationFitnessCalculation.get())
 		return "Local fitness calculation not set";
 
-	if (m_evtDist.get())
-		m_evtDist->signal(MPIEventHandler::Calculation);
+	if (auto dist = m_evtDist.lock())
+		dist->signal(MPIEventHandler::Calculation);
 
 	// TODO: check reference fitness type/layout against population?
 

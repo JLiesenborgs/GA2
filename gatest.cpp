@@ -5,6 +5,7 @@
 #include "uniformvectorgenomecrossover.h"
 #include "singlethreadedpopulationfitnesscalculation.h"
 #include "multithreadedpopulationfitnesscalculation.h"
+#include "mpipopulationfitnesscalculation.h"
 #include "simplesortedpopulation.h"
 #include "rankparentselection.h"
 #include "singlethreadedpopulationmutation.h"
@@ -63,7 +64,7 @@ public:
     virtual ~GeneticAlgorithm();
 
     bool_t run(size_t popSize, size_t minPopulationSize = 0, size_t maxPopulationSize = 0);
-protected:
+
     shared_ptr<Genome> createInitialGenome();
     shared_ptr<Fitness> createEmptyFitness();
     shared_ptr<FitnessComparison> getFitnessComparison();
@@ -213,7 +214,13 @@ public:
     }
 };
 
-int main(int argc, char const *argv[])
+const int CalcTypeSingle = 0;
+const int CalcTypeMulti = 1;
+const int CalcTypeMPI = 2;
+
+const int calcType = CalcTypeMPI;
+
+bool_t real_main(int argc, char *argv[], int rank)
 {
     bool_t r;
     random_device rd;
@@ -224,32 +231,100 @@ int main(int argc, char const *argv[])
     cout << "Seed: " << seed << endl;
     shared_ptr<RandomNumberGenerator> rng = make_shared<MersenneRandomNumberGenerator>(seed);
 
-#if 0
-    shared_ptr<SingleThreadedPopulationFitnessCalculation> calc = make_shared<SingleThreadedPopulationFitnessCalculation>(
+    shared_ptr<SingleThreadedPopulationFitnessCalculation> calcSingle = make_shared<SingleThreadedPopulationFitnessCalculation>(
         make_shared<TestFitnessCalculation>()
     );
-#else
-    shared_ptr<MultiThreadedPopulationFitnessCalculation> calc = make_shared<MultiThreadedPopulationFitnessCalculation>();
-    r = calc->initThreadPool({
-        make_shared<TestFitnessCalculation>(),
-        make_shared<TestFitnessCalculation>(),
-        make_shared<TestFitnessCalculation>(),
-        make_shared<TestFitnessCalculation>() });
-    if (!r)
+
+    shared_ptr<MultiThreadedPopulationFitnessCalculation> calcMulti = make_shared<MultiThreadedPopulationFitnessCalculation>();
+
+    shared_ptr<MPIEventDistributor> mpiDist = make_shared<MPIEventDistributor>();
+    shared_ptr<MPIPopulationFitnessCalculation> calcMPI = make_shared<MPIPopulationFitnessCalculation>(mpiDist);
+    mpiDist->setHandler(MPIEventHandler::Calculation, calcMPI);
+
+    shared_ptr<PopulationFitnessCalculation> calc;
+    if (calcType == 0)
     {
-        cerr << "Couldn't init thread based fitness calculator: " << r.getErrorString() << endl;
-        return -1;
+        // single threaded, nothing to do
+        calc = calcSingle;
     }
-#endif
+    else if (calcType == 1)
+    {        
+        // Multi threaded
+        calc = calcMulti;
+    }
+    else if (calcType == 2)
+    {
+        // MPI
+        calc = calcMPI;
+    }
+    else
+        return "Unknown calculation type " + to_string(calcType);
     
     GeneticAlgorithm ga { rng, calc };
-    //r = ga.run(16, 0, 32);
-    r = ga.run(16);
+
+    if (calcType == 1)
+    {
+        r = calcMulti->initThreadPool({
+            make_shared<TestFitnessCalculation>(),
+            make_shared<TestFitnessCalculation>(),
+            make_shared<TestFitnessCalculation>(),
+            make_shared<TestFitnessCalculation>() });
+        if (!r)
+            return "Couldn't init thread based fitness calculator: " + r.getErrorString();
+    }
+    else if (calcType == 2)
+    {
+        auto refGenome = ga.createInitialGenome();
+        auto refFitness = ga.createEmptyFitness();
+        r = calcMPI->init(*refGenome, *refFitness, calcSingle);
+        if (!r)
+            return "Couldn't init MPI fitness calculator: " + r.getErrorString();
+    }
+
+    if (rank == 0) // Should also work for the non MPI versions
+    {
+        //r = ga.run(16, 0, 32);
+        r = ga.run(16);
+        if (!r)
+            return "Error running GA: " + r.getErrorString();
+
+        if (calcType == 2)
+            mpiDist->signal(MPIEventHandler::Done);
+    }
+    else
+    {
+        r = mpiDist->eventLoop();
+        if (!r)
+            return "Error in event loop: " + r.getErrorString();
+    }
+
+    return true;
+}
+
+#if 0
+int main(int argc, char *argv[])
+{
+    bool_t r = real_main(argc, argv, 0);
     if (!r)
     {
-        cerr << "Error running GA: " << r.getErrorString() << endl;
+        cerr << "Error: " << r.getErrorString() << endl;
         return -1;
     }
     return 0;
 }
-
+#else
+int main(int argc, char *argv[])
+{
+    MPI_Init(&argc, &argv);
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    bool_t r = real_main(argc, argv, rank);
+    if (!r)
+    {
+        cerr << "Error: " << r.getErrorString() << endl;
+        MPI_Abort(MPI_COMM_WORLD, -1);
+    }
+    MPI_Finalize();
+    return 0;
+}
+#endif

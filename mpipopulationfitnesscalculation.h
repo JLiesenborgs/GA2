@@ -8,7 +8,7 @@
 class MPIPopulationFitnessCalculation : public PopulationFitnessCalculation, public MPIEventHandler
 {
 public:
-	MPIPopulationFitnessCalculation(const std::shared_ptr<MPIEventDistributor> &mpiDist = nullptr);
+	MPIPopulationFitnessCalculation(const std::weak_ptr<MPIEventDistributor> &mpiDist = std::weak_ptr<MPIEventDistributor>());
 	~MPIPopulationFitnessCalculation();
 
 	// Layout will be exchanged between master and helpers, should be called
@@ -16,7 +16,7 @@ public:
     // Need reference genome/fitness to be able to serialize it
 	errut::bool_t init(const Genome &referenceGenome,
 			    const Fitness &referenceFitness,
-				std::shared_ptr<PopulationFitnessCalculation> &popCalc,
+				std::shared_ptr<PopulationFitnessCalculation> popCalc,
                 MPI_Comm communicator = MPI_COMM_WORLD,
                 int root = 0);
 
@@ -33,7 +33,7 @@ private:
     MPI_Comm m_comm;
     int m_root, m_mpiSize;
 
-	std::shared_ptr<MPIEventDistributor> m_evtDist;
+	std::weak_ptr<MPIEventDistributor> m_evtDist;
 
 	std::vector<std::vector<std::pair<Genome *, Fitness *>>> m_helperGenomes;
 };
