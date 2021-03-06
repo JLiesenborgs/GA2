@@ -45,7 +45,8 @@ apply_include_paths("${MOGAL_EXTERNAL_INCLUDES}")
 
 add_executable(mpitest mpitest.cpp vectorgenomefitness.cpp
 						mpipopulationfitnesscalculation.cpp
-						singlethreadedpopulationfitnesscalculation.cpp)
+						singlethreadedpopulationfitnesscalculation.cpp
+						mpieventdistributor.cpp)
 target_link_libraries(mpitest "${MOGAL2_LINK_LIBS}")
 
 add_executable(threadtest threadtest.cpp vectorgenomefitness.cpp
@@ -59,6 +60,7 @@ add_executable(gatest gatest.cpp vectorgenomefitness.cpp
 			   simplesortedpopulation.cpp
 			   rankparentselection.cpp
 			   singlethreadedpopulationmutation.cpp
-			   singlethreadedpopulationcrossover.cpp  
+			   singlethreadedpopulationcrossover.cpp
+			   mpieventdistributor.cpp
 			   )
 target_link_libraries(gatest "${MOGAL2_LINK_LIBS}")

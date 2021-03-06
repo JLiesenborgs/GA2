@@ -6,7 +6,8 @@
 using namespace errut;
 using namespace std;
 
-MPIPopulationFitnessCalculation::MPIPopulationFitnessCalculation()
+MPIPopulationFitnessCalculation::MPIPopulationFitnessCalculation(const std::shared_ptr<MPIEventDistributor> &mpiDist)
+	: m_evtDist(mpiDist)
 {
 }
 
@@ -73,7 +74,10 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness(const vector<
 		return "Reference genome or fitness not set";
 	if (!m_localPopulationFitnessCalculation.get())
 		return "Local fitness calculation not set";
-	
+
+	if (m_evtDist.get())
+		m_evtDist->signal(MPIEventHandler::Calculation);
+
 	// TODO: check reference fitness type/layout against population?
 
 	m_localPop->m_individuals.clear();
@@ -182,7 +186,6 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness_MPIHelper()
 
 	int numGenomes = 0;
 	MPI_Recv(&numGenomes, 1, MPI_INT, m_root, 0, m_comm, MPI_STATUS_IGNORE);
-
 	// cerr << "Calculating " << numGenomes << " in helper" << endl;
 
 	// TODO: recycle previously created instances
@@ -232,4 +235,11 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness_MPIHelper()
 	MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
 	
 	return true;
+}
+
+bool_t MPIPopulationFitnessCalculation::handleEvent(MPIEventHandler::EventType t)
+{
+	if (t != MPIEventHandler::Calculation)
+		return "Can't handle event " + to_string(t);
+	return calculatePopulationFitness_MPIHelper();
 }

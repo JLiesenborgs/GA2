@@ -51,7 +51,11 @@ int main_master(int argc, char *argv[])
 {
 	cerr << "Master" << endl;
 
-	MPIPopulationFitnessCalculation calc;
+	shared_ptr<MPIEventDistributor> mpiDist = make_shared<MPIEventDistributor>(ROOT, MPI_COMM_WORLD);
+	shared_ptr<MPIPopulationFitnessCalculation> calc = make_shared<MPIPopulationFitnessCalculation>(mpiDist);
+
+	// mpiDist->setHandler(MPIEventHandler::Calculation, calc);
+
 	shared_ptr<DummyGenomeFitnessCalculation> genomeCalc = make_shared<DummyGenomeFitnessCalculation>();
 	shared_ptr<PopulationFitnessCalculation> localCalc = make_shared<SingleThreadedPopulationFitnessCalculation>(genomeCalc);
 
@@ -60,7 +64,7 @@ int main_master(int argc, char *argv[])
 	FloatVectorGenome genome(numFloatGenome);
 	FloatVectorFitness fitness(numFloatFitness);
 
-	auto r = calc.init(genome, fitness, localCalc, MPI_COMM_WORLD, ROOT);
+	auto r = calc->init(genome, fitness, localCalc, MPI_COMM_WORLD, ROOT);
 	if (!r)
 	{
 		cerr << "Can't init MPIPopulationFitnessCalculation: " << r.getErrorString() << endl;
@@ -75,7 +79,7 @@ int main_master(int argc, char *argv[])
 
 	for (int i = 0 ; i < LOOPS ; i++)
 	{
-		r = calc.calculatePopulationFitness({ pop });
+		r = calc->calculatePopulationFitness({ pop });
 		if (!r)
 		{
 			cerr << "Error in calculatePopulationFitness: " << r.getErrorString() << endl;
@@ -88,6 +92,8 @@ int main_master(int argc, char *argv[])
 		for (auto &i : pop->m_individuals)
 			i->m_fitness->setCalculated(false);
 	}
+	
+	mpiDist->signal(MPIEventHandler::Done);
 
 	cerr << "Master done\n";
 	return 0;
@@ -97,27 +103,28 @@ int main_helper(int argc, char *argv[])
 {
 	cerr << "Helper" << endl;
 
-	MPIPopulationFitnessCalculation calc;
+	shared_ptr<MPIEventDistributor> mpiDist = make_shared<MPIEventDistributor>(ROOT, MPI_COMM_WORLD);
+	shared_ptr<MPIPopulationFitnessCalculation> calc = make_shared<MPIPopulationFitnessCalculation>(mpiDist);
+
+	mpiDist->setHandler(MPIEventHandler::Calculation, calc);
+
 	shared_ptr<DummyGenomeFitnessCalculation> genomeCalc = make_shared<DummyGenomeFitnessCalculation>();
 	shared_ptr<PopulationFitnessCalculation> localCalc = make_shared<SingleThreadedPopulationFitnessCalculation>(genomeCalc);
 	
 	FloatVectorGenome genome; // should not now exact layout here, just type
 	FloatVectorFitness fitness; // same
 
-	auto r = calc.init(genome, fitness, localCalc, MPI_COMM_WORLD, ROOT);
+	auto r = calc->init(genome, fitness, localCalc, MPI_COMM_WORLD, ROOT);
 	if (!r)
 	{
 		cerr << "Can't init MPIPopulationFitnessCalculation in helper: " << r.getErrorString() << endl;
 		MPI_Abort(MPI_COMM_WORLD, -1);
 	}
 
-	for (int i = 0 ; i < LOOPS ; i++)
+	if (!(r = mpiDist->eventLoop()))
 	{
-		if (!(r = calc.calculatePopulationFitness_MPIHelper()))
-		{
-			cerr << "Error running calculatePopulationFitness_MPIHelper: " << r.getErrorString() << endl;
-			MPI_Abort(MPI_COMM_WORLD, -1);
-		}
+		cerr <<	"Error in event loop: " << r.getErrorString() << endl;
+		MPI_Abort(MPI_COMM_WORLD, -1);
 	}
 
 	cerr << "Helper done\n";
