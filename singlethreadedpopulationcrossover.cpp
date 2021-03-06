@@ -54,7 +54,9 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(vector<shared_ptr<
 
         auto newPopulation = make_shared<Population>();
         
-        // TODO: allow something else here? Different sizes?
+        // TODO: introduce elitist solutions
+
+        // TODO: generalize this
         const size_t popSize = (int)population->m_individuals.size();
         for (size_t i = 0 ; i < popSize ; i++)
         {
