@@ -172,7 +172,7 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness(const vector<
 	}
 
 	MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
-	cerr << "Local: " << localCount << ", remote: " << remoteCount << endl;
+	//cerr << "Local: " << localCount << ", remote: " << remoteCount << endl;
 
 	return true;
 }

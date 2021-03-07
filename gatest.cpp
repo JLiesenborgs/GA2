@@ -10,6 +10,7 @@
 #include "rankparentselection.h"
 #include "singlethreadedpopulationmutation.h"
 #include "singlethreadedpopulationcrossover.h"
+#include "gafactory.h"
 #include <cassert>
 #include <iostream>
 
@@ -59,25 +60,18 @@ private:
 class GeneticAlgorithm
 {
 public:
-    GeneticAlgorithm(shared_ptr<RandomNumberGenerator> rng,
-        shared_ptr<PopulationFitnessCalculation> calc);
+    GeneticAlgorithm();
     virtual ~GeneticAlgorithm();
 
-    bool_t run(size_t popSize, size_t minPopulationSize = 0, size_t maxPopulationSize = 0);
+    bool_t run(GAFactory &factory,
+               PopulationFitnessCalculation &fitnessCalc,
+               size_t popSize,
+               size_t minPopulationSize = 0,
+               size_t maxPopulationSize = 0);
 
-    shared_ptr<Genome> createInitialGenome();
-    shared_ptr<Fitness> createEmptyFitness();
-    shared_ptr<FitnessComparison> getFitnessComparison();
-    shared_ptr<PopulationMutation> getPopulationMutation();
-    shared_ptr<PopulationCrossover> getPopulationCrossover();
-
-    shared_ptr<RandomNumberGenerator> m_rng;
-    shared_ptr<PopulationFitnessCalculation> m_fitnessCalc;
 };
 
-GeneticAlgorithm::GeneticAlgorithm(shared_ptr<RandomNumberGenerator> rng,
-    shared_ptr<PopulationFitnessCalculation> calc)
-    : m_rng(rng), m_fitnessCalc(calc)
+GeneticAlgorithm::GeneticAlgorithm()
 {
 }
 
@@ -88,13 +82,17 @@ GeneticAlgorithm::~GeneticAlgorithm()
 // Note that the population size does not need to be constant throughout the loop,
 // more could arise so that their fitness is calculated. This is why the population
 // size is passed on to the populationcrossover
-bool_t GeneticAlgorithm::run(size_t popSize, size_t minPopulationSize, size_t maxPopulationSize)
+bool_t GeneticAlgorithm::run(GAFactory &factory,
+                             PopulationFitnessCalculation &fitnessCalc,
+                             size_t popSize,
+                             size_t minPopulationSize,
+                             size_t maxPopulationSize)
 {
     auto population = make_shared<Population>();
     auto newPopulation = make_shared<Population>();
-    auto refFitness = createEmptyFitness();
-    auto popMutation = getPopulationMutation();
-    auto popCross = getPopulationCrossover();
+    auto refFitness = factory.createEmptyFitness();
+    auto popMutation = factory.getPopulationMutation();
+    auto popCross = factory.getPopulationCrossover();
     bool_t r;
 
     if (maxPopulationSize == 0)
@@ -102,12 +100,12 @@ bool_t GeneticAlgorithm::run(size_t popSize, size_t minPopulationSize, size_t ma
 
     for (size_t i = 0 ; i < popSize ; i++)
     {
-        auto g = createInitialGenome();
+        auto g = factory.createInitializedGenome();
         auto f = refFitness->createCopy(false);
         population->m_individuals.push_back(make_shared<Individual>(g, f));
     }
 
-    if (!(r = m_fitnessCalc->calculatePopulationFitness({population})))
+    if (!(r = fitnessCalc.calculatePopulationFitness({population})))
         return "Error calculating fitness: " + r.getErrorString();    
 
     for (int generation = 0 ; generation < 100 ; generation++)
@@ -115,14 +113,18 @@ bool_t GeneticAlgorithm::run(size_t popSize, size_t minPopulationSize, size_t ma
         cout << "Generation " << generation << ": " << endl;
         population->print();
 
-        if (generation == 0)
+        if (popCross.get())
         {
-            if (!(r = popCross->check(population)))
-                return "Error in population crossover check: " + r.getErrorString();
-        }
+            if (generation == 0)
+            {
+                if (!(r = popCross->check(population)))
+                    return "Error in population crossover check: " + r.getErrorString();
+            }
 
-        if (!(r = popCross->createNewPopulation(population, popSize)))
-            return "Error creating new population: " + r.getErrorString();
+            
+            if (!(r = popCross->createNewPopulation(population, popSize)))
+                return "Error creating new population: " + r.getErrorString();
+        }
 
         const size_t curPopSize = population->m_individuals.size();
         if (curPopSize > maxPopulationSize)
@@ -130,17 +132,20 @@ bool_t GeneticAlgorithm::run(size_t popSize, size_t minPopulationSize, size_t ma
         if (curPopSize < minPopulationSize)
             return "Population size (" + to_string(curPopSize) + ") is less than minimum (" + to_string(minPopulationSize) + ")";
 
-        if (generation == 0)
+        if (popMutation.get())
         {
-            if (!(r = popMutation->check(population)))
-                return "Error checking mutation: " + r.getErrorString();
+            if (generation == 0)
+            {
+                if (!(r = popMutation->check(population)))
+                    return "Error checking mutation: " + r.getErrorString();
+            }
+
+            // TODO: how best to skip mutation on introduced elitist solutions?
+            if (!(r = popMutation->mutate(population)))
+                return "Error in mutation: " + r.getErrorString();
         }
 
-        // TODO: how best to skip mutation on introduced elitist solutions?
-        if (!(r = popMutation->mutate(population)))
-            return "Error in mutation: " + r.getErrorString();
-
-        if (!(r = m_fitnessCalc->calculatePopulationFitness({population})))
+        if (!(r = fitnessCalc.calculatePopulationFitness({population})))
             return "Error calculating fitness: " + r.getErrorString();
 
         // TODO: elitism -> also needs what's best, perhaps the selectionpopulation is
@@ -160,35 +165,48 @@ bool_t GeneticAlgorithm::run(size_t popSize, size_t minPopulationSize, size_t ma
     return true;
 }
 
-shared_ptr<Genome> GeneticAlgorithm::createInitialGenome()
+class TestGAFactory : public GAFactory
 {
-    auto g = make_shared<FloatVectorGenome>(2);
-    for (auto &x : g->getValues())
-        x = m_rng->getRandomFloat();
-    return g;
-}
+public:
+    TestGAFactory(unsigned long seed)
+    {
+        m_rng = make_shared<MersenneRandomNumberGenerator>(seed);
+    }
 
-shared_ptr<Fitness> GeneticAlgorithm::createEmptyFitness()
-{
-    return make_shared<FloatVectorFitness>(1);
-}
+    shared_ptr<Genome> createInitializedGenome() override
+    {
+        auto g = make_shared<FloatVectorGenome>(2);
+        for (auto &x : g->getValues())
+            x = m_rng->getRandomFloat();
+        return g;
+    }
 
-shared_ptr<PopulationMutation> GeneticAlgorithm::getPopulationMutation()
-{
-    return make_shared<SingleThreadedPopulationMutation>(
-        make_shared<VectorGenomeUniformMutation<float>>(0.2, 0, 1, m_rng));
-}
+    shared_ptr<Fitness> createEmptyFitness() override
+    {
+        return make_shared<FloatVectorFitness>(1);
+    }
 
-shared_ptr<PopulationCrossover> GeneticAlgorithm::getPopulationCrossover()
-{
-    return make_shared<SingleThreadedPopulationCrossover>(
-        0.1,
-        make_shared<SimpleSortedPopulation>(make_shared<VectorFitnessComparison<float>>()),
-        make_shared<RankParentSelection>(2.5, m_rng),
-        make_shared<UniformVectorGenomeCrossover<float>>(m_rng, false),
-        m_rng
-    );
-}
+    shared_ptr<PopulationMutation> getPopulationMutation()
+    {
+        // TODO: this creates a new one, return a previously created one
+        return make_shared<SingleThreadedPopulationMutation>(
+            make_shared<VectorGenomeUniformMutation<float>>(0.2, 0, 1, m_rng));
+    }
+
+    shared_ptr<PopulationCrossover> getPopulationCrossover()
+    {
+        // TODO: this creates a new one, return a previously created one
+        return make_shared<SingleThreadedPopulationCrossover>(
+            0.1,
+            make_shared<SimpleSortedPopulation>(make_shared<VectorFitnessComparison<float>>()),
+            make_shared<RankParentSelection>(2.5, m_rng),
+            make_shared<UniformVectorGenomeCrossover<float>>(m_rng, false),
+            m_rng
+        );
+    }
+private:
+    shared_ptr<RandomNumberGenerator> m_rng;
+};
 
 class TestFitnessCalculation : public GenomeFitnessCalculation
 {
@@ -229,38 +247,37 @@ bool_t real_main(int argc, char *argv[], int rank)
         seed = atoi(argv[1]);
     
     cout << "Seed: " << seed << endl;
-    shared_ptr<RandomNumberGenerator> rng = make_shared<MersenneRandomNumberGenerator>(seed);
 
-    shared_ptr<SingleThreadedPopulationFitnessCalculation> calcSingle = make_shared<SingleThreadedPopulationFitnessCalculation>(
-        make_shared<TestFitnessCalculation>()
-    );
-
-    shared_ptr<MultiThreadedPopulationFitnessCalculation> calcMulti = make_shared<MultiThreadedPopulationFitnessCalculation>();
-
-    shared_ptr<MPIEventDistributor> mpiDist = make_shared<MPIEventDistributor>();
-    shared_ptr<MPIPopulationFitnessCalculation> calcMPI = make_shared<MPIPopulationFitnessCalculation>(mpiDist);
-    mpiDist->setHandler(MPIEventHandler::Calculation, calcMPI);
+    shared_ptr<SingleThreadedPopulationFitnessCalculation> calcSingle;
+    shared_ptr<MultiThreadedPopulationFitnessCalculation> calcMulti;
+    shared_ptr<MPIPopulationFitnessCalculation> calcMPI;
+    shared_ptr<MPIEventDistributor> mpiDist;
 
     shared_ptr<PopulationFitnessCalculation> calc;
     if (calcType == 0)
     {
         // single threaded, nothing to do
+        calcSingle = make_shared<SingleThreadedPopulationFitnessCalculation>(make_shared<TestFitnessCalculation>());
         calc = calcSingle;
     }
     else if (calcType == 1)
     {        
         // Multi threaded
+        calcMulti = make_shared<MultiThreadedPopulationFitnessCalculation>();
         calc = calcMulti;
     }
     else if (calcType == 2)
     {
         // MPI
+        mpiDist = make_shared<MPIEventDistributor>();
+        calcMPI =  make_shared<MPIPopulationFitnessCalculation>(mpiDist);
+        mpiDist->setHandler(MPIEventHandler::Calculation, calcMPI);
         calc = calcMPI;
     }
     else
         return "Unknown calculation type " + to_string(calcType);
     
-    GeneticAlgorithm ga { rng, calc };
+    TestGAFactory factory(seed);
 
     if (calcType == 1)
     {
@@ -274,22 +291,35 @@ bool_t real_main(int argc, char *argv[], int rank)
     }
     else if (calcType == 2)
     {
-        auto refGenome = ga.createInitialGenome();
-        auto refFitness = ga.createEmptyFitness();
-        r = calcMPI->init(*refGenome, *refFitness, calcSingle);
+        auto refGenome = factory.createInitializedGenome();
+        auto refFitness = factory.createEmptyFitness();
+        r = calcMPI->init(*refGenome, *refFitness, 
+                          make_shared<SingleThreadedPopulationFitnessCalculation>(make_shared<TestFitnessCalculation>()));
         if (!r)
             return "Couldn't init MPI fitness calculator: " + r.getErrorString();
     }
 
     if (rank == 0) // Should also work for the non MPI versions
     {
-        //r = ga.run(16, 0, 32);
-        r = ga.run(16);
-        if (!r)
-            return "Error running GA: " + r.getErrorString();
+        // At this point, on the other ranks, the event loop will be waiting what
+        // to do, so we should send a Done signal 
+        auto cleanup = [mpiDist]()
+        {
+            if (mpiDist.get())
+                mpiDist->signal(MPIEventHandler::Done);
+        };
 
-        if (calcType == 2)
-            mpiDist->signal(MPIEventHandler::Done);
+        GeneticAlgorithm ga;
+
+        //r = ga.run(factory, calc, 16, 0, 32);
+        r = ga.run(factory, *calc, 16);
+        if (!r)
+        {
+            cleanup();
+            return "Error running GA: " + r.getErrorString();
+        }
+
+        cleanup();
     }
     else
     {
