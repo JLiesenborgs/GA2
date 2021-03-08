@@ -10,6 +10,7 @@ public:
                                       std::shared_ptr<SelectionPopulation> selectionPop,
                                       std::shared_ptr<ParentSelection> parentSelection,
                                       std::shared_ptr<GenomeCrossover> genomeCrossover,
+                                      std::shared_ptr<Elitism> elitism,
                                       std::shared_ptr<RandomNumberGenerator> rng);
     ~SingleThreadedPopulationCrossover();
     
@@ -28,5 +29,6 @@ private:
     std::shared_ptr<SelectionPopulation> m_selectionPop;
     std::shared_ptr<ParentSelection> m_parentSelection;
     std::shared_ptr<GenomeCrossover> m_genomeCrossover;
+    std::shared_ptr<Elitism> m_elitism;
     std::shared_ptr<RandomNumberGenerator> m_rng;
 };

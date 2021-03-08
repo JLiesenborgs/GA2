@@ -63,5 +63,6 @@ add_executable(gatest gatest.cpp vectorgenomefitness.cpp
 			   singlethreadedpopulationmutation.cpp
 			   singlethreadedpopulationcrossover.cpp
 			   mpieventdistributor.cpp
+			   singlebestelitism.cpp
 			   )
 target_link_libraries(gatest "${MOGAL2_LINK_LIBS}")

@@ -29,6 +29,8 @@ public:
 	Population() : m_skipMutation(0) { }
 	~Population() { }
 
+	size_t size() const { return m_individuals.size(); }
+
 	void setGenomesToSkipMutation(size_t n) { m_skipMutation = n; }
 	size_t getGenomesToSkipMutation() const { return m_skipMutation; }
 

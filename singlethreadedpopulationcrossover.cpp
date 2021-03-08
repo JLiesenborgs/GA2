@@ -9,10 +9,11 @@ SingleThreadedPopulationCrossover::SingleThreadedPopulationCrossover(double clon
                                     shared_ptr<SelectionPopulation> selectionPop,
                                     shared_ptr<ParentSelection> parentSelection,
                                     shared_ptr<GenomeCrossover> genomeCrossover,
+                                    shared_ptr<Elitism> elitism,
                                     shared_ptr<RandomNumberGenerator> rng)
     : m_cloneFraction(cloneFraction), m_selectionPop(selectionPop), 
       m_parentSelection(parentSelection), m_genomeCrossover(genomeCrossover),
-      m_rng(rng)
+      m_elitism(elitism), m_rng(rng)
 {
 }
 
@@ -28,6 +29,11 @@ bool_t SingleThreadedPopulationCrossover::check(const vector<shared_ptr<Populati
     {
         if (!(r = m_selectionPop->check(*pop)))
             return "Error checking selection preprocessing: " + r.getErrorString();
+    }
+    if (m_elitism.get())
+    {
+        if (!(r = m_elitism->check(m_selectionPop)))
+            return "Error checking compatibility of elitism with selection preprocessing: " + r.getErrorString();
     }
 
     // TODO: check crossover, check parent selection
@@ -49,16 +55,21 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(vector<shared_ptr<
         if (!(r = m_selectionPop->processPopulation(population, targetPopulationSize)))
             return "Error in selection preprocessing: " + r.getErrorString();
 
-        assert(population->m_individuals.size() > 0);
+        assert(population->size() > 0);
         auto refFitness = population->m_individuals[0]->m_fitness;
 
         auto newPopulation = make_shared<Population>();
         
-        // TODO: introduce elitist solutions
+        // introduce elitist solutions, this also marks how many genomes should not
+        // be mutated
+        if (m_elitism.get())
+        {
+            if (!(r = m_elitism->introduceElites(m_selectionPop, newPopulation, targetPopulationSize)))
+                return "Can't introduce elitist solutions: " + r.getErrorString();
+        }
 
-        // TODO: generalize this
-        const size_t popSize = (int)population->m_individuals.size();
-        for (size_t i = 0 ; i < popSize ; i++)
+        // TODO: generalize this!
+        for (size_t i = newPopulation->size() ; i < targetPopulationSize ; i++)
         {
             double x = m_rng->getRandomDouble();
             if (x < m_cloneFraction) // TODO: can we do this more efficiently?

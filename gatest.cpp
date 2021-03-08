@@ -11,6 +11,7 @@
 #include "singlethreadedpopulationmutation.h"
 #include "singlethreadedpopulationcrossover.h"
 #include "gafactory.h"
+#include "singlebestelitism.h"
 #include <cassert>
 #include <iostream>
 
@@ -57,6 +58,31 @@ private:
     double m_min, m_max;
 };
 
+class StopCriterion
+{
+public:
+    StopCriterion() { }
+    virtual ~StopCriterion() { }
+
+    virtual errut::bool_t analyze(const std::vector<std::shared_ptr<Individual>> &currentBest, size_t generationNumber, bool &shouldStop) { return "Not implemented in base class"; }
+};
+
+class FixedGenerationsStopCriterion : public StopCriterion
+{
+public:
+    FixedGenerationsStopCriterion(size_t n) : m_maxGen(n) { }
+    ~FixedGenerationsStopCriterion() { }
+
+    errut::bool_t analyze(const std::vector<std::shared_ptr<Individual>> &currentBest, size_t generationNumber, bool &shouldStop) override
+    {
+        if (generationNumber >= m_maxGen)
+            shouldStop = true;
+        return true;
+    }
+private:
+    size_t m_maxGen;
+};
+
 class GeneticAlgorithm
 {
 public:
@@ -65,6 +91,7 @@ public:
 
     bool_t run(GAFactory &factory,
                PopulationFitnessCalculation &fitnessCalc,
+               StopCriterion &stopCriterion,
                size_t popSize,
                size_t minPopulationSize = 0,
                size_t maxPopulationSize = 0);
@@ -84,6 +111,7 @@ GeneticAlgorithm::~GeneticAlgorithm()
 // size is passed on to the populationcrossover
 bool_t GeneticAlgorithm::run(GAFactory &factory,
                              PopulationFitnessCalculation &fitnessCalc,
+                             StopCriterion &stopCriterion,
                              size_t popSize,
                              size_t minPopulationSize,
                              size_t maxPopulationSize)
@@ -108,7 +136,8 @@ bool_t GeneticAlgorithm::run(GAFactory &factory,
     if (!(r = fitnessCalc.calculatePopulationFitness({population})))
         return "Error calculating fitness: " + r.getErrorString();    
 
-    for (int generation = 0 ; generation < 100 ; generation++)
+    size_t generation = 0;
+    while (true)
     {        
         cout << "Generation " << generation << ": " << endl;
         population->print();
@@ -125,8 +154,6 @@ bool_t GeneticAlgorithm::run(GAFactory &factory,
             if (!(r = popCross->createNewPopulation(population, popSize)))
                 return "Error creating new population: " + r.getErrorString();
         }
-
-        // TODO: check best genomes, check if done
 
         const size_t curPopSize = population->m_individuals.size();
         if (curPopSize > maxPopulationSize)
@@ -151,12 +178,17 @@ bool_t GeneticAlgorithm::run(GAFactory &factory,
         if (!(r = fitnessCalc.calculatePopulationFitness({population})))
             return "Error calculating fitness: " + r.getErrorString();
 
-        // TODO: elitism -> also needs what's best, perhaps the selectionpopulation is
-        //       the way to track this?
-
         // TODO: somehow check that all fitness values have been calculated??
         //       some calculation postprocessor? Might also be a good way to
         //       store the scale factor from own GA into the genome
+
+        bool shouldStop = false;
+        if (!(r = stopCriterion.analyze(popCross->getBestIndividuals(), generation, shouldStop)))
+            return "Error in termination check: " + r.getErrorString();
+        if (shouldStop)
+            break;
+
+        generation++;
     }
 
     population->print();
@@ -174,6 +206,16 @@ public:
     TestGAFactory(unsigned long seed)
     {
         m_rng = make_shared<MersenneRandomNumberGenerator>(seed);
+        m_mutation = make_shared<SingleThreadedPopulationMutation>(
+            make_shared<VectorGenomeUniformMutation<float>>(0.2, 0, 1, m_rng));
+        m_crossover = make_shared<SingleThreadedPopulationCrossover>(
+            0.1,
+            make_shared<SimpleSortedPopulation>(make_shared<VectorFitnessComparison<float>>()),
+            make_shared<RankParentSelection>(2.5, m_rng),
+            make_shared<UniformVectorGenomeCrossover<float>>(m_rng, false),
+            make_shared<SingleBestElitism>(true, true),
+            m_rng
+        );
     }
 
     shared_ptr<Genome> createInitializedGenome() override
@@ -191,24 +233,17 @@ public:
 
     shared_ptr<PopulationMutation> getPopulationMutation()
     {
-        // TODO: this creates a new one, return a previously created one
-        return make_shared<SingleThreadedPopulationMutation>(
-            make_shared<VectorGenomeUniformMutation<float>>(0.2, 0, 1, m_rng));
+        return m_mutation;
     }
 
     shared_ptr<PopulationCrossover> getPopulationCrossover()
     {
-        // TODO: this creates a new one, return a previously created one
-        return make_shared<SingleThreadedPopulationCrossover>(
-            0.1,
-            make_shared<SimpleSortedPopulation>(make_shared<VectorFitnessComparison<float>>()),
-            make_shared<RankParentSelection>(2.5, m_rng),
-            make_shared<UniformVectorGenomeCrossover<float>>(m_rng, false),
-            m_rng
-        );
+        return m_crossover;
     }
 private:
     shared_ptr<RandomNumberGenerator> m_rng;
+    shared_ptr<SingleThreadedPopulationMutation> m_mutation;
+    shared_ptr<SingleThreadedPopulationCrossover> m_crossover;
 };
 
 class TestFitnessCalculation : public GenomeFitnessCalculation
@@ -239,7 +274,7 @@ const int CalcTypeSingle = 0;
 const int CalcTypeMulti = 1;
 const int CalcTypeMPI = 2;
 
-const int calcType = CalcTypeMPI;
+const int calcType = CalcTypeSingle;
 
 bool_t real_main(int argc, char *argv[], int rank)
 {
@@ -312,10 +347,11 @@ bool_t real_main(int argc, char *argv[], int rank)
                 mpiDist->signal(MPIEventHandler::Done);
         };
 
+        FixedGenerationsStopCriterion stop(100);
         GeneticAlgorithm ga;
 
         //r = ga.run(factory, calc, 16, 0, 32);
-        r = ga.run(factory, *calc, 16);
+        r = ga.run(factory, *calc, stop, 16);
         if (!r)
         {
             cleanup();
@@ -334,7 +370,7 @@ bool_t real_main(int argc, char *argv[], int rank)
     return true;
 }
 
-#if 0
+#if 1
 int main(int argc, char *argv[])
 {
     bool_t r = real_main(argc, argv, 0);

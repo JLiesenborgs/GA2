@@ -117,11 +117,25 @@ public:
 	
 	// May change population! (e.g sort it immediately)
 	// target population size is to allow pruning
-	virtual errut::bool_t processPopulation(std::shared_ptr<Population> &population, int targetPopulationSize) { return "Not implemented in base class"; }
+	virtual errut::bool_t processPopulation(std::shared_ptr<Population> &population, size_t targetPopulationSize) { return "Not implemented in base class"; }
 
 	virtual const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const { return m_emptyBest; }
 private:
 	const std::vector<std::shared_ptr<Individual>> m_emptyBest;
+};
+
+class Elitism
+{
+public:
+	Elitism() { }
+	virtual ~Elitism() { }
+
+	virtual errut::bool_t check(const std::shared_ptr<SelectionPopulation> &selPop) { return "Not implemented in base class"; }
+
+	// Population should be empty, number of genomes to skip should be set in this function
+	virtual errut::bool_t introduceElites(const std::shared_ptr<SelectionPopulation> &selPop,
+										  std::shared_ptr<Population> &population,
+										  size_t targetPopulationSize) { return "Not implemented in base class"; }
 };
 
 class ParentSelection // Don't think we need some kind of check, shouldn't depend on type of genome

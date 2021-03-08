@@ -13,7 +13,7 @@ public:
     void setObjectiveNumber(int objectiveNumber) { m_objectiveNumber = objectiveNumber; }
 
     errut::bool_t check(const Population &population) override;
-    errut::bool_t processPopulation(std::shared_ptr<Population> &population, int targetPopulationSize) override;
+    errut::bool_t processPopulation(std::shared_ptr<Population> &population, size_t targetPopulationSize) override;
     std::shared_ptr<Population> getSortedPopulation() const { return m_lastPopulation; }
 
     int getNumberOfSets() const override { return (int)m_lastPopulation->m_individuals.size(); }
