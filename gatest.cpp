@@ -200,6 +200,8 @@ bool_t GeneticAlgorithm::run(GAFactory &factory,
     return true;
 }
 
+typedef int RealType;
+
 class TestGAFactory : public GAFactory
 {
 public:
@@ -207,12 +209,12 @@ public:
     {
         m_rng = make_shared<MersenneRandomNumberGenerator>(seed);
         m_mutation = make_shared<SingleThreadedPopulationMutation>(
-            make_shared<VectorGenomeUniformMutation<float>>(0.2, 0, 1, m_rng));
+            make_shared<VectorGenomeUniformMutation<RealType>>(0.2, 0, 100, m_rng));
         m_crossover = make_shared<SingleThreadedPopulationCrossover>(
             0.1,
-            make_shared<SimpleSortedPopulation>(make_shared<VectorFitnessComparison<float>>()),
+            make_shared<SimpleSortedPopulation>(make_shared<VectorFitnessComparison<RealType>>()),
             make_shared<RankParentSelection>(2.5, m_rng),
-            make_shared<UniformVectorGenomeCrossover<float>>(m_rng, false),
+            make_shared<UniformVectorGenomeCrossover<RealType>>(m_rng, false),
             make_shared<SingleBestElitism>(true, true),
             m_rng
         );
@@ -220,15 +222,15 @@ public:
 
     shared_ptr<Genome> createInitializedGenome() override
     {
-        auto g = make_shared<FloatVectorGenome>(2);
+        auto g = make_shared<VectorGenome<RealType>>(2);
         for (auto &x : g->getValues())
-            x = m_rng->getRandomFloat();
+            x = (RealType)(m_rng->getRandomDouble()*100.0);
         return g;
     }
 
     shared_ptr<Fitness> createEmptyFitness() override
     {
-        return make_shared<FloatVectorFitness>(1);
+        return make_shared<VectorFitness<RealType>>(1);
     }
 
     shared_ptr<PopulationMutation> getPopulationMutation()
@@ -254,16 +256,16 @@ public:
 
     bool_t calculate(const Genome &g, Fitness &f)
     {
-        const FloatVectorGenome &vg = static_cast<const FloatVectorGenome &>(g);
-        FloatVectorFitness &vf = static_cast<FloatVectorFitness &>(f);
+        const VectorGenome<RealType> &vg = static_cast<const VectorGenome<RealType> &>(g);
+        VectorFitness<RealType> &vf = static_cast<VectorFitness<RealType> &>(f);
 
         assert(vg.getValues().size() == 2);
         assert(vf.getValues().size() == 1);
         
-        float x = vg.getValues()[0];
-        float y = vg.getValues()[1];
-        float dx = x - 0.3f;
-        float dy = y - 0.2f;
+        RealType x = vg.getValues()[0];
+        RealType y = vg.getValues()[1];
+        RealType dx = x - (RealType)30;
+        RealType dy = y - (RealType)20;
 
         vf.getValues()[0] = dx*dx + dy*dy;
         return true;
@@ -274,7 +276,7 @@ const int CalcTypeSingle = 0;
 const int CalcTypeMulti = 1;
 const int CalcTypeMPI = 2;
 
-const int calcType = CalcTypeSingle;
+const int calcType = CalcTypeMPI;
 
 bool_t real_main(int argc, char *argv[], int rank)
 {
@@ -370,7 +372,7 @@ bool_t real_main(int argc, char *argv[], int rank)
     return true;
 }
 
-#if 1
+#if 0
 int main(int argc, char *argv[])
 {
     bool_t r = real_main(argc, argv, 0);
