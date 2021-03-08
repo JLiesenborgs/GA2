@@ -12,6 +12,7 @@
 #include "singlethreadedpopulationcrossover.h"
 #include "gafactory.h"
 #include "singlebestelitism.h"
+#include "valuefitness.h"
 #include <cassert>
 #include <iostream>
 
@@ -181,6 +182,8 @@ bool_t GeneticAlgorithm::run(GAFactory &factory,
         // TODO: somehow check that all fitness values have been calculated??
         //       some calculation postprocessor? Might also be a good way to
         //       store the scale factor from own GA into the genome
+        // TODO: this could be done by implementing your own fitness calculator
+        //       and performing the check at the end
 
         bool shouldStop = false;
         if (!(r = stopCriterion.analyze(popCross->getBestIndividuals(), generation, shouldStop)))
@@ -212,7 +215,8 @@ public:
             make_shared<VectorGenomeUniformMutation<RealType>>(0.2, 0, 100, m_rng));
         m_crossover = make_shared<SingleThreadedPopulationCrossover>(
             0.1,
-            make_shared<SimpleSortedPopulation>(make_shared<VectorFitnessComparison<RealType>>()),
+            // make_shared<SimpleSortedPopulation>(make_shared<VectorFitnessComparison<RealType>>()),
+            make_shared<SimpleSortedPopulation>(make_shared<ValueFitnessComparison<RealType>>()),
             make_shared<RankParentSelection>(2.5, m_rng),
             make_shared<UniformVectorGenomeCrossover<RealType>>(m_rng, false),
             make_shared<SingleBestElitism>(true, true),
@@ -230,7 +234,8 @@ public:
 
     shared_ptr<Fitness> createEmptyFitness() override
     {
-        return make_shared<VectorFitness<RealType>>(1);
+        return make_shared<ValueFitness<RealType>>();
+        //return make_shared<VectorFitness<RealType>>(1);
     }
 
     shared_ptr<PopulationMutation> getPopulationMutation()
@@ -257,17 +262,20 @@ public:
     bool_t calculate(const Genome &g, Fitness &f)
     {
         const VectorGenome<RealType> &vg = static_cast<const VectorGenome<RealType> &>(g);
-        VectorFitness<RealType> &vf = static_cast<VectorFitness<RealType> &>(f);
-
         assert(vg.getValues().size() == 2);
-        assert(vf.getValues().size() == 1);
-        
+
+        //VectorFitness<RealType> &vf = static_cast<VectorFitness<RealType> &>(f);
+        //assert(vf.getValues().size() == 1);
+
+        ValueFitness<RealType> &vf = static_cast<ValueFitness<RealType> &>(f);
+
         RealType x = vg.getValues()[0];
         RealType y = vg.getValues()[1];
         RealType dx = x - (RealType)30;
         RealType dy = y - (RealType)20;
 
-        vf.getValues()[0] = dx*dx + dy*dy;
+        //vf.getValues()[0] = dx*dx + dy*dy;
+        vf.setValue(dx*dx + dy*dy);
         return true;
     }
 };
