@@ -43,7 +43,7 @@ public:
 	virtual errut::bool_t check(const Fitness &f) const { return "Not implemented in base class"; }
 	// Using just a bool for speed - will be used in sorting functions
 	// TODO: perhaps some kind of FitnessComparison operator is better?
-	virtual bool isFitterThan(const Fitness &first, const Fitness &second, int objectiveNumber) const { return false; } // Implement this
+	virtual bool isFitterThan(const Fitness &first, const Fitness &second, size_t objectiveNumber) const { return false; } // Implement this
 };
 
 class GenomeFitnessCalculation

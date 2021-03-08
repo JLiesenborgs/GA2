@@ -57,14 +57,14 @@ public:
 		return "Different fitness type than expected: " + std::string(typeid(f).name());
 	}
 
-	bool isFitterThan(const Fitness &first, const Fitness &second, int objectiveNumber) const override
+	bool isFitterThan(const Fitness &first, const Fitness &second, size_t objectiveNumber) const override
 	{
 		const VectorFitness<T> &f1 = static_cast<const VectorFitness<T> &>(first);
 		const VectorFitness<T> &f2 = static_cast<const VectorFitness<T> &>(second);
 
 		const std::vector<T> &v1 = f1.getValues();
 		const std::vector<T> &v2 = f2.getValues();
-		assert(objectiveNumber >= 0 && objectiveNumber < (int)v1.size());
+		assert(objectiveNumber >= 0 && objectiveNumber < v1.size());
 		assert(v1.size() == v2.size());
 
 		if (minimum)

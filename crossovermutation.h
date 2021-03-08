@@ -20,7 +20,7 @@ public:
 	virtual errut::bool_t generateOffspring(const std::vector<std::shared_ptr<Genome>> &parents,
 	                                        std::vector<std::shared_ptr<Genome>> &generatedOffspring) { return "Not implemented in base class"; }
 private:
-	int m_numParents;
+	size_t m_numParents;
 };
 
 class GenomeMutation
@@ -67,7 +67,6 @@ private:
 	std::vector<std::shared_ptr<Population>> m_tmp;
 };
 
-// TODO: PopulationCrossover ?
 // allow in-place? some children that overwrite older parents?
 class PopulationCrossover
 {
@@ -85,8 +84,6 @@ public:
 	virtual errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations){ return "Not implemented in base class"; }
 	// The populations are overwritten, if the old one is still needed it should
 	// be stored externally
-	// This is in-place, must reset isCalculated flag if changed
-	// Idea is to apply a GenomeMutation operator to every individual
 	virtual errut::bool_t createNewPopulation(std::vector<std::shared_ptr<Population>> &populations, size_t targetPopulationSize) { return "Not implemented in base class"; }
 	virtual errut::bool_t createNewPopulation(std::shared_ptr<Population> &population, size_t targetPopulationSize)
 	{
