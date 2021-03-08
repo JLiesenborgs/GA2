@@ -14,7 +14,7 @@ public:
     ~SingleThreadedPopulationCrossover();
     
     errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) override;
-	errut::bool_t createNewPopulation(std::vector<std::shared_ptr<Population>> &populations, int targetPopulationSize) override;
+	errut::bool_t createNewPopulation(std::vector<std::shared_ptr<Population>> &populations, size_t targetPopulationSize) override;
 
     const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const override
     {

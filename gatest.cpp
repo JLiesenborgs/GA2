@@ -113,6 +113,7 @@ bool_t GeneticAlgorithm::run(GAFactory &factory,
         cout << "Generation " << generation << ": " << endl;
         population->print();
 
+        population->setGenomesToSkipMutation(0);
         if (popCross.get())
         {
             if (generation == 0)
@@ -121,10 +122,11 @@ bool_t GeneticAlgorithm::run(GAFactory &factory,
                     return "Error in population crossover check: " + r.getErrorString();
             }
 
-            
             if (!(r = popCross->createNewPopulation(population, popSize)))
                 return "Error creating new population: " + r.getErrorString();
         }
+
+        // TODO: check best genomes, check if done
 
         const size_t curPopSize = population->m_individuals.size();
         if (curPopSize > maxPopulationSize)
@@ -141,6 +143,7 @@ bool_t GeneticAlgorithm::run(GAFactory &factory,
             }
 
             // TODO: how best to skip mutation on introduced elitist solutions?
+            //       -> population now has member to keep track of this count
             if (!(r = popMutation->mutate(population)))
                 return "Error in mutation: " + r.getErrorString();
         }

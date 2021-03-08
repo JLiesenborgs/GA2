@@ -87,8 +87,8 @@ public:
 	// be stored externally
 	// This is in-place, must reset isCalculated flag if changed
 	// Idea is to apply a GenomeMutation operator to every individual
-	virtual errut::bool_t createNewPopulation(std::vector<std::shared_ptr<Population>> &populations, int targetPopulationSize) { return "Not implemented in base class"; }
-	virtual errut::bool_t createNewPopulation(std::shared_ptr<Population> &population, int targetPopulationSize)
+	virtual errut::bool_t createNewPopulation(std::vector<std::shared_ptr<Population>> &populations, size_t targetPopulationSize) { return "Not implemented in base class"; }
+	virtual errut::bool_t createNewPopulation(std::shared_ptr<Population> &population, size_t targetPopulationSize)
 	{
 		m_tmp[0] = population;
 		auto r = createNewPopulation(m_tmp, targetPopulationSize);

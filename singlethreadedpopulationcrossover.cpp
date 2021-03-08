@@ -35,7 +35,7 @@ bool_t SingleThreadedPopulationCrossover::check(const vector<shared_ptr<Populati
 }
 
 bool_t SingleThreadedPopulationCrossover::createNewPopulation(vector<shared_ptr<Population>> &populations,
-                                                              int targetPopulationSize)
+                                                              size_t targetPopulationSize)
 {
     bool_t r;
     vector<shared_ptr<Genome>> parents, cloneParent, offspring;
