@@ -16,6 +16,11 @@ public:
 	{
 		return m_genome->toString() + ": " + m_fitness->toString();
 	}
+
+	std::shared_ptr<Individual> createCopy() const
+	{
+		return std::make_shared<Individual>(m_genome->createCopy(), m_fitness->createCopy());
+	}
 	
 //private:
 	std::shared_ptr<Genome> m_genome;

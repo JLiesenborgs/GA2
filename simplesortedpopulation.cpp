@@ -48,10 +48,10 @@ bool_t SimpleSortedPopulation::processPopulation(shared_ptr<Population> &populat
     {
         auto &best = m_best[0];
         if (cmp.isFitterThan(*i->m_fitness, *best->m_fitness, N))
-            m_best[0] = i; // TODO: is this safe? should we make a copy?
+            m_best[0] = i->createCopy(); // TODO: is it safe to not make a copy?
     }
     else
-        m_best.push_back(i); // TODO: is this safe? should we make a copy?
+        m_best.push_back(i->createCopy()); // TODO: is it safe to not make a copy?
 
     return true;
 }
