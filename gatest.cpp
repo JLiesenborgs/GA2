@@ -13,76 +13,13 @@
 #include "gafactory.h"
 #include "singlebestelitism.h"
 #include "valuefitness.h"
+#include "vectorgenomeuniformmutation.h"
+#include "stopcriterion.h"
 #include <cassert>
 #include <iostream>
 
 using namespace errut;
 using namespace std;
-
-// TODO: elitism
-
-template<class T>
-class VectorGenomeUniformMutation : public GenomeMutation
-{
-public:
-    VectorGenomeUniformMutation(double mutationFraction, T minValue, T maxValue, std::shared_ptr<RandomNumberGenerator> &rng)
-        :  m_mutationFraction(mutationFraction), m_min(minValue), m_max(maxValue), m_rng(rng) { }
-    ~VectorGenomeUniformMutation() { }
-
-	errut::bool_t check(const Genome &genome) override
-    {
-        const VectorGenome<T> *pGenome = dynamic_cast<const VectorGenome<T>*>(&genome);
-        if (!pGenome)
-            return "Genome is not of the expected type";
-        return true;
-    }
-
-	errut::bool_t mutate(Genome &genome, bool &isChanged) override
-    {
-        VectorGenome<T> &g = dynamic_cast<VectorGenome<T>&>(genome);
-        vector<T> &v = g.getValues();
-    
-        for (auto &x : v)
-        {
-            // TODO: can we do this without as many random numbers? Floats? Generate indices first by some other means?
-            if (m_rng->getRandomDouble() < m_mutationFraction)
-            {
-                x = m_rng->getRandomDouble(m_min, m_max);
-                isChanged = true;
-            }
-        }
-        return true;
-    }
-private:
-    std::shared_ptr<RandomNumberGenerator> m_rng;
-    double m_mutationFraction;
-    double m_min, m_max;
-};
-
-class StopCriterion
-{
-public:
-    StopCriterion() { }
-    virtual ~StopCriterion() { }
-
-    virtual errut::bool_t analyze(const std::vector<std::shared_ptr<Individual>> &currentBest, size_t generationNumber, bool &shouldStop) { return "Not implemented in base class"; }
-};
-
-class FixedGenerationsStopCriterion : public StopCriterion
-{
-public:
-    FixedGenerationsStopCriterion(size_t n) : m_maxGen(n) { }
-    ~FixedGenerationsStopCriterion() { }
-
-    errut::bool_t analyze(const std::vector<std::shared_ptr<Individual>> &currentBest, size_t generationNumber, bool &shouldStop) override
-    {
-        if (generationNumber >= m_maxGen)
-            shouldStop = true;
-        return true;
-    }
-private:
-    size_t m_maxGen;
-};
 
 class GeneticAlgorithm
 {
