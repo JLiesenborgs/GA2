@@ -76,7 +76,7 @@ bool_t MultiThreadedPopulationFitnessCalculation::calculatePopulationFitness(con
 		int count = 0;
 		for (auto &pop : populations)
 		{
-			for (auto &ind : pop->m_individuals)
+			for (auto &ind : pop->individuals())
 			{
 				if (!ind->fitnessRef().isCalculated())
 				{

@@ -16,7 +16,7 @@ SimpleSortedPopulation::~SimpleSortedPopulation()
 bool_t SimpleSortedPopulation::check(const Population &population)
 {
     FitnessComparison &cmp = *m_fitnessComp;
-    for (auto &i : population.m_individuals)
+    for (auto &i : population.individuals())
     {
         bool_t r = cmp.check(i->fitnessRef());
         if (!r)
@@ -37,13 +37,13 @@ bool_t SimpleSortedPopulation::processPopulation(shared_ptr<Population> &populat
         return cmp.isFitterThan(i1->fitnessRef(), i2->fitnessRef(), N);
     };
 
-    sort(population->m_individuals.begin(), population->m_individuals.end(), comp);
+    sort(population->individuals().begin(), population->individuals().end(), comp);
 
     // TODO: allow more complex pruning?
-    population->m_individuals.resize(targetPopulationSize);
+    population->resize(targetPopulationSize);
 
-    assert(population->m_individuals.size() > 0);
-    auto &i = population->m_individuals.front();
+    assert(population->size() > 0);
+    auto &i = population->individuals().front();
     if (m_best.size() > 0)
     {
         auto &best = m_best[0];

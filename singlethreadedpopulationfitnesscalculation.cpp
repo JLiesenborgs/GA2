@@ -27,7 +27,7 @@ bool_t SingleThreadedPopulationFitnessCalculation::calculatePopulationFitness(co
 	// First, initialize the calculations
 	for (auto &pop : populations)
 	{
-		for (auto &i : pop->m_individuals)
+		for (auto &i : pop->individuals())
 		{
 			if (!i->fitnessRef().isCalculated())
 			{		
@@ -45,7 +45,7 @@ bool_t SingleThreadedPopulationFitnessCalculation::calculatePopulationFitness(co
 		allCalculated = true;
 		for (auto &pop : populations)
 		{
-			for (auto &i : pop->m_individuals)
+			for (auto &i : pop->individuals())
 			{
 				Fitness &f = i->fitnessRef();
 				if (!f.isCalculated())

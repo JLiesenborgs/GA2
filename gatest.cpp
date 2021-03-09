@@ -131,7 +131,7 @@ bool_t GeneticAlgorithm::run(GAFactory &factory,
     {
         auto g = factory.createInitializedGenome();
         auto f = refFitness->createCopy(false);
-        population->m_individuals.push_back(make_shared<Individual>(g, f));
+        population->append(make_shared<Individual>(g, f));
     }
 
     if (!(r = fitnessCalc.calculatePopulationFitness({population})))
@@ -156,7 +156,7 @@ bool_t GeneticAlgorithm::run(GAFactory &factory,
                 return "Error creating new population: " + r.getErrorString();
         }
 
-        const size_t curPopSize = population->m_individuals.size();
+        const size_t curPopSize = population->size();
         if (curPopSize > maxPopulationSize)
             return "Population size (" + to_string(curPopSize) + ") exceeds maximum (" + to_string(maxPopulationSize) + ")";
         if (curPopSize < minPopulationSize)

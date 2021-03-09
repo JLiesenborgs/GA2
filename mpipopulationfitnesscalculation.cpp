@@ -51,7 +51,7 @@ bool_t MPIPopulationFitnessCalculation::check(const std::vector<std::shared_ptr<
 	
 	for (auto &pop : populations)
 	{
-		for (auto &i : pop->m_individuals)
+		for (auto &i : pop->individuals())
 		{
 			string popGenomeType = typeid(i->genomeRef()).name();
 			string refGenomeType = typeid(*(m_referenceGenome.get())).name();
@@ -80,7 +80,7 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness(const vector<
 
 	// TODO: check reference fitness type/layout against population?
 
-	m_localPop->m_individuals.clear();
+	m_localPop->clear();
 
 	m_helperGenomes.resize(m_mpiSize); // TODO: use a reusable array
 	for (auto &h : m_helperGenomes)
@@ -93,7 +93,7 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness(const vector<
 	// Split the work over the helpers
 	for (auto pPop : populations)
 	{		
-		for (auto &i : pPop->m_individuals)
+		for (auto &i : pPop->individuals())
 		{
 			// TODO: check for first that type is same as reference genome? Or only for debugging?
 			// cerr << typeid(*(i->m_genome.get())).name() << " " << typeid(*(m_referenceGenome.get())).name() << endl;
@@ -102,7 +102,7 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness(const vector<
 			{
 				if (nextHelper == m_root) // This is for local calculation
 				{
-					m_localPop->m_individuals.push_back(i);
+					m_localPop->append(i);
 					localCount++;
 				}
 				else
@@ -191,14 +191,14 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness_MPIHelper()
 	// TODO: recycle previously created instances
 	vector<pair<Genome *, Fitness *>> helperGenomes;
 
-	m_localPop->m_individuals.clear();
+	m_localPop->clear();
 	for (int i = 0 ; i < numGenomes ; i++) 
 	{
 		auto genome = m_referenceGenome->createCopy(false);
 		auto fitness = m_referenceFitness->createCopy(false);
 		fitness->setCalculated(false); // Make sure it's not set accidentally, so that we actually calculate it
 
-		m_localPop->m_individuals.push_back(make_shared<Individual>(genome, fitness));
+		m_localPop->append(make_shared<Individual>(genome, fitness));
 		helperGenomes.push_back({genome.get(), fitness.get()});
 	}
 

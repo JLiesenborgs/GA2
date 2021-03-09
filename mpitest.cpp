@@ -73,7 +73,7 @@ int main_master(int argc, char *argv[])
 
 	shared_ptr<Population> pop = make_shared<Population>();
 	for (int i = 0 ; i < 32 ; i++)
-		pop->m_individuals.push_back(make_shared<Individual>(
+		pop->append(make_shared<Individual>(
 					make_shared<FloatVectorGenome>(numFloatGenome, i),
 					make_shared<FloatVectorFitness>(numFloatFitness))); 
 
@@ -86,10 +86,10 @@ int main_master(int argc, char *argv[])
 			MPI_Abort(MPI_COMM_WORLD, -1);
 		}
 
-		for (auto &i : pop->m_individuals)
+		for (auto &i : pop->individuals())
 			cout << i->toString() << endl;
 
-		for (auto &i : pop->m_individuals)
+		for (auto &i : pop->individuals())
 			i->fitnessRef().setCalculated(false);
 	}
 	

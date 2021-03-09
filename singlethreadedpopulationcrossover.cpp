@@ -56,7 +56,7 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(vector<shared_ptr<
             return "Error in selection preprocessing: " + r.getErrorString();
 
         assert(population->size() > 0);
-        auto refFitness = population->m_individuals[0]->fitness();
+        auto refFitness = population->individual(0)->fitness();
 
         auto newPopulation = make_shared<Population>();
         
@@ -80,7 +80,7 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(vector<shared_ptr<
                 auto f = refFitness->createCopy(false);
                 auto g = cloneParent[0]->createCopy(true);
                 auto ind = make_shared<Individual>(g, f);
-                newPopulation->m_individuals.push_back(ind);
+                newPopulation->append(ind);
             }
             else
             {
@@ -94,7 +94,7 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(vector<shared_ptr<
                 {
                     auto f = refFitness->createCopy(false);
                     auto ind = make_shared<Individual>(g, f);
-                    newPopulation->m_individuals.push_back(ind);
+                    newPopulation->append(ind);
                 }                
             }
         }

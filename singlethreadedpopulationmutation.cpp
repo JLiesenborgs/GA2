@@ -16,7 +16,7 @@ bool_t SingleThreadedPopulationMutation::check(const vector<shared_ptr<Populatio
 {
     for (auto &pop : populations)
     {
-        for (auto &i : pop->m_individuals)
+        for (auto &i : pop->individuals())
         {
             bool_t r = m_mutation->check(i->genomeRef());
             if (!r)
@@ -32,9 +32,9 @@ bool_t SingleThreadedPopulationMutation::mutate(const vector<shared_ptr<Populati
     for (auto &pop : populations)
     {
         size_t numToSkip = pop->getGenomesToSkipMutation();
-        for (size_t idx = numToSkip ; idx < pop->m_individuals.size() ; idx++)
+        for (size_t idx = numToSkip ; idx < pop->size() ; idx++)
         {
-            auto &i = pop->m_individuals[idx];
+            auto &i = pop->individual(idx);
             bool isChanged = false;
             bool_t r = m_mutation->mutate(i->genomeRef(), isChanged);
             if (!r)
