@@ -102,6 +102,18 @@ private:
 	const std::vector<std::shared_ptr<Individual>> m_emptyBest;
 };
 
+class PopulationCrossoverIteration
+{
+public:
+	PopulationCrossoverIteration() { }
+	virtual ~PopulationCrossoverIteration() { }
+
+	// new population can already have some individuals from elitims for example
+	virtual void startNewIteration(std::shared_ptr<Population> newPopulation, size_t targetPopulationSize) { }
+	// TODO: do we need other arguments here?
+	virtual bool iterate() { return false; }
+};
+
 // Something to give ParentSelection as input, e.g. a simple sorted population,
 // a non-dominated sorted population
 class SelectionPopulation

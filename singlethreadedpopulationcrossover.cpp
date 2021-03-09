@@ -10,10 +10,11 @@ SingleThreadedPopulationCrossover::SingleThreadedPopulationCrossover(double clon
                                     shared_ptr<ParentSelection> parentSelection,
                                     shared_ptr<GenomeCrossover> genomeCrossover,
                                     shared_ptr<Elitism> elitism,
+                                    shared_ptr<PopulationCrossoverIteration> popIteration,
                                     shared_ptr<RandomNumberGenerator> rng)
     : m_cloneFraction(cloneFraction), m_selectionPop(selectionPop), 
       m_parentSelection(parentSelection), m_genomeCrossover(genomeCrossover),
-      m_elitism(elitism), m_rng(rng)
+      m_elitism(elitism), m_popIteration(popIteration), m_rng(rng)
 {
 }
 
@@ -35,6 +36,8 @@ bool_t SingleThreadedPopulationCrossover::check(const vector<shared_ptr<Populati
         if (!(r = m_elitism->check(m_selectionPop)))
             return "Error checking compatibility of elitism with selection preprocessing: " + r.getErrorString();
     }
+    if (!m_popIteration.get())
+        return "No new population iteration was set";
 
     // TODO: check crossover, check parent selection
     return true;
@@ -68,8 +71,8 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(vector<shared_ptr<
                 return "Can't introduce elitist solutions: " + r.getErrorString();
         }
 
-        // TODO: generalize this!
-        for (size_t i = newPopulation->size() ; i < targetPopulationSize ; i++)
+        m_popIteration->startNewIteration(newPopulation, targetPopulationSize);
+        while(m_popIteration->iterate())
         {
             double x = m_rng->getRandomDouble();
             if (x < m_cloneFraction) // TODO: can we do this more efficiently?

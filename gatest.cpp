@@ -14,6 +14,7 @@
 #include "valuefitness.h"
 #include "vectorgenomeuniformmutation.h"
 #include "stopcriterion.h"
+#include "remainingtargetpopulationsizeiteration.h"
 #include <cassert>
 #include <iostream>
 
@@ -171,6 +172,7 @@ public:
             make_shared<RankParentSelection>(2.5, m_rng),
             make_shared<UniformVectorGenomeCrossover<RealType>>(m_rng, false),
             make_shared<SingleBestElitism>(true, true),
+            make_shared<RemainingTargetPopulationSizeIteration>(),
             m_rng
         );
     }
