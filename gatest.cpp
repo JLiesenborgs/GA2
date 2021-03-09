@@ -15,6 +15,7 @@
 #include "vectorgenomeuniformmutation.h"
 #include "stopcriterion.h"
 #include "remainingtargetpopulationsizeiteration.h"
+#include "probesystem.h"
 #include <cassert>
 #include <iostream>
 
@@ -29,7 +30,7 @@ using namespace std;
 class GeneticAlgorithm
 {
 public:
-    GeneticAlgorithm();
+    GeneticAlgorithm(std::shared_ptr<ProbeSystem> probes = nullptr);
     virtual ~GeneticAlgorithm();
 
     bool_t run(GenomeFitnessCreation &gfc,
@@ -40,10 +41,11 @@ public:
                size_t popSize,
                size_t minPopulationSize = 0,
                size_t maxPopulationSize = 0);
-
+private:
+    std::shared_ptr<ProbeSystem> m_probes;
 };
 
-GeneticAlgorithm::GeneticAlgorithm()
+GeneticAlgorithm::GeneticAlgorithm(std::shared_ptr<ProbeSystem> probes) : m_probes(probes)
 {
 }
 
@@ -86,15 +88,28 @@ bool_t GeneticAlgorithm::run(GenomeFitnessCreation &gfc,
         population->append(make_shared<Individual>(g, f));
     }
 
-    if (!(r = fitnessCalc.calculatePopulationFitness({population})))
-        return "Error calculating fitness: " + r.getErrorString();    
-
     size_t generation = 0;
+
+    if (!(r = fitnessCalc.calculatePopulationFitness({population})))
+        return "Error calculating fitness: " + r.getErrorString();
+
+    auto reportOnFitness = [&population, &generation, this]() -> bool_t
+    {
+        if (m_probes.get())
+        {
+            m_probes->setGeneration(generation);
+            bool_t r = m_probes->inspect(ProbeSystem::FitnessCalculated, population);
+            if (!r)
+                return "Error inspecting population after fitness calculation: " + r;
+        }
+        return true;
+    };
+
+    if (!(r = reportOnFitness()))
+        return r;
+
     while (true)
     {        
-        cout << "Generation " << generation << ": " << endl;
-        population->print();
-
         population->setGenomesToSkipMutation(0);
         if (popCross.get())
         {
@@ -128,34 +143,63 @@ bool_t GeneticAlgorithm::run(GenomeFitnessCreation &gfc,
                 return "Error in mutation: " + r.getErrorString();
         }
 
+        generation++; // At this point we can call it the new generation
+
         if (!(r = fitnessCalc.calculatePopulationFitness({population})))
             return "Error calculating fitness: " + r.getErrorString();
 
-        // TODO: somehow check that all fitness values have been calculated??
-        //       some calculation postprocessor? Might also be a good way to
-        //       store the scale factor from own GA into the genome
-        // TODO: this could be done by implementing your own fitness calculator
-        //       and performing the check at the end
+        if (!(r = reportOnFitness()))
+            return r;
 
         bool shouldStop = false;
         if (!(r = stopCriterion.analyze(popCross->getBestIndividuals(), generation, shouldStop)))
             return "Error in termination check: " + r.getErrorString();
         if (shouldStop)
             break;
-
-        generation++;
     }
 
-    population->print();
-
-    cout << "Best are: " << endl;
-    for (auto &i : popCross->getBestIndividuals())
-        cout << i->toString() << endl;
+    if (m_probes.get())
+    {
+        if (!(r = m_probes->inspect(ProbeSystem::AlgorithmDone, popCross->getBestIndividuals())))
+            return "Error inspecting best individuals upon algorithm end: " + r.getErrorString();
+    }
 
     return true;
 }
 
 typedef int RealType;
+
+class MyProbes : public ProbeSystem
+{
+public:
+    MyProbes() { }
+    ~MyProbes() { }
+
+    bool_t inspect(EventType eventType, shared_ptr<Population> &population) override
+    {
+        cout << "Generation: " << getGeneration() << endl;
+        cout << "EventType: " << eventType << endl;
+        population->print();
+        cout << endl;
+
+        // TODO: check if all fitnesses are calculated?
+        return true;
+    }
+
+    bool_t inspect(EventType eventType, shared_ptr<SelectionPopulation> &selPop) override
+    {
+        return true;
+    }
+    
+    bool_t inspect(EventType eventType, const vector<shared_ptr<Individual>> &bestIndividuals) override
+    {
+        cout << "Best are: " << endl;
+        for (auto &i : bestIndividuals)
+            cout << i->toString() << endl;
+
+        return true;
+    }
+};
 
 class TestFactory : public GenomeFitnessCreation
 {
@@ -175,6 +219,7 @@ public:
             make_shared<RemainingTargetPopulationSizeIteration>(),
             m_rng
         );
+        m_probes = make_shared<MyProbes>();
     }
 
     shared_ptr<Genome> createInitializedGenome() override
@@ -200,10 +245,13 @@ public:
     {
         return m_crossover;
     }
+
+    shared_ptr<ProbeSystem> getProbeSystem() { return m_probes; }
 private:
     shared_ptr<RandomNumberGenerator> m_rng;
     shared_ptr<SingleThreadedPopulationMutation> m_mutation;
     shared_ptr<SingleThreadedPopulationCrossover> m_crossover;
+    shared_ptr<MyProbes> m_probes;
 };
 
 class TestFitnessCalculation : public GenomeFitnessCalculation
@@ -311,7 +359,7 @@ bool_t real_main(int argc, char *argv[], int rank)
         };
 
         FixedGenerationsStopCriterion stop(100);
-        GeneticAlgorithm ga;
+        GeneticAlgorithm ga { factory.getProbeSystem() };
 
         //r = ga.run(factory, calc, 16, 0, 32);
         r = ga.run(factory,
