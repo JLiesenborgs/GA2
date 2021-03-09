@@ -4,7 +4,7 @@
 using namespace std;
 using namespace errut;
 
-SimpleSortedPopulation::SimpleSortedPopulation(shared_ptr<FitnessComparison> fitComp, int objectiveNumber)
+SimpleSortedPopulation::SimpleSortedPopulation(shared_ptr<FitnessComparison> fitComp, size_t objectiveNumber)
     : m_objectiveNumber(objectiveNumber), m_fitnessComp(fitComp) 
 {
 }
@@ -18,7 +18,7 @@ bool_t SimpleSortedPopulation::check(const Population &population)
     FitnessComparison &cmp = *m_fitnessComp;
     for (auto &i : population.m_individuals)
     {
-        bool_t r = cmp.check(*i->m_fitness);
+        bool_t r = cmp.check(i->fitnessRef());
         if (!r)
             return "Error in fitness comparison check: " + r.getErrorString();
     }
@@ -30,11 +30,11 @@ bool_t SimpleSortedPopulation::processPopulation(shared_ptr<Population> &populat
     m_lastPopulation = population;
 
     FitnessComparison &cmp = *m_fitnessComp;
-    const int N = m_objectiveNumber;
+    const size_t N = m_objectiveNumber;
 
     auto comp = [&cmp, N](auto &i1, auto &i2)
     {
-        return cmp.isFitterThan(*i1->m_fitness, *i2->m_fitness, N);
+        return cmp.isFitterThan(i1->fitnessRef(), i2->fitnessRef(), N);
     };
 
     sort(population->m_individuals.begin(), population->m_individuals.end(), comp);
@@ -47,7 +47,7 @@ bool_t SimpleSortedPopulation::processPopulation(shared_ptr<Population> &populat
     if (m_best.size() > 0)
     {
         auto &best = m_best[0];
-        if (cmp.isFitterThan(*i->m_fitness, *best->m_fitness, N))
+        if (cmp.isFitterThan(i->fitnessRef(), best->fitnessRef(), N))
             m_best[0] = i->createCopy(); // TODO: is it safe to not make a copy?
     }
     else

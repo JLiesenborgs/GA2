@@ -56,7 +56,7 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(vector<shared_ptr<
             return "Error in selection preprocessing: " + r.getErrorString();
 
         assert(population->size() > 0);
-        auto refFitness = population->m_individuals[0]->m_fitness;
+        auto refFitness = population->m_individuals[0]->fitness();
 
         auto newPopulation = make_shared<Population>();
         

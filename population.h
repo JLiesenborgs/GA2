@@ -3,6 +3,7 @@
 #include "genomefitness.h"
 #include <vector>
 #include <iostream>
+#include <cassert>
 
 // TODO: record parents?
 // TODO: generation of creation? To allow age?
@@ -21,8 +22,25 @@ public:
 	{
 		return std::make_shared<Individual>(m_genome->createCopy(), m_fitness->createCopy());
 	}
-	
-//private:
+
+
+	std::shared_ptr<Genome> &genome() { return m_genome; }
+	Genome &genomeRef() 
+	{ 
+		assert(m_genome.get());
+		return *m_genome;
+	}
+	Genome *genomePtr() { return m_genome.get(); }
+
+	std::shared_ptr<Fitness> &fitness() { return m_fitness; }
+	Fitness &fitnessRef()
+	{
+		assert(m_fitness.get());
+		return *m_fitness;
+	}
+
+	Fitness *fitnessPtr() { return m_fitness.get(); }
+private:
 	std::shared_ptr<Genome> m_genome;
 	std::shared_ptr<Fitness> m_fitness;
 };

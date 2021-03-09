@@ -78,12 +78,12 @@ bool_t MultiThreadedPopulationFitnessCalculation::calculatePopulationFitness(con
 		{
 			for (auto &ind : pop->m_individuals)
 			{
-				if (!ind->m_fitness->isCalculated())
+				if (!ind->fitnessRef().isCalculated())
 				{
 					if (count%numThreads == id)
 					{
-						Genome *pGenome = ind->m_genome.get();
-						Fitness *pFitness = ind->m_fitness.get();
+						Genome *pGenome = ind->genomePtr();
+						Fitness *pFitness = ind->fitnessPtr();
 
 						bool_t r = pGenomeCalc->startNewCalculation(*pGenome);
 						if (!r)

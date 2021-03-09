@@ -53,12 +53,12 @@ bool_t MPIPopulationFitnessCalculation::check(const std::vector<std::shared_ptr<
 	{
 		for (auto &i : pop->m_individuals)
 		{
-			string popGenomeType = typeid(*(i->m_genome.get())).name();
+			string popGenomeType = typeid(i->genomeRef()).name();
 			string refGenomeType = typeid(*(m_referenceGenome.get())).name();
 			if (popGenomeType != refGenomeType)
 				return "Genome in population is of different type than reference genome (" + popGenomeType + " != " + refGenomeType +  ")";
 
-			string popFitnessType = typeid(*(i->m_fitness.get())).name();
+			string popFitnessType = typeid(i->fitnessRef()).name();
 			string refFitnessType = typeid(*(m_referenceFitness.get())).name();
 			if (popFitnessType != refFitnessType)
 				return "Fitness in population is of different type than reference fitness (" + popFitnessType + " != " + refFitnessType +  ")";
@@ -98,7 +98,7 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness(const vector<
 			// TODO: check for first that type is same as reference genome? Or only for debugging?
 			// cerr << typeid(*(i->m_genome.get())).name() << " " << typeid(*(m_referenceGenome.get())).name() << endl;
 
-			if (!i->m_fitness->isCalculated())
+			if (!i->fitnessRef().isCalculated())
 			{
 				if (nextHelper == m_root) // This is for local calculation
 				{
@@ -107,7 +107,7 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness(const vector<
 				}
 				else
 				{
-					m_helperGenomes[nextHelper].push_back({i->m_genome.get(), i->m_fitness.get()});
+					m_helperGenomes[nextHelper].push_back({i->genomePtr(), i->fitnessPtr()});
 					remoteCount++;
 				}
 

@@ -79,11 +79,11 @@ int main(int argc, char *argv[])
 		}
 
 		for (auto &i : pop->m_individuals)
-			cout << i->m_genome->toString() << ": " << i->m_fitness->toString() << endl;
+			cout << i->toString() << endl;
 		cout << endl;
 
 		for (auto &i : pop->m_individuals)
-			i->m_fitness->setCalculated(false);
+			i->fitnessRef().setCalculated(false);
 	}
 	return 0;
 }

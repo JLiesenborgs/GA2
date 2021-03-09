@@ -29,9 +29,9 @@ bool_t SingleThreadedPopulationFitnessCalculation::calculatePopulationFitness(co
 	{
 		for (auto &i : pop->m_individuals)
 		{
-			if (!i->m_fitness->isCalculated())
+			if (!i->fitnessRef().isCalculated())
 			{		
-				auto r = m_genomeFitnessCalculation->startNewCalculation(*i->m_genome);
+				auto r = m_genomeFitnessCalculation->startNewCalculation(i->genomeRef());
 				if (!r)
 					return "Error starting genome calculation: " + r.getErrorString();
 			}
@@ -47,10 +47,10 @@ bool_t SingleThreadedPopulationFitnessCalculation::calculatePopulationFitness(co
 		{
 			for (auto &i : pop->m_individuals)
 			{
-				Fitness &f = *i->m_fitness;
+				Fitness &f = i->fitnessRef();
 				if (!f.isCalculated())
 				{
-					auto r = m_genomeFitnessCalculation->pollCalculate(*i->m_genome, f);
+					auto r = m_genomeFitnessCalculation->pollCalculate(i->genomeRef(), f);
 					if (!r)
 						return "Error calculating fitness for genome: " + r.getErrorString();
 

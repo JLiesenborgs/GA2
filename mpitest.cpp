@@ -87,10 +87,10 @@ int main_master(int argc, char *argv[])
 		}
 
 		for (auto &i : pop->m_individuals)
-			cout << i->m_genome->toString() << ": " << i->m_fitness->toString() << endl;
+			cout << i->toString() << endl;
 
 		for (auto &i : pop->m_individuals)
-			i->m_fitness->setCalculated(false);
+			i->fitnessRef().setCalculated(false);
 	}
 	
 	mpiDist->signal(MPIEventHandler::Done);

@@ -44,10 +44,7 @@ bool_t SingleBestElitism::introduceElites(const shared_ptr<SelectionPopulation> 
 
     auto copyBest = [&i, &population]()
     {
-        population->m_individuals.push_back(make_shared<Individual>(
-            i.m_genome->createCopy(true),
-            i.m_fitness->createCopy(true)
-        ));
+        population->m_individuals.push_back(i.createCopy());
     };
 
     if (m_eliteWithoutMutation)
