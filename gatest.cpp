@@ -10,7 +10,6 @@
 #include "rankparentselection.h"
 #include "singlethreadedpopulationmutation.h"
 #include "singlethreadedpopulationcrossover.h"
-#include "gafactory.h"
 #include "singlebestelitism.h"
 #include "valuefitness.h"
 #include "vectorgenomeuniformmutation.h"
@@ -18,16 +17,23 @@
 #include <cassert>
 #include <iostream>
 
+// TODO: some kind of state that needs to be communicated when calculating fitness?
+//       perhaps something else needs to be done depending on the generation?
+
 using namespace errut;
 using namespace std;
 
+// TODO: do we need a separate class? Just a function
+// TODO: feedback/probes?
 class GeneticAlgorithm
 {
 public:
     GeneticAlgorithm();
     virtual ~GeneticAlgorithm();
 
-    bool_t run(GAFactory &factory,
+    bool_t run(GenomeFitnessCreation &gfc,
+               shared_ptr<PopulationCrossover> crossover,
+               shared_ptr<PopulationMutation> mutation,
                PopulationFitnessCalculation &fitnessCalc,
                StopCriterion &stopCriterion,
                size_t popSize,
@@ -47,26 +53,34 @@ GeneticAlgorithm::~GeneticAlgorithm()
 // Note that the population size does not need to be constant throughout the loop,
 // more could arise so that their fitness is calculated. This is why the population
 // size is passed on to the populationcrossover
-bool_t GeneticAlgorithm::run(GAFactory &factory,
+bool_t GeneticAlgorithm::run(GenomeFitnessCreation &gfc,
+                             shared_ptr<PopulationCrossover> popCross,
+                             shared_ptr<PopulationMutation> popMutation,
                              PopulationFitnessCalculation &fitnessCalc,
                              StopCriterion &stopCriterion,
                              size_t popSize,
                              size_t minPopulationSize,
                              size_t maxPopulationSize)
 {
+    bool_t r;
     auto population = make_shared<Population>();
     auto newPopulation = make_shared<Population>();
-    auto refFitness = factory.createEmptyFitness();
-    auto popMutation = factory.getPopulationMutation();
-    auto popCross = factory.getPopulationCrossover();
-    bool_t r;
+    auto refFitness = gfc.createEmptyFitness();
+    if (!refFitness.get())
+        return "Unable to create a reference fitness object";
 
+    if (popSize == 0)
+        return "No population size specified";
+    
     if (maxPopulationSize == 0)
         maxPopulationSize = popSize;
 
     for (size_t i = 0 ; i < popSize ; i++)
     {
-        auto g = factory.createInitializedGenome();
+        auto g = gfc.createInitializedGenome();
+        if (!g.get())
+            return "Unable to create an inialized genome";
+
         auto f = refFitness->createCopy(false);
         population->append(make_shared<Individual>(g, f));
     }
@@ -142,10 +156,10 @@ bool_t GeneticAlgorithm::run(GAFactory &factory,
 
 typedef int RealType;
 
-class TestGAFactory : public GAFactory
+class TestFactory : public GenomeFitnessCreation
 {
 public:
-    TestGAFactory(unsigned long seed)
+    TestFactory(unsigned long seed)
     {
         m_rng = make_shared<MersenneRandomNumberGenerator>(seed);
         m_mutation = make_shared<SingleThreadedPopulationMutation>(
@@ -262,7 +276,7 @@ bool_t real_main(int argc, char *argv[], int rank)
     else
         return "Unknown calculation type " + to_string(calcType);
     
-    TestGAFactory factory(seed);
+    TestFactory factory(seed);
 
     if (calcType == 1)
     {
@@ -298,7 +312,10 @@ bool_t real_main(int argc, char *argv[], int rank)
         GeneticAlgorithm ga;
 
         //r = ga.run(factory, calc, 16, 0, 32);
-        r = ga.run(factory, *calc, stop, 16);
+        r = ga.run(factory,
+                   factory.getPopulationCrossover(),
+                   factory.getPopulationMutation(),
+                   *calc, stop, 16);
         if (!r)
         {
             cleanup();
