@@ -17,7 +17,10 @@ public:
 
     std::shared_ptr<Fitness> createCopy(bool copyContents = true) const override
     {
-        return std::make_shared<ValueFitness<T>>(m_value);
+        auto f = std::make_shared<ValueFitness<T>>(m_value);
+        if (copyContents && Fitness::isCalculated())
+            f->setCalculated();
+        return f;
     }
 
 	std::string toString() const override
