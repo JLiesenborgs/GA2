@@ -65,5 +65,6 @@ add_executable(gatest gatest.cpp vectorgenomefitness.cpp
 			   mpieventdistributor.cpp
 			   singlebestelitism.cpp
 			   valuefitness.cpp
+			   geneticalgorithm.cpp
 			   )
 target_link_libraries(gatest "${MOGAL2_LINK_LIBS}")
