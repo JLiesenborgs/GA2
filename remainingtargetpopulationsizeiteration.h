@@ -8,7 +8,7 @@ public:
     RemainingTargetPopulationSizeIteration() : m_remaining(0) { }
     ~RemainingTargetPopulationSizeIteration() { }
 	
-    void startNewIteration(std::shared_ptr<Population> newPopulation, size_t targetPopulationSize) override
+    void startNewIteration(std::shared_ptr<Population> &newPopulation, size_t targetPopulationSize) override
     {
         if (targetPopulationSize < newPopulation->size())
             m_remaining = 0;
@@ -16,7 +16,7 @@ public:
             m_remaining = targetPopulationSize - newPopulation->size();
     }
 	
-	bool iterate() override
+	bool iterate(std::shared_ptr<Population> &newPopulation) override
     {
         if (m_remaining == 0)
             return false;

@@ -72,7 +72,7 @@ Some things to consider:
  - selection like in own GA, based on sorted population and prob factor beta
  - fitness proportionate selection
  - representations/crossover for permutations
- - 
+ - generational model/steady state model/mating pool 
 
 Example problems:
  - Beam from Keane 1996

@@ -7,7 +7,6 @@
 #include "mpipopulationfitnesscalculation.h"
 #include "simplesortedpopulation.h"
 #include "rankparentselection.h"
-#include "singlethreadedpopulationmutation.h"
 #include "singlethreadedpopulationcrossover.h"
 #include "singlebestelitism.h"
 #include "valuefitness.h"
@@ -22,23 +21,19 @@
 using namespace errut;
 using namespace std;
 
-typedef int RealType;
-
-/*
-    bool_t inspect(EventType eventType, shared_ptr<SelectionPopulation> &selPop) override
-    {
-        const SimpleSortedPopulation *pSortPop = dynamic_cast<const SimpleSortedPopulation *>(selPop.get());
-        if (!pSortPop)
-            return "Selection population is not of expected type";
-        cout << "Sorted population for generation " << getGeneration() << endl;
-        pSortPop->getSortedPopulation()->print();
-        return true;
-    }
-*/
+typedef double RealType;
 
 class MyGA : public GeneticAlgorithm
 {
 protected:
+    bool_t onBeforeFitnessCalculation(size_t generation, std::shared_ptr<Population> &population) override
+    {
+        cout << "BEFORE Fitness calculation for generation: " << generation << endl;
+        population->print();
+        cout << endl;
+        return true;
+    }
+
     bool_t onFitnessCalculated(size_t generation, std::shared_ptr<Population> &population) override
     {
         cout << "Fitness calculated for generation: " << generation << endl;
@@ -59,13 +54,14 @@ protected:
 class MyCrossOver : public SingleThreadedPopulationCrossover
 {
 public:
-    MyCrossOver(shared_ptr<RandomNumberGenerator> rng)
-        : SingleThreadedPopulationCrossover(0.1,
+    MyCrossOver(shared_ptr<RandomNumberGenerator> rng, shared_ptr<GenomeMutation> mutation)
+        : SingleThreadedPopulationCrossover(0.1, false,
             // make_shared<SimpleSortedPopulation>(make_shared<VectorFitnessComparison<RealType>>()),
             make_shared<SimpleSortedPopulation>(make_shared<ValueFitnessComparison<RealType>>()),
             make_shared<RankParentSelection>(2.5, rng),
             make_shared<UniformVectorGenomeCrossover<RealType>>(rng, false),
-            make_shared<SingleBestElitism>(true, true),
+            mutation,
+            make_shared<SingleBestElitism>(true, mutation),
             make_shared<RemainingTargetPopulationSizeIteration>(),
             rng
         )
@@ -90,9 +86,8 @@ public:
     TestFactory(unsigned long seed)
     {
         m_rng = make_shared<MersenneRandomNumberGenerator>(seed);
-        m_mutation = make_shared<SingleThreadedPopulationMutation>(
-            make_shared<VectorGenomeUniformMutation<RealType>>(0.2, 0, 100, m_rng));
-        m_crossover = make_shared<MyCrossOver>(m_rng);
+        m_mutation = make_shared<VectorGenomeUniformMutation<RealType>>(0.2, 0, 100, m_rng);
+        m_crossover = make_shared<MyCrossOver>(m_rng, m_mutation);
     }
 
     shared_ptr<Genome> createInitializedGenome() override
@@ -109,11 +104,6 @@ public:
         //return make_shared<VectorFitness<RealType>>(1);
     }
 
-    shared_ptr<PopulationMutation> getPopulationMutation()
-    {
-        return m_mutation;
-    }
-
     shared_ptr<PopulationCrossover> getPopulationCrossover()
     {
         return m_crossover;
@@ -121,8 +111,8 @@ public:
 
 private:
     shared_ptr<RandomNumberGenerator> m_rng;
-    shared_ptr<SingleThreadedPopulationMutation> m_mutation;
     shared_ptr<SingleThreadedPopulationCrossover> m_crossover;
+    shared_ptr<VectorGenomeUniformMutation<RealType>> m_mutation;
 };
 
 class TestFitnessCalculation : public GenomeFitnessCalculation
@@ -232,11 +222,9 @@ bool_t real_main(int argc, char *argv[], int rank)
         FixedGenerationsStopCriterion stop(100);
         MyGA ga;
 
-        //r = ga.run(factory, calc, 16, 0, 32);
         r = ga.run(factory,
                    *factory.getPopulationCrossover(),
-                   *factory.getPopulationMutation(),
-                   *calc, stop, 16);
+                   *calc, stop, 16, 0, 34);
         if (!r)
         {
             cleanup();

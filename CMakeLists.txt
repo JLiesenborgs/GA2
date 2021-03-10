@@ -60,7 +60,6 @@ add_executable(gatest gatest.cpp vectorgenomefitness.cpp
 			   mersennerandomnumbergenerator.cpp
 			   simplesortedpopulation.cpp
 			   rankparentselection.cpp
-			   singlethreadedpopulationmutation.cpp
 			   singlethreadedpopulationcrossover.cpp
 			   mpieventdistributor.cpp
 			   singlebestelitism.cpp

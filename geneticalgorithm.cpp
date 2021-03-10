@@ -16,7 +16,6 @@ GeneticAlgorithm::~GeneticAlgorithm()
 // size is passed on to the populationcrossover
 bool_t GeneticAlgorithm::run(GenomeFitnessCreation &gfc,
                              PopulationCrossover &popCross, // We really do need this, it keeps track of the best
-                             PopulationMutation &popMutation, // To disble, use a dummy one
                              PopulationFitnessCalculation &fitnessCalc,
                              StopCriterion &stopCriterion,
                              size_t popSize,
@@ -48,6 +47,17 @@ bool_t GeneticAlgorithm::run(GenomeFitnessCreation &gfc,
 
     size_t generation = 0;
 
+    auto beforeFitnessCalculatedCallback = [&generation, &population, this]() -> bool_t
+    {
+        bool_t r;
+        if (!(r = onBeforeFitnessCalculation(generation, population)))
+            return "Error inspecting population before fitness calculation in generation " + to_string(generation) + ": " + r.getErrorString();
+        return true;
+    };
+
+    if (!(r = beforeFitnessCalculatedCallback()))
+        return r;
+
     if (!(r = fitnessCalc.calculatePopulationFitness({population})))
         return "Error calculating fitness: " + r.getErrorString();
 
@@ -64,8 +74,6 @@ bool_t GeneticAlgorithm::run(GenomeFitnessCreation &gfc,
 
     while (true)
     {        
-        population->setGenomesToSkipMutation(0);
-
         if (generation == 0)
         {
             if (!(r = popCross.check(population)))
@@ -80,17 +88,10 @@ bool_t GeneticAlgorithm::run(GenomeFitnessCreation &gfc,
         if (curPopSize < minPopulationSize)
             return "Population size (" + to_string(curPopSize) + ") is less than minimum (" + to_string(minPopulationSize) + ")";
 
-        if (generation == 0)
-        {
-            if (!(r = popMutation.check(population)))
-                return "Error checking mutation: " + r.getErrorString();
-        }
-        // TODO: how best to skip mutation on introduced elitist solutions?
-        //       -> population now has member to keep track of this count
-        if (!(r = popMutation.mutate(population)))
-            return "Error in mutation: " + r.getErrorString();
-
         generation++; // At this point we can call it the new generation
+
+        if (!(r = beforeFitnessCalculatedCallback()))
+            return r;
 
         if (!(r = fitnessCalc.calculatePopulationFitness({population})))
             return "Error calculating fitness: " + r.getErrorString();

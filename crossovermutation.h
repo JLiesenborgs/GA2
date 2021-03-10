@@ -34,39 +34,6 @@ public:
 	virtual errut::bool_t mutate(Genome &genome, bool &isChanged) { return "Not implemented in base class"; }
 };
 
-// Idea is to have e.g a single threaded one and a multithreaded one
-// Should we allow multithreaded? What to do with random number generation?
-//  -> Mersenne twister has 'discard' in c++11
-class PopulationMutation
-{
-public:
-	PopulationMutation() { m_tmp.resize(1); }
-	virtual ~PopulationMutation() { }
-
-	// Convenience functions
-	virtual errut::bool_t check(const std::shared_ptr<Population> &population)
-	{
-		m_tmp[0] = population;
-		auto r = check(m_tmp);
-		m_tmp[0] = nullptr;
-		return r;
-	}
-	virtual errut::bool_t mutate(std::shared_ptr<Population> &population)
-	{
-		m_tmp[0] = population;
-		auto r = mutate(m_tmp);
-		m_tmp[0] = nullptr;
-		return r;
-	}
-
-	virtual errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
-	// This is in-place, must reset isCalculated flag if changed
-	// Idea is to apply a GenomeMutation operator to every individual
-	virtual errut::bool_t mutate(const std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
-private:
-	std::vector<std::shared_ptr<Population>> m_tmp;
-};
-
 // allow in-place? some children that overwrite older parents?
 class PopulationCrossover
 {
@@ -109,9 +76,9 @@ public:
 	virtual ~PopulationCrossoverIteration() { }
 
 	// new population can already have some individuals from elitims for example
-	virtual void startNewIteration(std::shared_ptr<Population> newPopulation, size_t targetPopulationSize) { }
+	virtual void startNewIteration(std::shared_ptr<Population> &newPopulation, size_t targetPopulationSize) { }
 	// TODO: do we need other arguments here?
-	virtual bool iterate() { return false; }
+	virtual bool iterate(std::shared_ptr<Population> &newPopulation) { return false; }
 };
 
 // Something to give ParentSelection as input, e.g. a simple sorted population,

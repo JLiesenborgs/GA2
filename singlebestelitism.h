@@ -5,7 +5,7 @@
 class SingleBestElitism : public Elitism
 {
 public:
-    SingleBestElitism(bool eliteWithoutMutation, bool eliteWithMutation);
+    SingleBestElitism(bool eliteWithoutMutation, const std::shared_ptr<GenomeMutation> &mutation);
     ~SingleBestElitism();
 
     errut::bool_t check(const std::shared_ptr<SelectionPopulation> &selPop) override;
@@ -14,5 +14,5 @@ public:
 								  size_t targetPopulationSize) override;
 private:
     bool m_eliteWithoutMutation;
-    bool m_eliteWithMutation;
+    std::shared_ptr<GenomeMutation> m_mutation;
 };

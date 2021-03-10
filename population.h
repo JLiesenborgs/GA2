@@ -49,7 +49,7 @@ private:
 class Population
 {
 public:
-	Population() : m_skipMutation(0) { }
+	Population() { }
 	~Population() { }
 
 	void clear() { m_individuals.clear(); }
@@ -69,9 +69,6 @@ public:
 		return m_individuals[n];
 	}
 
-	void setGenomesToSkipMutation(size_t n) { m_skipMutation = n; }
-	size_t getGenomesToSkipMutation() const { return m_skipMutation; }
-
 	void print() const
 	{
 		using namespace std;
@@ -83,7 +80,6 @@ public:
 	}
 private:
 	std::vector<std::shared_ptr<Individual>> m_individuals;
-	size_t m_skipMutation;
 };
 
 class PopulationFitnessCalculation
