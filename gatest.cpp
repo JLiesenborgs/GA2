@@ -15,7 +15,6 @@
 #include "vectorgenomeuniformmutation.h"
 #include "stopcriterion.h"
 #include "remainingtargetpopulationsizeiteration.h"
-#include "probesystem.h"
 #include <cassert>
 #include <iostream>
 
@@ -25,12 +24,10 @@
 using namespace errut;
 using namespace std;
 
-// TODO: do we need a separate class? Just a function
-// TODO: feedback/probes?
 class GeneticAlgorithm
 {
 public:
-    GeneticAlgorithm(std::shared_ptr<ProbeSystem> probes = nullptr);
+    GeneticAlgorithm();
     virtual ~GeneticAlgorithm();
 
     bool_t run(GenomeFitnessCreation &gfc,
@@ -41,11 +38,12 @@ public:
                size_t popSize,
                size_t minPopulationSize = 0,
                size_t maxPopulationSize = 0);
-private:
-    std::shared_ptr<ProbeSystem> m_probes;
+protected:
+    virtual bool_t onFitnessCalculated(size_t generation, std::shared_ptr<Population> &population) { return true; }
+    virtual bool_t onAlgorithmDone(size_t generation, const std::vector<std::shared_ptr<Individual>> &bestIndividuals) { return true; }
 };
 
-GeneticAlgorithm::GeneticAlgorithm(std::shared_ptr<ProbeSystem> probes) : m_probes(probes)
+GeneticAlgorithm::GeneticAlgorithm()
 {
 }
 
@@ -93,19 +91,15 @@ bool_t GeneticAlgorithm::run(GenomeFitnessCreation &gfc,
     if (!(r = fitnessCalc.calculatePopulationFitness({population})))
         return "Error calculating fitness: " + r.getErrorString();
 
-    auto reportOnFitness = [&population, &generation, this]() -> bool_t
+    auto fitnessCalculatedCallback = [&generation, &population, this]() -> bool_t
     {
-        if (m_probes.get())
-        {
-            m_probes->setGeneration(generation);
-            bool_t r = m_probes->inspect(ProbeSystem::FitnessCalculated, population);
-            if (!r)
-                return "Error inspecting population after fitness calculation: " + r;
-        }
+        bool_t r;
+        if (!(r = onFitnessCalculated(generation, population)))
+            return "Error inspecting population after fitness calculation in generation " + to_string(generation) + ": " + r.getErrorString();
         return true;
     };
 
-    if (!(r = reportOnFitness()))
+    if (!(r = fitnessCalculatedCallback()))
         return r;
 
     while (true)
@@ -148,7 +142,7 @@ bool_t GeneticAlgorithm::run(GenomeFitnessCreation &gfc,
         if (!(r = fitnessCalc.calculatePopulationFitness({population})))
             return "Error calculating fitness: " + r.getErrorString();
 
-        if (!(r = reportOnFitness()))
+        if (!(r = fitnessCalculatedCallback()))
             return r;
 
         bool shouldStop = false;
@@ -158,34 +152,15 @@ bool_t GeneticAlgorithm::run(GenomeFitnessCreation &gfc,
             break;
     }
 
-    if (m_probes.get())
-    {
-        if (!(r = m_probes->inspect(ProbeSystem::AlgorithmDone, popCross->getBestIndividuals())))
-            return "Error inspecting best individuals upon algorithm end: " + r.getErrorString();
-    }
+    if (!(r = onAlgorithmDone(generation, popCross->getBestIndividuals())))
+        return "Error inspecting best individuals upon algorithm end: " + r.getErrorString();
 
     return true;
 }
 
 typedef int RealType;
 
-class MyProbes : public ProbeSystem
-{
-public:
-    MyProbes() { }
-    ~MyProbes() { }
-
-    bool_t inspect(EventType eventType, shared_ptr<Population> &population) override
-    {
-        cout << "Generation: " << getGeneration() << endl;
-        cout << "EventType: " << eventType << endl;
-        population->print();
-        cout << endl;
-
-        // TODO: check if all fitnesses are calculated?
-        return true;
-    }
-
+/*
     bool_t inspect(EventType eventType, shared_ptr<SelectionPopulation> &selPop) override
     {
         const SimpleSortedPopulation *pSortPop = dynamic_cast<const SimpleSortedPopulation *>(selPop.get());
@@ -195,13 +170,52 @@ public:
         pSortPop->getSortedPopulation()->print();
         return true;
     }
-    
-    bool_t inspect(EventType eventType, const vector<shared_ptr<Individual>> &bestIndividuals) override
+*/
+
+class MyGA : public GeneticAlgorithm
+{
+protected:
+    bool_t onFitnessCalculated(size_t generation, std::shared_ptr<Population> &population) override
     {
-        cout << "Best are: " << endl;
+        cout << "Fitness calculated for generation: " << generation << endl;
+        population->print();
+        cout << endl;
+        return true;
+    }
+
+    bool_t onAlgorithmDone(size_t generation, const std::vector<std::shared_ptr<Individual>> &bestIndividuals) override
+    {
+        cout << "Ending after " << generation << " generations, best are: " << endl;
         for (auto &i : bestIndividuals)
             cout << i->toString() << endl;
+        return true;
+    }
+};
 
+class MyCrossOver : public SingleThreadedPopulationCrossover
+{
+public:
+    MyCrossOver(shared_ptr<RandomNumberGenerator> rng)
+        : SingleThreadedPopulationCrossover(0.1,
+            // make_shared<SimpleSortedPopulation>(make_shared<VectorFitnessComparison<RealType>>()),
+            make_shared<SimpleSortedPopulation>(make_shared<ValueFitnessComparison<RealType>>()),
+            make_shared<RankParentSelection>(2.5, rng),
+            make_shared<UniformVectorGenomeCrossover<RealType>>(rng, false),
+            make_shared<SingleBestElitism>(true, true),
+            make_shared<RemainingTargetPopulationSizeIteration>(),
+            rng
+        )
+    {
+    }
+
+protected:
+    bool_t onSelectionPopulationProcessed(std::shared_ptr<SelectionPopulation> &selPop) override
+    {
+        const SimpleSortedPopulation *pSortPop = dynamic_cast<const SimpleSortedPopulation *>(selPop.get());
+        if (!pSortPop)
+            return "Selection population is not of expected type";
+        cout << "Sorted population: " << endl;
+        pSortPop->getSortedPopulation()->print();
         return true;
     }
 };
@@ -212,20 +226,9 @@ public:
     TestFactory(unsigned long seed)
     {
         m_rng = make_shared<MersenneRandomNumberGenerator>(seed);
-        m_probes = make_shared<MyProbes>();
         m_mutation = make_shared<SingleThreadedPopulationMutation>(
             make_shared<VectorGenomeUniformMutation<RealType>>(0.2, 0, 100, m_rng));
-        m_crossover = make_shared<SingleThreadedPopulationCrossover>(
-            0.1,
-            // make_shared<SimpleSortedPopulation>(make_shared<VectorFitnessComparison<RealType>>()),
-            make_shared<SimpleSortedPopulation>(make_shared<ValueFitnessComparison<RealType>>()),
-            make_shared<RankParentSelection>(2.5, m_rng),
-            make_shared<UniformVectorGenomeCrossover<RealType>>(m_rng, false),
-            make_shared<SingleBestElitism>(true, true),
-            make_shared<RemainingTargetPopulationSizeIteration>(),
-            m_rng,
-            m_probes
-        );
+        m_crossover = make_shared<MyCrossOver>(m_rng);
     }
 
     shared_ptr<Genome> createInitializedGenome() override
@@ -252,12 +255,10 @@ public:
         return m_crossover;
     }
 
-    shared_ptr<ProbeSystem> getProbeSystem() { return m_probes; }
 private:
     shared_ptr<RandomNumberGenerator> m_rng;
     shared_ptr<SingleThreadedPopulationMutation> m_mutation;
     shared_ptr<SingleThreadedPopulationCrossover> m_crossover;
-    shared_ptr<MyProbes> m_probes;
 };
 
 class TestFitnessCalculation : public GenomeFitnessCalculation
@@ -365,7 +366,7 @@ bool_t real_main(int argc, char *argv[], int rank)
         };
 
         FixedGenerationsStopCriterion stop(100);
-        GeneticAlgorithm ga { factory.getProbeSystem() };
+        MyGA ga;
 
         //r = ga.run(factory, calc, 16, 0, 32);
         r = ga.run(factory,

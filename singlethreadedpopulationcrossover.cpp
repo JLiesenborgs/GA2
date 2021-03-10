@@ -11,12 +11,11 @@ SingleThreadedPopulationCrossover::SingleThreadedPopulationCrossover(double clon
                                     shared_ptr<GenomeCrossover> genomeCrossover,
                                     shared_ptr<Elitism> elitism,
                                     shared_ptr<PopulationCrossoverIteration> popIteration,
-                                    shared_ptr<RandomNumberGenerator> rng,
-                                    std::shared_ptr<ProbeSystem> probes)
+                                    shared_ptr<RandomNumberGenerator> rng)
     : m_cloneFraction(cloneFraction), m_selectionPop(selectionPop), 
       m_parentSelection(parentSelection), m_genomeCrossover(genomeCrossover),
       m_elitism(elitism), m_popIteration(popIteration),
-      m_probes(probes), m_rng(rng)
+      m_rng(rng)
 {
 }
 
@@ -60,11 +59,8 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(vector<shared_ptr<
         if (!(r = m_selectionPop->processPopulation(population, targetPopulationSize)))
             return "Error in selection preprocessing: " + r.getErrorString();
 
-        if (m_probes.get())
-        {
-            if (!(r = m_probes->inspect(ProbeSystem::SelectionPreProcessed, m_selectionPop)))
-                return "Error inspecting selection preprocessing: " + r.getErrorString();
-        }
+        if (!(r = onSelectionPopulationProcessed(m_selectionPop)))
+            return "Error inspecting selection preprocessing: " + r.getErrorString();
 
         assert(population->size() > 0);
         auto refFitness = population->individual(0)->fitness();

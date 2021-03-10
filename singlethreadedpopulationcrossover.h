@@ -2,7 +2,6 @@
 
 #include "crossovermutation.h"
 #include "randomnumbergenerator.h"
-#include "probesystem.h"
 
 class SingleThreadedPopulationCrossover : public PopulationCrossover
 {
@@ -13,8 +12,7 @@ public:
                                       std::shared_ptr<GenomeCrossover> genomeCrossover,
                                       std::shared_ptr<Elitism> elitism,
                                       std::shared_ptr<PopulationCrossoverIteration> popIteration,
-                                      std::shared_ptr<RandomNumberGenerator> rng,
-                                      std::shared_ptr<ProbeSystem> probes = nullptr);
+                                      std::shared_ptr<RandomNumberGenerator> rng);
     ~SingleThreadedPopulationCrossover();
     
     errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) override;
@@ -27,6 +25,8 @@ public:
         // the best
         return m_selectionPop->getBestIndividuals();
     }
+protected:
+    virtual errut::bool_t onSelectionPopulationProcessed(std::shared_ptr<SelectionPopulation> &selPop) { return true; }
 private:
     double m_cloneFraction;
     std::shared_ptr<SelectionPopulation> m_selectionPop;
@@ -35,5 +35,4 @@ private:
     std::shared_ptr<Elitism> m_elitism;
     std::shared_ptr<PopulationCrossoverIteration> m_popIteration;
     std::shared_ptr<RandomNumberGenerator> m_rng;
-    std::shared_ptr<ProbeSystem> m_probes;
 };
