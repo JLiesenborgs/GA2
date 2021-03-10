@@ -9,7 +9,8 @@ public:
     enum EventType
     {
         FitnessCalculated,
-        AlgorithmDone
+        AlgorithmDone,
+        SelectionPreProcessed
     };
 
     ProbeSystem() : m_generation(0) { }

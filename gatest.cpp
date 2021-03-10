@@ -188,6 +188,11 @@ public:
 
     bool_t inspect(EventType eventType, shared_ptr<SelectionPopulation> &selPop) override
     {
+        const SimpleSortedPopulation *pSortPop = dynamic_cast<const SimpleSortedPopulation *>(selPop.get());
+        if (!pSortPop)
+            return "Selection population is not of expected type";
+        cout << "Sorted population for generation " << getGeneration() << endl;
+        pSortPop->getSortedPopulation()->print();
         return true;
     }
     
@@ -207,6 +212,7 @@ public:
     TestFactory(unsigned long seed)
     {
         m_rng = make_shared<MersenneRandomNumberGenerator>(seed);
+        m_probes = make_shared<MyProbes>();
         m_mutation = make_shared<SingleThreadedPopulationMutation>(
             make_shared<VectorGenomeUniformMutation<RealType>>(0.2, 0, 100, m_rng));
         m_crossover = make_shared<SingleThreadedPopulationCrossover>(
@@ -217,9 +223,9 @@ public:
             make_shared<UniformVectorGenomeCrossover<RealType>>(m_rng, false),
             make_shared<SingleBestElitism>(true, true),
             make_shared<RemainingTargetPopulationSizeIteration>(),
-            m_rng
+            m_rng,
+            m_probes
         );
-        m_probes = make_shared<MyProbes>();
     }
 
     shared_ptr<Genome> createInitializedGenome() override
