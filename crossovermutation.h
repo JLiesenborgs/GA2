@@ -51,11 +51,11 @@ public:
 	virtual errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations){ return "Not implemented in base class"; }
 	// The populations are overwritten, if the old one is still needed it should
 	// be stored externally
-	virtual errut::bool_t createNewPopulation(std::vector<std::shared_ptr<Population>> &populations, size_t targetPopulationSize) { return "Not implemented in base class"; }
-	virtual errut::bool_t createNewPopulation(std::shared_ptr<Population> &population, size_t targetPopulationSize)
+	virtual errut::bool_t createNewPopulation(size_t generation, std::vector<std::shared_ptr<Population>> &populations, size_t targetPopulationSize) { return "Not implemented in base class"; }
+	virtual errut::bool_t createNewPopulation(size_t generation, std::shared_ptr<Population> &population, size_t targetPopulationSize)
 	{
 		m_tmp[0] = population;
-		auto r = createNewPopulation(m_tmp, targetPopulationSize);
+		auto r = createNewPopulation(generation, m_tmp, targetPopulationSize);
 		std::swap(m_tmp[0], population);
 		m_tmp[0] = nullptr; // Don't keep a reference to this object 
 		return r;
@@ -109,7 +109,7 @@ public:
 	virtual errut::bool_t check(const std::shared_ptr<SelectionPopulation> &selPop) { return "Not implemented in base class"; }
 
 	// Population should be empty, number of genomes to skip should be set in this function
-	virtual errut::bool_t introduceElites(const std::shared_ptr<SelectionPopulation> &selPop,
+	virtual errut::bool_t introduceElites(size_t generation, const std::shared_ptr<SelectionPopulation> &selPop,
 										  std::shared_ptr<Population> &population,
 										  size_t targetPopulationSize) { return "Not implemented in base class"; }
 };

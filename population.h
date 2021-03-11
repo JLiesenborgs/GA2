@@ -4,25 +4,39 @@
 #include <vector>
 #include <iostream>
 #include <cassert>
+#include <limits>
 
 // TODO: record parents?
 // TODO: generation of creation? To allow age?
 class Individual
 {
 public:
-	Individual(std::shared_ptr<Genome> genome, std::shared_ptr<Fitness> fitness)
-		: m_genome(genome), m_fitness(fitness) { }
+	Individual(std::shared_ptr<Genome> genome, std::shared_ptr<Fitness> fitness,
+			   size_t introducedInGeneration = std::numeric_limits<size_t>::max())
+		: m_genome(genome), m_fitness(fitness),
+		  m_introducedInGeneration(introducedInGeneration), m_lastMutationGeneration(introducedInGeneration)
+	{
+	}
+
+	void setLastMutationGeneration(size_t g)
+	{
+		assert(g >= m_introducedInGeneration);
+		m_lastMutationGeneration = g;
+	}
 
 	std::string toString() const
 	{
-		return m_genome->toString() + ": " + m_fitness->toString();
+		return m_genome->toString() + ": " + m_fitness->toString() + "(" +
+		       std::to_string(m_introducedInGeneration)+ "/" +
+			   std::to_string(m_lastMutationGeneration) + ")";
 	}
 
 	std::shared_ptr<Individual> createCopy() const
 	{
-		return std::make_shared<Individual>(m_genome->createCopy(), m_fitness->createCopy());
+		auto ind = std::make_shared<Individual>(m_genome->createCopy(), m_fitness->createCopy(), m_introducedInGeneration);
+		ind->m_lastMutationGeneration = m_lastMutationGeneration;
+		return ind;
 	}
-
 
 	std::shared_ptr<Genome> &genome() { return m_genome; }
 	Genome &genomeRef() 
@@ -43,6 +57,7 @@ public:
 private:
 	std::shared_ptr<Genome> m_genome;
 	std::shared_ptr<Fitness> m_fitness;
+	size_t m_introducedInGeneration, m_lastMutationGeneration;
 };
 
 // Do we need this? Just a typedef perhaps?

@@ -35,6 +35,8 @@ bool_t GeneticAlgorithm::run(GenomeFitnessCreation &gfc,
     if (maxPopulationSize == 0)
         maxPopulationSize = popSize;
 
+    size_t generation = 0;
+
     for (size_t i = 0 ; i < popSize ; i++)
     {
         auto g = gfc.createInitializedGenome();
@@ -42,10 +44,8 @@ bool_t GeneticAlgorithm::run(GenomeFitnessCreation &gfc,
             return "Unable to create an inialized genome";
 
         auto f = refFitness->createCopy(false);
-        population->append(make_shared<Individual>(g, f));
+        population->append(make_shared<Individual>(g, f, generation));
     }
-
-    size_t generation = 0;
 
     auto beforeFitnessCalculatedCallback = [&generation, &population, this]() -> bool_t
     {
@@ -79,7 +79,7 @@ bool_t GeneticAlgorithm::run(GenomeFitnessCreation &gfc,
             if (!(r = popCross.check(population)))
                 return "Error in population crossover check: " + r.getErrorString();
         }
-        if (!(r = popCross.createNewPopulation(population, popSize)))
+        if (!(r = popCross.createNewPopulation(generation, population, popSize)))
             return "Error creating new population: " + r.getErrorString();
 
         const size_t curPopSize = population->size();

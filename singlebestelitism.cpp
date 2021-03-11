@@ -23,7 +23,7 @@ bool_t SingleBestElitism::check(const shared_ptr<SelectionPopulation> &selPop)
     return true;
 }
 
-bool_t SingleBestElitism::introduceElites(const shared_ptr<SelectionPopulation> &selPop,
+bool_t SingleBestElitism::introduceElites(size_t generation, const shared_ptr<SelectionPopulation> &selPop,
                                 shared_ptr<Population> &population,
                                 size_t targetPopulationSize)
 {
@@ -56,7 +56,10 @@ bool_t SingleBestElitism::introduceElites(const shared_ptr<SelectionPopulation> 
         bool isChanged = false;
         bool_t r = m_mutation->mutate(copy->genomeRef(), isChanged);
         if (isChanged)
+        {
             copy->fitness()->setCalculated(false);
+            copy->setLastMutationGeneration(generation);
+        }
     }
     return true;
 }

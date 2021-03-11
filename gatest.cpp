@@ -69,12 +69,12 @@ public:
     }
 
 protected:
-    bool_t onSelectionPopulationProcessed(std::shared_ptr<SelectionPopulation> &selPop) override
+    bool_t onSelectionPopulationProcessed(size_t generation, std::shared_ptr<SelectionPopulation> &selPop) override
     {
         const SimpleSortedPopulation *pSortPop = dynamic_cast<const SimpleSortedPopulation *>(selPop.get());
         if (!pSortPop)
             return "Selection population is not of expected type";
-        cout << "Sorted population: " << endl;
+        cout << "Sorted population for generation " << generation << ":" << endl;
         pSortPop->getSortedPopulation()->print();
         return true;
     }

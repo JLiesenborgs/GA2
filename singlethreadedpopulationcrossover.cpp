@@ -47,7 +47,8 @@ bool_t SingleThreadedPopulationCrossover::check(const vector<shared_ptr<Populati
     return true;
 }
 
-bool_t SingleThreadedPopulationCrossover::createNewPopulation(vector<shared_ptr<Population>> &populations,
+bool_t SingleThreadedPopulationCrossover::createNewPopulation(size_t generation,
+                                                              vector<shared_ptr<Population>> &populations,
                                                               size_t targetPopulationSize)
 {
     bool_t r;
@@ -64,7 +65,7 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(vector<shared_ptr<
         if (!(r = m_selectionPop->processPopulation(population, targetPopulationSize)))
             return "Error in selection preprocessing: " + r.getErrorString();
 
-        if (!(r = onSelectionPopulationProcessed(m_selectionPop)))
+        if (!(r = onSelectionPopulationProcessed(generation, m_selectionPop)))
             return "Error inspecting selection preprocessing: " + r.getErrorString();
 
         assert(population->size() > 0);
@@ -75,22 +76,22 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(vector<shared_ptr<
         // introduce elitist solutions ; should itself introduce mutations if needed
         if (m_elitism.get())
         {
-            if (!(r = m_elitism->introduceElites(m_selectionPop, newPopulation, targetPopulationSize)))
+            if (!(r = m_elitism->introduceElites(generation, m_selectionPop, newPopulation, targetPopulationSize)))
                 return "Can't introduce elitist solutions: " + r.getErrorString();
         }
 
-        auto appendNewIndividual = [this, &refFitness, &newPopulation](auto &i) -> bool_t
+        auto appendNewIndividual = [this, generation, &refFitness, &newPopulation](auto &i) -> bool_t
         {
             bool isChanged = false;
             bool_t r = m_genomeMutation->mutate(i->genomeRef(), isChanged);
             if (!r)
                 return "Error mutating genome: " + r.getErrorString();
 
-            // TODO: At this point this doesn't help much, as only new fitness
-            //       objects are introduced; but perhaps in the future when cloning
-            //       a solution, the fitness can be copied as well
             if (isChanged)
+            {
                 i->fitness()->setCalculated(false);
+                i->setLastMutationGeneration(generation);
+            }
             newPopulation->append(i);
             return true;
         };
@@ -122,7 +123,7 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(vector<shared_ptr<
                 for (auto &g : offspring)
                 {
                     auto f = refFitness->createCopy(false);
-                    auto i = make_shared<Individual>(g, f);
+                    auto i = make_shared<Individual>(g, f, generation);
                     if (!(r = appendNewIndividual(i)))
                         return r;
                 }                

@@ -17,7 +17,7 @@ public:
     ~SingleThreadedPopulationCrossover();
     
     errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) override;
-	errut::bool_t createNewPopulation(std::vector<std::shared_ptr<Population>> &populations, size_t targetPopulationSize) override;
+	errut::bool_t createNewPopulation(size_t generation, std::vector<std::shared_ptr<Population>> &populations, size_t targetPopulationSize) override;
 
     const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const override
     {
@@ -27,7 +27,7 @@ public:
         return m_selectionPop->getBestIndividuals();
     }
 protected:
-    virtual errut::bool_t onSelectionPopulationProcessed(std::shared_ptr<SelectionPopulation> &selPop) { return true; }
+    virtual errut::bool_t onSelectionPopulationProcessed(size_t generation, std::shared_ptr<SelectionPopulation> &selPop) { return true; }
 private:
     double m_cloneFraction;
     bool m_keepExistingPopulation;
