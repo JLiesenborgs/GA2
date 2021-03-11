@@ -122,6 +122,6 @@ public:
 	
 	virtual errut::bool_t check(const SelectionPopulation &pop) { return "Not implemented in base class"; }
 	// The length of 'parents' describes the number of parents that should be
-	virtual errut::bool_t selectParents(const SelectionPopulation &pop, std::vector<std::shared_ptr<Genome>> &parents) { return "Not implemented in base class"; }
+	virtual errut::bool_t selectParents(const SelectionPopulation &pop, std::vector<std::shared_ptr<Individual>> &parents) { return "Not implemented in base class"; }
 };
 

@@ -51,10 +51,12 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(vector<shared_ptr<
                                                               size_t targetPopulationSize)
 {
     bool_t r;
-    vector<shared_ptr<Genome>> parents, cloneParent, offspring;
+    vector<shared_ptr<Genome>> parentGenomes, offspring;
+    vector<shared_ptr<Individual>> parentIndividuals, cloneIndividual;
     
-    parents.resize(m_genomeCrossover->getNumberOfParents());
-    cloneParent.resize(1);
+    parentGenomes.resize(m_genomeCrossover->getNumberOfParents());
+    parentIndividuals.resize(m_genomeCrossover->getNumberOfParents());
+    cloneIndividual.resize(1);
 
     for (auto &population : populations)
     {
@@ -77,12 +79,10 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(vector<shared_ptr<
                 return "Can't introduce elitist solutions: " + r.getErrorString();
         }
 
-        auto appendNewIndividual = [this, &refFitness, &newPopulation](auto &g) -> bool_t
+        auto appendNewIndividual = [this, &refFitness, &newPopulation](auto &i) -> bool_t
         {
-            auto f = refFitness->createCopy(false);
-            auto ind = make_shared<Individual>(g, f);
             bool isChanged = false;
-            bool_t r = m_genomeMutation->mutate(*g, isChanged);
+            bool_t r = m_genomeMutation->mutate(i->genomeRef(), isChanged);
             if (!r)
                 return "Error mutating genome: " + r.getErrorString();
 
@@ -90,8 +90,8 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(vector<shared_ptr<
             //       objects are introduced; but perhaps in the future when cloning
             //       a solution, the fitness can be copied as well
             if (isChanged)
-                f->setCalculated(false);
-            newPopulation->append(ind);
+                i->fitness()->setCalculated(false);
+            newPopulation->append(i);
             return true;
         };
 
@@ -101,25 +101,29 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(vector<shared_ptr<
             double x = m_rng->getRandomDouble();
             if (x < m_cloneFraction) // TODO: can we do this more efficiently?
             {
-                if (!(r = m_parentSelection->selectParents(*m_selectionPop, cloneParent)))
+                if (!(r = m_parentSelection->selectParents(*m_selectionPop, cloneIndividual)))
                     return "Error in clone parent selection: " + r.getErrorString();
 
-                // TODO: should the selection also copy fitness?
-                auto g = cloneParent[0]->createCopy(true);
-                if (!(r = appendNewIndividual(g)))
+                auto i = cloneIndividual[0]->createCopy();
+                if (!(r = appendNewIndividual(i)))
                     return r;
             }
             else
             {
-                if (!(r = m_parentSelection->selectParents(*m_selectionPop, parents)))
+                if (!(r = m_parentSelection->selectParents(*m_selectionPop, parentIndividuals)))
                     return "Error in parent selection: " + r.getErrorString();
 
-                if (!(r = m_genomeCrossover->generateOffspring(parents, offspring)))
+                for (size_t i = 0 ; i < parentIndividuals.size() ; i++)
+                    parentGenomes[i] = parentIndividuals[i]->genome();
+
+                if (!(r = m_genomeCrossover->generateOffspring(parentGenomes, offspring)))
                     return "Error generating offspring: " + r.getErrorString();
 
                 for (auto &g : offspring)
                 {
-                    if (!(r = appendNewIndividual(g)))
+                    auto f = refFitness->createCopy(false);
+                    auto i = make_shared<Individual>(g, f);
+                    if (!(r = appendNewIndividual(i)))
                         return r;
                 }                
             }

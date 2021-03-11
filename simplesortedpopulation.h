@@ -18,11 +18,11 @@ public:
 
     int getNumberOfSets() const override { return (int)m_lastPopulation->size(); }
     int getSetSize(int s) const override { return 1; }
-    std::shared_ptr<Genome> getGenome(int s, int i) const override
+    std::shared_ptr<Individual> getIndividual(int s, int i) const override
     {
         assert(m_lastPopulation.get());
         assert(s >= 0 && s < (int)m_lastPopulation->size());
-        return m_lastPopulation->individual(s)->genome();
+        return m_lastPopulation->individual(s);
     };
 
     const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const { return m_best; }

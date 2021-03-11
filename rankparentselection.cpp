@@ -24,9 +24,9 @@ bool_t RankParentSelection::check(const SelectionPopulation &pop)
     return true;
 }
 
-bool_t RankParentSelection::selectParents(const SelectionPopulation &pop, std::vector<std::shared_ptr<Genome>> &parents)
+bool_t RankParentSelection::selectParents(const SelectionPopulation &pop, std::vector<std::shared_ptr<Individual>> &parents)
 {
-    const NDSortedPopulation &ndPop = dynamic_cast<const NDSortedPopulation &>(pop);
+    const NDSortedPopulation &ndPop = static_cast<const NDSortedPopulation &>(pop);
     int numSets = ndPop.getNumberOfSets();
     assert(numSets > 0);
     
@@ -58,7 +58,7 @@ bool_t RankParentSelection::selectParents(const SelectionPopulation &pop, std::v
         int setIdx = getSetIndex();
         int genomeIdx = getGenomeIndex(setIdx);
 
-        p = ndPop.getGenome(setIdx, genomeIdx);
+        p = ndPop.getIndividual(setIdx, genomeIdx);
     }
 
     // TODO: something to prevent inbreeding?
