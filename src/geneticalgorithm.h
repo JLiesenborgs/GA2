@@ -1,7 +1,11 @@
 #pragma once
 
+#include "mogal2config.h"
 #include "crossovermutation.h"
 #include "stopcriterion.h"
+
+namespace mogal2
+{
 
 class GeneticAlgorithm
 {
@@ -21,3 +25,5 @@ protected:
     virtual errut::bool_t onFitnessCalculated(size_t generation, std::shared_ptr<Population> &population) { return true; }
     virtual errut::bool_t onAlgorithmDone(size_t generation, const std::vector<std::shared_ptr<Individual>> &bestIndividuals) { return true; }
 };
+
+}

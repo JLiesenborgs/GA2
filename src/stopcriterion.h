@@ -1,6 +1,10 @@
 #pragma once
 
+#include "mogal2config.h"
 #include "population.h"
+
+namespace mogal2
+{
 
 class StopCriterion
 {
@@ -26,3 +30,5 @@ public:
 private:
     size_t m_maxGen;
 };
+
+}

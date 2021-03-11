@@ -1,6 +1,10 @@
 #pragma once
 
+#include "mogal2config.h"
 #include "population.h"
+
+namespace mogal2
+{
 
 class MultiThreadedPopulationFitnessCalculation : public PopulationFitnessCalculation
 {
@@ -17,3 +21,4 @@ private:
 	std::vector<std::shared_ptr<GenomeFitnessCalculation>> m_threadGenomeCalculations;
 };
 
+}

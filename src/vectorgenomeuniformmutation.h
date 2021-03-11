@@ -1,7 +1,11 @@
 #pragma once
 
+#include "mogal2config.h"
 #include "crossovermutation.h"
 #include "randomnumbergenerator.h"
+
+namespace mogal2
+{
 
 template<class T>
 class VectorGenomeUniformMutation : public GenomeMutation
@@ -40,3 +44,5 @@ private:
     double m_mutationFraction;
     double m_min, m_max;
 };
+
+}

@@ -6,6 +6,9 @@
 using namespace std;
 using namespace errut;
 
+namespace mogal2
+{
+
 MultiThreadedPopulationFitnessCalculation::MultiThreadedPopulationFitnessCalculation()
 {
 }
@@ -159,4 +162,6 @@ bool_t MultiThreadedPopulationFitnessCalculation::calculatePopulationFitness(con
 	}
 
 	return true;
+}
+
 }

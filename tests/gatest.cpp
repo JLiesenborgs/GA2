@@ -20,6 +20,7 @@
 
 using namespace errut;
 using namespace std;
+using namespace mogal2;
 
 typedef double RealType;
 

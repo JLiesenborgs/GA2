@@ -1,5 +1,8 @@
 #include "mersennerandomnumbergenerator.h"
 
+namespace mogal2
+{
+
 MersenneRandomNumberGenerator::MersenneRandomNumberGenerator(unsigned int seed) : m_rng(seed)
 {
 
@@ -37,4 +40,6 @@ float MersenneRandomNumberGenerator::getRandomFloat(float min, float max)
 uint32_t MersenneRandomNumberGenerator::getRandomUint32()
 {
     return m_rng();
+}
+
 }

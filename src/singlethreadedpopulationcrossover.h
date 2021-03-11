@@ -1,7 +1,11 @@
 #pragma once
 
+#include "mogal2config.h"
 #include "crossovermutation.h"
 #include "randomnumbergenerator.h"
+
+namespace mogal2
+{
 
 class SingleThreadedPopulationCrossover : public PopulationCrossover
 {
@@ -39,3 +43,5 @@ private:
     std::shared_ptr<PopulationCrossoverIteration> m_popIteration;
     std::shared_ptr<RandomNumberGenerator> m_rng;
 };
+
+}

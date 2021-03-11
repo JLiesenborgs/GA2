@@ -1,9 +1,13 @@
 #pragma once
 
+#include "mogal2config.h"
 #include <errut/booltype.h>
 #include <mpi.h>
 #include <memory>
 #include <vector>
+
+namespace mogal2
+{
 
 // To avoid circular references, no shared_ptr is used, but a weak_ptr
 
@@ -31,3 +35,5 @@ private:
     int m_root;
     std::vector<std::weak_ptr<MPIEventHandler>> m_handlers;
 };
+
+}

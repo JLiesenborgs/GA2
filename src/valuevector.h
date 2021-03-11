@@ -1,5 +1,6 @@
 #pragma once
 
+#include "mogal2config.h"
 #include <mpi.h>
 #include <errut/booltype.h>
 #include <vector>
@@ -8,6 +9,9 @@
 #include <cstring>
 #include <cassert>
 #include <sstream>
+
+namespace mogal2
+{
 
 template<class Base, class Type>
 class ValueVector : public Base
@@ -71,3 +75,5 @@ protected:
 	std::vector<Type> m_values;
 	static MPI_Datatype m_mpiType;
 };
+
+}

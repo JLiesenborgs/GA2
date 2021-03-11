@@ -6,6 +6,9 @@
 using namespace errut;
 using namespace std;
 
+namespace mogal2
+{
+
 MPIPopulationFitnessCalculation::MPIPopulationFitnessCalculation(const std::weak_ptr<MPIEventDistributor> &mpiDist)
 	: m_evtDist(mpiDist)
 {
@@ -242,4 +245,6 @@ bool_t MPIPopulationFitnessCalculation::handleEvent(MPIEventHandler::EventType t
 	if (t != MPIEventHandler::Calculation)
 		return "Can't handle event " + to_string(t);
 	return calculatePopulationFitness_MPIHelper();
+}
+
 }

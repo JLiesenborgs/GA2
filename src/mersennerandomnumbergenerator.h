@@ -1,7 +1,11 @@
 #pragma once
 
+#include "mogal2config.h"
 #include "randomnumbergenerator.h"
 #include <random>
+
+namespace mogal2
+{
 
 class MersenneRandomNumberGenerator : public RandomNumberGenerator
 {
@@ -18,3 +22,4 @@ private:
     std::mt19937 m_rng;
 };
 
+}

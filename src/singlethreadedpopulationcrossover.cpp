@@ -5,6 +5,9 @@
 using namespace errut;
 using namespace std;
 
+namespace mogal2
+{
+
 SingleThreadedPopulationCrossover::SingleThreadedPopulationCrossover(double cloneFraction,
                                     bool keepExistingPopulation,
                                     shared_ptr<SelectionPopulation> selectionPop,
@@ -141,4 +144,6 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(size_t generation,
     }
 
     return true;
+}
+
 }

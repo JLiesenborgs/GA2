@@ -8,14 +8,12 @@
 #include <cassert>
 #include <cstdio>
 
-// TODO: namespace
-
 // TODO: for genome and fitness, a copyInto function? So that memory doesn't need to be
 //       allocated/reallocated often
 
-
 using namespace std;
 using namespace errut;
+using namespace mogal2;
 
 class DummyGenomeFitnessCalculation : public GenomeFitnessCalculation
 {

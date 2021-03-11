@@ -1,8 +1,12 @@
 #pragma once
 
+#include "mogal2config.h"
 #include <mpi.h>
 #include <errut/booltype.h>
 #include <memory>
+
+namespace mogal2
+{
 
 class Genome
 {
@@ -78,3 +82,5 @@ public:
     virtual std::shared_ptr<Genome> createInitializedGenome() = 0;
     virtual std::shared_ptr<Fitness> createEmptyFitness() = 0;
 };
+
+}

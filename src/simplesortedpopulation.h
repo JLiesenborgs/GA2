@@ -1,7 +1,11 @@
 #pragma once
 
+#include "mogal2config.h"
 #include "ndsortedpopulation.h"
 #include <cassert>
+
+namespace mogal2
+{
 
 class SimpleSortedPopulation : public NDSortedPopulation
 {
@@ -32,3 +36,5 @@ private:
     std::shared_ptr<Population> m_lastPopulation;
     std::vector<std::shared_ptr<Individual>> m_best;
 };
+
+}

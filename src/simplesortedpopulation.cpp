@@ -4,6 +4,9 @@
 using namespace std;
 using namespace errut;
 
+namespace mogal2
+{
+
 SimpleSortedPopulation::SimpleSortedPopulation(shared_ptr<FitnessComparison> fitComp, size_t objectiveNumber)
     : m_objectiveNumber(objectiveNumber), m_fitnessComp(fitComp) 
 {
@@ -54,4 +57,6 @@ bool_t SimpleSortedPopulation::processPopulation(shared_ptr<Population> &populat
         m_best.push_back(i->createCopy()); // TODO: is it safe to not make a copy?
 
     return true;
+}
+
 }

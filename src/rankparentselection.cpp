@@ -6,6 +6,9 @@
 using namespace std;
 using namespace errut;
 
+namespace mogal2
+{
+
 RankParentSelection::RankParentSelection(double beta, shared_ptr<RandomNumberGenerator> rng)
     : m_beta(beta), m_rng(rng)
 {
@@ -64,4 +67,6 @@ bool_t RankParentSelection::selectParents(const SelectionPopulation &pop, std::v
     // TODO: something to prevent inbreeding?
 
     return true;
+}
+
 }

@@ -1,8 +1,12 @@
 #pragma once
 
+#include "mogal2config.h"
 #include "genomefitness.h"
 #include "population.h"
 #include <vector>
+
+namespace mogal2
+{
 
 class GenomeCrossover
 {
@@ -125,3 +129,4 @@ public:
 	virtual errut::bool_t selectParents(const SelectionPopulation &pop, std::vector<std::shared_ptr<Individual>> &parents) { return "Not implemented in base class"; }
 };
 
+}

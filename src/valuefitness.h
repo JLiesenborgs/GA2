@@ -1,8 +1,12 @@
 #pragma once
 
+#include "mogal2config.h"
 #include "genomefitness.h"
 #include <memory>
 #include <string>
+
+namespace mogal2
+{
 
 template<class T>
 class ValueFitness : public Fitness
@@ -78,3 +82,5 @@ public:
 		return (f1.getValue() > f2.getValue());
 	}
 };
+
+}

@@ -1,6 +1,10 @@
 #pragma once
 
+#include "mogal2config.h"
 #include "crossovermutation.h"
+
+namespace mogal2
+{
 
 class RemainingTargetPopulationSizeIteration : public PopulationCrossoverIteration
 {
@@ -26,3 +30,5 @@ public:
 private:
     size_t m_remaining;
 };
+
+}

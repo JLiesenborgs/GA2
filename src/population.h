@@ -1,10 +1,14 @@
 #pragma once
 
+#include "mogal2config.h"
 #include "genomefitness.h"
 #include <vector>
 #include <iostream>
 #include <cassert>
 #include <limits>
+
+namespace mogal2
+{
 
 // TODO: record parents?
 // TODO: generation of creation? To allow age?
@@ -111,3 +115,4 @@ public:
 	virtual errut::bool_t calculatePopulationFitness(const std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
 };
 
+}

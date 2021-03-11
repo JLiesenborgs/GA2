@@ -1,6 +1,10 @@
 #pragma once
 
+#include "mogal2config.h"
 #include <stdint.h>
+
+namespace mogal2
+{
 
 class RandomNumberGenerator
 {
@@ -24,3 +28,5 @@ public:
     }
     virtual uint32_t getRandomUint32() = 0;
 };
+
+}

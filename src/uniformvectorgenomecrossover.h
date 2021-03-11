@@ -1,8 +1,12 @@
 #pragma once
 
+#include "mogal2config.h"
 #include "vectorgenomefitness.h"
 #include "crossovermutation.h"
 #include "randomnumbergenerator.h"
+
+namespace mogal2
+{
 
 template<class T>
 class UniformVectorGenomeCrossover : public GenomeCrossover
@@ -85,3 +89,5 @@ private:
     std::shared_ptr<RandomNumberGenerator> m_rng;
     const bool m_twoOffspring;
 };
+
+}

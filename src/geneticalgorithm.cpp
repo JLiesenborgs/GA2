@@ -3,6 +3,9 @@
 using namespace std;
 using namespace errut;
 
+namespace mogal2
+{
+
 GeneticAlgorithm::GeneticAlgorithm()
 {
 }
@@ -111,4 +114,6 @@ bool_t GeneticAlgorithm::run(GenomeFitnessCreation &gfc,
         return "Error inspecting best individuals upon algorithm end: " + r.getErrorString();
 
     return true;
+}
+
 }

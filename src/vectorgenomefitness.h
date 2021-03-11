@@ -1,8 +1,12 @@
 #pragma once
 
+#include "mogal2config.h"
 #include "valuevector.h"
 #include "genomefitness.h"
 #include <cassert>
+
+namespace mogal2
+{
 
 template<class T>
 class VectorGenome : public ValueVector<Genome, T>
@@ -82,3 +86,4 @@ typedef VectorFitness<double> DoubleVectorFitness;
 typedef VectorGenome<int> IntVectorGenome;
 typedef VectorFitness<int> IntVectorFitness;
 
+}

@@ -1,5 +1,11 @@
+#pragma once
+
+#include "mogal2config.h"
 #include "crossovermutation.h"
 #include "randomnumbergenerator.h"
+
+namespace mogal2
+{
 
 class RankParentSelection : public ParentSelection
 {
@@ -13,3 +19,5 @@ private:
     const double m_beta;
     std::shared_ptr<RandomNumberGenerator> m_rng;
 };
+
+}

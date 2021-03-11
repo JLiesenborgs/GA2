@@ -4,6 +4,9 @@
 using namespace errut;
 using namespace std;
 
+namespace mogal2
+{
+
 MPIEventDistributor::MPIEventDistributor(int root, MPI_Comm communicator)
     : m_comm(communicator), m_root(root)
 {
@@ -54,4 +57,6 @@ bool_t MPIEventDistributor::eventLoop()
             return "No handler set for event type " + to_string(evt) + "(or handler expired)";
     }
     return true;
+}
+
 }

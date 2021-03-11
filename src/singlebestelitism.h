@@ -1,6 +1,10 @@
 #pragma once
 
+#include "mogal2config.h"
 #include "crossovermutation.h"
+
+namespace mogal2
+{
 
 class SingleBestElitism : public Elitism
 {
@@ -16,3 +20,5 @@ private:
     bool m_eliteWithoutMutation;
     std::shared_ptr<GenomeMutation> m_mutation;
 };
+
+}

@@ -1,9 +1,12 @@
 #pragma once
 
+#include "mogal2config.h"
 #include "population.h"
 #include "mpieventdistributor.h"
 
 // TODO: MPI_Comm seems to be a pointer in OpenMPI
+namespace mogal2
+{
 
 class MPIPopulationFitnessCalculation : public PopulationFitnessCalculation, public MPIEventHandler
 {
@@ -37,3 +40,5 @@ private:
 
 	std::vector<std::vector<std::pair<Genome *, Fitness *>>> m_helperGenomes;
 };
+
+}

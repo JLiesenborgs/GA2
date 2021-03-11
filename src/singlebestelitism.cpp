@@ -5,6 +5,9 @@
 using namespace errut;
 using namespace std;
 
+namespace mogal2
+{
+
 SingleBestElitism::SingleBestElitism(bool eliteWithoutMutation, const shared_ptr<GenomeMutation> &mutation)
     : m_eliteWithoutMutation(eliteWithoutMutation),
       m_mutation(mutation)
@@ -62,4 +65,6 @@ bool_t SingleBestElitism::introduceElites(size_t generation, const shared_ptr<Se
         }
     }
     return true;
+}
+
 }

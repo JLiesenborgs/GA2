@@ -3,6 +3,9 @@
 using namespace std;
 using namespace errut;
 
+namespace mogal2
+{
+
 SingleThreadedPopulationFitnessCalculation::SingleThreadedPopulationFitnessCalculation(shared_ptr<GenomeFitnessCalculation> genomeFitCalc)
     : m_genomeFitnessCalculation(genomeFitCalc)
 { 
@@ -62,4 +65,6 @@ bool_t SingleThreadedPopulationFitnessCalculation::calculatePopulationFitness(co
 	} while (!allCalculated);
 
 	return true;
+}
+
 }
