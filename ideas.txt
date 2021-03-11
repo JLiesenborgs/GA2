@@ -1,68 +1,5 @@
-Population:
- - List/vector Individuals
-
-Individual:
- - Genome/Chromosome/Representation
- - Fitness (Set to Unknown or some fitness measures)
-  - Number of components, each component known/unknown?
- - How to serialize these? MPI only?
-  - some construction to allow scatter/gather? Genome would use a memory
-    context, from which it would get pointers for data? Similar for Fitness?
-
-PopulationFitnessCalculation: MPI, threads, OpenCL/Async
- - multiple populations possible
-
-IndividualFitnessCalculation:
- - sync/async (OpenCL?)
- - start on new generation; some context?
-
-SortedPopulation:
- - single fitness sort, non-dominated sets
-
-PopulationCrossover:
- - takes SortedPopulation as input, produces new population as output
- - selects individuals to be combined -> how many?
- - append to population? To allow cloning?
-GenomeCrossover:
- - combines two or more genomes 
-
-PopulationMutation:
- - determine which genomes need mutation
-
-GenomeMutation:
- - apply mutation to genome
-
-GeneticAlgorithm (DefaultGeneticAlgorithm)
-
- - initialize population
- - calculate fitness 
- - loop:
-   - sort
-    - sorted population callback
-    - abstract sort and new population? parent selection instead?
-   - update best, check if done 
-   - newpopulation, clone & crossover, mutations
-   - calculate fitness
-   - prune (if crossover creates too many, keep best? keep random?)
-
-basic process:
- - init = create initial pop
- - calc fitness
- - loop:
-  - create new population
-  - calc fitness
-
--> in core Evolutionary Alg:
- - initPop & updatePop step functions
- - Externally, fitness calc should then be called
-  - this way, it's easy to create separate versions for mpi/non-mpi
-
--> some kind of geneticalgstep function/class?
-
 
 Some things to consider:
- - age of individual
- - more than two parents
  - niching
  - some further feedback from fitness calculation, like scale factor in
    lensing GA
@@ -81,4 +18,5 @@ Example problems:
  - graph k-colouring problem
  - moving optimum ES
    experiment,http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.35.8073
-
+ - cases from https://ui.adsabs.harvard.edu/abs/1995ApJS..101..309C/abstract,
+   Genetic Algorithms in Astronomy and Astrophysics
