@@ -40,30 +40,51 @@ find_package(Threads REQUIRED)
 list(APPEND MOGAL2_LINK_LIBS "${CMAKE_THREAD_LIBS_INIT}")
 
 list(APPEND MOGAL2_INTERNAL_INCLUDES "${PROJECT_BINARY_DIR}/src/")
-apply_include_paths("${MOGAL_INTERNAL_INCLUDES}")
-apply_include_paths("${MOGAL_EXTERNAL_INCLUDES}")
+apply_include_paths("${MOGAL2_INTERNAL_INCLUDES}")
+apply_include_paths("${MOGAL2_EXTERNAL_INCLUDES}")
 
-add_executable(mpitest mpitest.cpp vectorgenomefitness.cpp
-						mpipopulationfitnesscalculation.cpp
-						singlethreadedpopulationfitnesscalculation.cpp
-						mpieventdistributor.cpp)
-target_link_libraries(mpitest "${MOGAL2_LINK_LIBS}")
+if (MSVC)
+	set(MOGAL2_COMPILE_STATIC ON CACHE BOOL "Flag indicating if a static library should be built, or a dynamic one")
+endif (MSVC)
+if (NOT MSVC OR MOGAL2_COMPILE_STATIC)
+	set(MOGAL2_IMPORT "")
+	set(MOGAL2_EXPORT "")
+else (NOT MSVC OR MOGAL2_COMPILE_STATIC)
+	set(MOGAL2_IMPORT "__declspec(dllimport)")
+	set(MOGAL2_EXPORT "__declspec(dllexport)")
+endif (NOT MSVC OR MOGAL2_COMPILE_STATIC)
 
-add_executable(threadtest threadtest.cpp vectorgenomefitness.cpp
-						  multithreadedpopulationfitnesscalculation.cpp)
-target_link_libraries(threadtest "${MOGAL2_LINK_LIBS}")
+configure_file("${PROJECT_SOURCE_DIR}/src/mogal2config.h.in" "${PROJECT_BINARY_DIR}/src/mogal2config.h")
 
-add_executable(gatest gatest.cpp vectorgenomefitness.cpp
-			   singlethreadedpopulationfitnesscalculation.cpp
-			   multithreadedpopulationfitnesscalculation.cpp
-			   mpipopulationfitnesscalculation.cpp
-			   mersennerandomnumbergenerator.cpp
-			   simplesortedpopulation.cpp
-			   rankparentselection.cpp
-			   singlethreadedpopulationcrossover.cpp
-			   mpieventdistributor.cpp
-			   singlebestelitism.cpp
-			   valuefitness.cpp
-			   geneticalgorithm.cpp
-			   )
-target_link_libraries(gatest "${MOGAL2_LINK_LIBS}")
+list(APPEND MOGAL2_INTERNAL_INCLUDES "${PROJECT_SOURCE_DIR}/src/")
+list(APPEND MOGAL2_INTERNAL_INCLUDES "${PROJECT_BINARY_DIR}/src/")
+
+add_subdirectory(src)
+#add_subdirectory(programs)
+add_subdirectory(tests)
+
+if (NOT MSVC)
+	set(MOGAL2_LIBS "-L${LIBRARY_INSTALL_DIR}" "-lmogal2")
+else (NOT MSVC)
+	set(MOGAL2_LIBS optimized "${LIBRARY_INSTALL_DIR}/mogal2.lib" 
+		        debug "${LIBRARY_INSTALL_DIR}/mogal2_d.lib")
+endif (NOT MSVC)
+
+set(MOGAL2_INCDIRS "${MOGAL2_EXTERNAL_INCLUDES};${CMAKE_INSTALL_PREFIX}/include")
+set(MOGAL2_LIBS "${MOGAL2_LIBS};${MOGAL2_LINK_LIBS}")
+remove_empty(MOGAL2_INCDIRS)
+list(REMOVE_DUPLICATES MOGAL2_INCDIRS)
+remove_empty(MOGAL2_LIBS)
+
+foreach(ARG ${MOGAL2_LIBS})
+	set(MOGAL2_LIBS_CMAKECONFIG "${MOGAL2_LIBS_CMAKECONFIG} \"${ARG}\"")
+endforeach()
+foreach(ARG ${MOGAL2_INCDIRS})
+	set(MOGAL2_INCDIRS_CMAKECONFIG "${MOGAL2_INCDIRS_CMAKECONFIG} \"${ARG}\"")
+endforeach()
+
+configure_file("${PROJECT_SOURCE_DIR}/cmake/MOGAL2Config.cmake.in" "${PROJECT_BINARY_DIR}/cmake/MOGAL2Config.cmake")
+install(FILES "${PROJECT_BINARY_DIR}/cmake/MOGAL2Config.cmake" 
+	DESTINATION ${LIBRARY_INSTALL_DIR}/cmake/MOGAL2)
+
+
