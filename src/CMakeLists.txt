@@ -9,6 +9,8 @@ set(HEADERS
 	mpipopulationfitnesscalculation.h
 	multithreadedpopulationfitnesscalculation.h
 	ndsortedpopulation.h
+	permutationordercrossover.h
+	permutationswapmutation.h
 	population.h
 	randomnumbergenerator.h
 	rankparentselection.h
@@ -31,6 +33,8 @@ set(SOURCES
 	mpieventdistributor.cpp
 	mpipopulationfitnesscalculation.cpp
 	multithreadedpopulationfitnesscalculation.cpp
+	permutationordercrossover.cpp
+	permutationswapmutation.cpp
 	rankparentselection.cpp
 	simplesortedpopulation.cpp
 	singlebestelitism.cpp
