@@ -56,6 +56,8 @@ public:
 	GenomeFitnessCalculation() { }
 	virtual ~GenomeFitnessCalculation() { }
 
+	// TODO: do we need a check function here?
+
 	// These are to allow a more async version, but by default the sync version is called
 	virtual errut::bool_t startNewCalculation(const Genome &genome) { return true; }
 	

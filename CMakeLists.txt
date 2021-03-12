@@ -62,6 +62,7 @@ list(APPEND MOGAL2_INTERNAL_INCLUDES "${PROJECT_BINARY_DIR}/src/")
 add_subdirectory(src)
 #add_subdirectory(programs)
 add_subdirectory(tests)
+add_subdirectory(examples)
 
 if (NOT MSVC)
 	set(MOGAL2_LIBS "-L${LIBRARY_INSTALL_DIR}" "-lmogal2")
