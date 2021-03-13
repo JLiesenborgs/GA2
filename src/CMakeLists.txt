@@ -24,6 +24,7 @@ set(HEADERS
 	valuefitness.h
 	valuevector.h
 	vectorgenomefitness.h
+	vectorgenomeflipmutation.h
 	vectorgenomeuniformmutation.h
 	"${PROJECT_BINARY_DIR}/src/mogal2config.h" )
 
