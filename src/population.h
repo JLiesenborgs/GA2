@@ -22,6 +22,12 @@ public:
 	{
 	}
 
+	virtual std::shared_ptr<Individual> createNew(std::shared_ptr<Genome> genome, std::shared_ptr<Fitness> fitness,
+			   size_t introducedInGeneration = std::numeric_limits<size_t>::max()) const
+	{
+		return std::make_shared<Individual>(genome, fitness, introducedInGeneration);
+	}
+
 	void setLastMutationGeneration(size_t g)
 	{
 		assert(g >= m_introducedInGeneration);
@@ -37,7 +43,7 @@ public:
 
 	std::shared_ptr<Individual> createCopy() const
 	{
-		auto ind = std::make_shared<Individual>(m_genome->createCopy(), m_fitness->createCopy(), m_introducedInGeneration);
+		auto ind = createNew(m_genome->createCopy(), m_fitness->createCopy(), m_introducedInGeneration);
 		ind->m_lastMutationGeneration = m_lastMutationGeneration;
 		return ind;
 	}
@@ -113,6 +119,18 @@ public:
 
 	// TODO: all populations should have exactly the same genomes! (ie same number of floats)
 	virtual errut::bool_t calculatePopulationFitness(const std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
+};
+
+class IndividualCreation
+{
+public:
+	IndividualCreation() { }
+	virtual ~IndividualCreation() { }
+
+    // TODO: how to signal error?
+    virtual std::shared_ptr<Genome> createInitializedGenome() = 0;
+    virtual std::shared_ptr<Fitness> createEmptyFitness() = 0;
+	virtual std::shared_ptr<Individual> createReferenceIndividual() { return std::make_shared<Individual>(nullptr, nullptr); }
 };
 
 }

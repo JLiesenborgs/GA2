@@ -74,15 +74,4 @@ public:
 	virtual errut::bool_t calculate(const Genome &genome, Fitness &fitness) { return "Not implemented"; }
 };
 
-class GenomeFitnessCreation
-{
-public:
-	GenomeFitnessCreation() { }
-	virtual ~GenomeFitnessCreation() { }
-
-    // TODO: how to signal error?
-    virtual std::shared_ptr<Genome> createInitializedGenome() = 0;
-    virtual std::shared_ptr<Fitness> createEmptyFitness() = 0;
-};
-
 }

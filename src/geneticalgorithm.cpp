@@ -17,7 +17,7 @@ GeneticAlgorithm::~GeneticAlgorithm()
 // Note that the population size does not need to be constant throughout the loop,
 // more could arise so that their fitness is calculated. This is why the population
 // size is passed on to the populationcrossover
-bool_t GeneticAlgorithm::run(GenomeFitnessCreation &gfc,
+bool_t GeneticAlgorithm::run(IndividualCreation &gfc,
                              PopulationCrossover &popCross, // We really do need this, it keeps track of the best
                              PopulationFitnessCalculation &fitnessCalc,
                              StopCriterion &stopCriterion,
@@ -29,8 +29,13 @@ bool_t GeneticAlgorithm::run(GenomeFitnessCreation &gfc,
     auto population = make_shared<Population>();
     auto newPopulation = make_shared<Population>();
     auto refFitness = gfc.createEmptyFitness();
+    auto refIndividual = gfc.createReferenceIndividual();
+
     if (!refFitness.get())
         return "Unable to create a reference fitness object";
+
+    if (!refIndividual.get())
+        return "Unable to create reference individual";
 
     if (popSize == 0)
         return "No population size specified";
@@ -47,7 +52,7 @@ bool_t GeneticAlgorithm::run(GenomeFitnessCreation &gfc,
             return "Unable to create an inialized genome";
 
         auto f = refFitness->createCopy(false);
-        population->append(make_shared<Individual>(g, f, generation));
+        population->append(refIndividual->createNew(g, f, generation));
     }
 
     auto beforeFitnessCalculatedCallback = [&generation, &population, this]() -> bool_t

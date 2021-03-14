@@ -13,7 +13,7 @@ public:
     GeneticAlgorithm();
     virtual ~GeneticAlgorithm();
 
-    errut::bool_t run(GenomeFitnessCreation &gfc,
+    errut::bool_t run(IndividualCreation &gfc,
                PopulationCrossover &crossover,
                PopulationFitnessCalculation &fitnessCalc,
                StopCriterion &stopCriterion,

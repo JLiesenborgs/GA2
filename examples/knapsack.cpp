@@ -17,7 +17,7 @@ using namespace errut;
 using namespace std;
 using namespace mogal2;
 
-class Creation : public GenomeFitnessCreation
+class Creation : public IndividualCreation
 {
 public:
     Creation(const shared_ptr<RandomNumberGenerator> rng, size_t numItems)

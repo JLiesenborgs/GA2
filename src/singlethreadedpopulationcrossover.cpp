@@ -58,6 +58,9 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(size_t generation,
     vector<shared_ptr<Genome>> parentGenomes, offspring;
     vector<shared_ptr<Individual>> parentIndividuals, cloneIndividual;
     
+    if (m_genomeCrossover->getNumberOfParents() < 2)
+        return "Number of parents should be at least 2";
+
     parentGenomes.resize(m_genomeCrossover->getNumberOfParents());
     parentIndividuals.resize(m_genomeCrossover->getNumberOfParents());
     cloneIndividual.resize(1);
@@ -126,7 +129,7 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(size_t generation,
                 for (auto &g : offspring)
                 {
                     auto f = refFitness->createCopy(false);
-                    auto i = make_shared<Individual>(g, f, generation);
+                    auto i = parentIndividuals[0]->createNew(g, f, generation);
                     if (!(r = appendNewIndividual(i)))
                         return r;
                 }                

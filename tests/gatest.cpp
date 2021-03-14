@@ -81,7 +81,7 @@ protected:
     }
 };
 
-class TestFactory : public GenomeFitnessCreation
+class TestFactory : public IndividualCreation
 {
 public:
     TestFactory(unsigned long seed)
