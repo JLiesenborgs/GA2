@@ -88,15 +88,18 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(size_t generation,
 
         auto appendNewIndividual = [this, generation, &refFitness, &newPopulation](auto &i) -> bool_t
         {
-            bool isChanged = false;
-            bool_t r = m_genomeMutation->mutate(i->genomeRef(), isChanged);
-            if (!r)
-                return "Error mutating genome: " + r.getErrorString();
-
-            if (isChanged)
+            if (m_genomeMutation.get())
             {
-                i->fitness()->setCalculated(false);
-                i->setLastMutationGeneration(generation);
+                bool isChanged = false;
+                bool_t r = m_genomeMutation->mutate(i->genomeRef(), isChanged);
+                if (!r)
+                    return "Error mutating genome: " + r.getErrorString();
+
+                if (isChanged)
+                {
+                    i->fitness()->setCalculated(false);
+                    i->setLastMutationGeneration(generation);
+                }
             }
             newPopulation->append(i);
             return true;
