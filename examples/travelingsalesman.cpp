@@ -4,6 +4,7 @@
 #include "vectorgenomefitness.h"
 #include "singlethreadedpopulationcrossover.h"
 #include "rankparentselection.h"
+#include "tournamentparentselection.h"
 #include "simplesortedpopulation.h"
 #include "singlebestelitism.h"
 #include "remainingtargetpopulationsizeiteration.h"
@@ -125,12 +126,18 @@ int main(int argc, char const *argv[])
     unsigned int seed = rd();
     auto rng = make_shared<MersenneRandomNumberGenerator>(seed);
     auto creation = make_shared<Creation>(rng, cities.size());
-
+    auto cmp = make_shared<ValueFitnessComparison<double>>();
+    auto selection = make_shared<RankParentSelection>(2.5, rng);
+    //auto selection = make_shared<TournamentParentSelection>(rng, 5, cmp);
+    
     auto calcSingle = make_shared<SingleThreadedPopulationFitnessCalculation>(make_shared<TSPFitnessCalculation>(cities));
+    
     auto mutation = make_shared<PermutationSwapMutation>(rng, 0.5/cities.size());
+    //auto mutation = nullptr;
+
     auto cross = make_shared<SingleThreadedPopulationCrossover>(0.1, false,
-            make_shared<SimpleSortedPopulation>(make_shared<ValueFitnessComparison<double>>()),
-            make_shared<RankParentSelection>(2.5, rng),
+            make_shared<SimpleSortedPopulation>(cmp),
+            selection,
             make_shared<PermutationOrderCrossover>(rng, false),
             mutation,
             make_shared<SingleBestElitism>(true, mutation),
