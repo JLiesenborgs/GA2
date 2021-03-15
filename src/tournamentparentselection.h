@@ -17,9 +17,9 @@ public:
     ~TournamentParentSelection();
 
 	errut::bool_t check(const SelectionPopulation &pop) override;
-	errut::bool_t selectParents(const SelectionPopulation &pop, std::vector<std::shared_ptr<Individual>> &parents);
+	errut::bool_t selectParents(const Population &population, const SelectionPopulation &pop, std::vector<std::shared_ptr<Individual>> &parents);
 private:
-    std::vector<std::shared_ptr<Individual>> m_tournament;
+    size_t m_tournamentSize;
     std::shared_ptr<RandomNumberGenerator> m_rng;
     std::shared_ptr<FitnessComparison> m_cmp;
     size_t m_objectiveNumber;

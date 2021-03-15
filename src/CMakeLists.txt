@@ -21,6 +21,7 @@ set(HEADERS
 	singlethreadedpopulationfitnesscalculation.h
 	stopcriterion.h
 	tournamentparentselection.h
+	trackbestonlyselectionpopulation.h
 	uniformvectorgenomecrossover.h
 	valuefitness.h
 	valuevector.h
@@ -43,6 +44,7 @@ set(SOURCES
 	singlethreadedpopulationcrossover.cpp
 	singlethreadedpopulationfitnesscalculation.cpp
 	tournamentparentselection.cpp
+	trackbestonlyselectionpopulation.cpp
 	valuefitness.cpp
 	vectorgenomefitness.cpp)
 

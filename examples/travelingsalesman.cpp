@@ -11,6 +11,7 @@
 #include "singlethreadedpopulationfitnesscalculation.h"
 #include "permutationordercrossover.h"
 #include "permutationswapmutation.h"
+#include "trackbestonlyselectionpopulation.h"
 #include <iostream>
 
 using namespace errut;
@@ -127,16 +128,19 @@ int main(int argc, char const *argv[])
     auto rng = make_shared<MersenneRandomNumberGenerator>(seed);
     auto creation = make_shared<Creation>(rng, cities.size());
     auto cmp = make_shared<ValueFitnessComparison<double>>();
-    auto selection = make_shared<RankParentSelection>(2.5, rng);
-    //auto selection = make_shared<TournamentParentSelection>(rng, 5, cmp);
+    //auto selection = make_shared<RankParentSelection>(2.5, rng);
+    auto selection = make_shared<TournamentParentSelection>(rng, 3, cmp);
     
     auto calcSingle = make_shared<SingleThreadedPopulationFitnessCalculation>(make_shared<TSPFitnessCalculation>(cities));
     
     auto mutation = make_shared<PermutationSwapMutation>(rng, 0.5/cities.size());
     //auto mutation = nullptr;
+    
+    // auto sortedPop = make_shared<SimpleSortedPopulation>(cmp);
+    auto sortedPop = make_shared<TrackBestOnlySelectionPopulation>(cmp);
 
     auto cross = make_shared<SingleThreadedPopulationCrossover>(0.1, false,
-            make_shared<SimpleSortedPopulation>(cmp),
+            sortedPop,
             selection,
             make_shared<PermutationOrderCrossover>(rng, false),
             mutation,

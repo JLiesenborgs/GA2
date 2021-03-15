@@ -27,9 +27,11 @@ bool_t RankParentSelection::check(const SelectionPopulation &pop)
     return true;
 }
 
-bool_t RankParentSelection::selectParents(const SelectionPopulation &pop, std::vector<std::shared_ptr<Individual>> &parents)
+bool_t RankParentSelection::selectParents(const Population &population,
+                                          const SelectionPopulation &selPop,
+                                          std::vector<std::shared_ptr<Individual>> &parents)
 {
-    const NDSortedPopulation &ndPop = static_cast<const NDSortedPopulation &>(pop);
+    const NDSortedPopulation &ndPop = static_cast<const NDSortedPopulation &>(selPop);
     int numSets = ndPop.getNumberOfSets();
     assert(numSets > 0);
     

@@ -128,7 +128,9 @@ public:
 	// The length of 'parents' describes the number of parents that should be
 	// TODO: just a single parent? Letting the amount and possibly inbreeding be
 	//       controlled outside?
-	virtual errut::bool_t selectParents(const SelectionPopulation &pop, std::vector<std::shared_ptr<Individual>> &parents) { return "Not implemented in base class"; }
+	// Note that population might have been changed (e.g. the order) by the SelectionPopulation
+	// step that precedes it
+	virtual errut::bool_t selectParents(const Population &population, const SelectionPopulation &selPop, std::vector<std::shared_ptr<Individual>> &parents) { return "Not implemented in base class"; }
 };
 
 }

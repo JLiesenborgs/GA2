@@ -128,7 +128,7 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(size_t generation,
             double x = m_rng->getRandomDouble();
             if (x < m_cloneFraction) // TODO: can we do this more efficiently?
             {
-                if (!(r = m_parentSelection->selectParents(*m_selectionPop, cloneIndividual)))
+                if (!(r = m_parentSelection->selectParents(*population, *m_selectionPop, cloneIndividual)))
                     return "Error in clone parent selection: " + r.getErrorString();
 
                 auto i = cloneIndividual[0]->createCopy();
@@ -137,7 +137,7 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(size_t generation,
             }
             else
             {
-                if (!(r = m_parentSelection->selectParents(*m_selectionPop, parentIndividuals)))
+                if (!(r = m_parentSelection->selectParents(*population, *m_selectionPop, parentIndividuals)))
                     return "Error in parent selection: " + r.getErrorString();
 
                 for (size_t i = 0 ; i < parentIndividuals.size() ; i++)

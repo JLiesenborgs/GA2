@@ -88,7 +88,14 @@ public:
 
 	const std::vector<std::shared_ptr<Individual>> &individuals() const { return m_individuals; }
 	std::vector<std::shared_ptr<Individual>> &individuals() { return m_individuals; }
+	
 	std::shared_ptr<Individual> &individual(size_t n)
+	{
+		assert(n < m_individuals.size());
+		return m_individuals[n];
+	}
+
+	const std::shared_ptr<Individual> &individual(size_t n) const
 	{
 		assert(n < m_individuals.size());
 		return m_individuals[n];
