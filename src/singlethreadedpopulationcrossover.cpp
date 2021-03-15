@@ -35,9 +35,24 @@ bool_t SingleThreadedPopulationCrossover::check(const vector<shared_ptr<Populati
 
     for (auto pop : populations)
     {
+        if (pop->size() == 0)
+            return "A population is empty";
+    
         if (!(r = m_selectionPop->check(*pop)))
             return "Error checking selection preprocessing: " + r.getErrorString();
+    
+        size_t numCross = m_genomeCrossover->getNumberOfParents();
+        vector<shared_ptr<Genome>> crossGenomes(numCross);
+        for (auto &g : crossGenomes)
+            g = pop->individual(0)->genome()->createCopy();
+
+        if (!(r = m_genomeCrossover->check(crossGenomes)))
+            return "Error checking crossover: " + r.getErrorString();
+
+        if (!(r = m_genomeMutation->check(*pop->individual(0)->genome()->createCopy())))
+            return "Error checking mutation: " + r.getErrorString();        
     }
+
     if (m_elitism.get())
     {
         if (!(r = m_elitism->check(m_selectionPop)))
@@ -46,7 +61,9 @@ bool_t SingleThreadedPopulationCrossover::check(const vector<shared_ptr<Populati
     if (!m_popIteration.get())
         return "No new population iteration was set";
 
-    // TODO: check crossover, mutation, check parent selection
+    if (!(r = m_parentSelection->check(*m_selectionPop)))
+        return "Parent selection is not compatible with selection preprocessing: " + r.getErrorString();
+
     return true;
 }
 
