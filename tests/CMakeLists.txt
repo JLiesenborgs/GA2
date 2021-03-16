@@ -10,3 +10,5 @@ target_link_libraries(threadtest mogal2-static "${MOGAL2_LINK_LIBS}")
 add_executable(gatest gatest.cpp )
 target_link_libraries(gatest mogal2-static "${MOGAL2_LINK_LIBS}")
 
+add_executable(ndset ndset.cpp)
+target_link_libraries(ndset mogal2-static "${MOGAL2_LINK_LIBS}")
