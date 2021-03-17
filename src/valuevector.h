@@ -43,20 +43,24 @@ public:
 		return true;
 	}
 
-	errut::bool_t MPI_ISend(int dest, int tag, MPI_Comm communicator, MPI_Request *pRequest) const override
+	errut::bool_t MPI_Send(int dest, int tag, MPI_Comm communicator, std::vector<MPI_Request> &requests) const override
 	{
 		// TODO: does this work when m_values.size() == 0? Should it?
 
 		// Master and helper should already know the genome layout, no need to send the
 		// number of values first
-		MPI_Isend(m_values.data(), m_values.size(), m_mpiType, dest, tag, communicator, pRequest);
+		requests.resize(1);
+		MPI_Isend(m_values.data(), m_values.size(), m_mpiType, dest, tag, communicator, requests.data());
+		// ::MPI_Send(m_values.data(), m_values.size(), m_mpiType, dest, tag, communicator);
 		return true;
 	}
 
-	errut::bool_t MPI_IRecv(int src, int tag, MPI_Comm communicator, MPI_Request *pRequest) override
+	errut::bool_t MPI_Recv(int src, int tag, MPI_Comm communicator, std::vector<MPI_Request> &requests) override
 	{
 		// cerr << "Receiving " << m_values.size() << " floats" << endl;
-		MPI_Irecv(m_values.data(), m_values.size(), m_mpiType, src, tag, communicator, pRequest);
+		requests.resize(1);
+		MPI_Irecv(m_values.data(), m_values.size(), m_mpiType, src, tag, communicator, requests.data());
+		// ::MPI_Recv(m_values.data(), m_values.size(), m_mpiType, src, tag, communicator, MPI_STATUS_IGNORE);
 		return true;
 	}
 

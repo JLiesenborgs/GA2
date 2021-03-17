@@ -1,6 +1,6 @@
 
 Some things to consider:
- - niching
+ - niching/crowding
  - some further feedback from fitness calculation, like scale factor in
    lensing GA
    - adjust genome based on this
@@ -14,10 +14,9 @@ Some things to consider:
 Example problems:
  - Beam from Keane 1996
  - Eight Queens problem
- - Knapsack problem
  - graph k-colouring problem
  - moving optimum ES
    experiment,http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.35.8073
  - cases from https://ui.adsabs.harvard.edu/abs/1995ApJS..101..309C/abstract,
    Genetic Algorithms in Astronomy and Astrophysics
- - Traveling salesman
+ - NSGA II

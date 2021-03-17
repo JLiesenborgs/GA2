@@ -119,12 +119,7 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness(const vector<
 		}
 	}
 
-	vector<MPI_Request> requests;
-	auto getNextRequest = [&requests]()
-	{
-		requests.push_back(MPI_Request());
-		return &(requests.back());
-	};
+	m_allRequests.clear();
 
 	// First send everything to the helpers
 	for (int helper = 0 ; helper < (int)m_helperGenomes.size() ; helper++)
@@ -138,18 +133,21 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness(const vector<
 
 		for (int individual = 0 ; individual < numGenomes ; individual++)
 		{
+			m_subRequests.clear();
+
 			Genome *pGenome = thisHelperGenomes[individual].first;
-			MPI_Request *pReq = getNextRequest();
-			auto r = pGenome->MPI_ISend(helper, individual, m_comm, pReq);
+			auto r = pGenome->MPI_Send(helper, individual, m_comm, m_subRequests);
+			for (auto &r : m_subRequests)
+				m_allRequests.push_back(r);
 
 			if (!r)
-				return "Error in genome's MPI_ISend: " + r.getErrorString();
+				return "Error in genome's MPI_Send: " + r.getErrorString();
 		}
 	}
 
 	// Wait for the work to be received (we may not be doing MPI calls for a while,
 	// and don't want the sending to stall)
-	MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
+	MPI_Waitall(m_allRequests.size(), m_allRequests.data(), MPI_STATUSES_IGNORE);
 	
 	// Do our own work
 	auto r = m_localPopulationFitnessCalculation->calculatePopulationFitness({ m_localPop });
@@ -159,22 +157,27 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness(const vector<
 	// TODO: check calculation flags in localpop?
 	
 	// Receive the calculations
-	requests.clear();
+	m_allRequests.clear();
 	for (int helper = 0 ; helper < (int)m_helperGenomes.size() ; helper++)
 	{
 		auto &partHelperGenoms = m_helperGenomes[helper];
 		for (int individual = 0 ; individual < (int)partHelperGenoms.size() ; individual++)
 		{
+			m_subRequests.clear();
+
 			Fitness *pFitness = partHelperGenoms[individual].second;
 			assert(pFitness);
 
-			pFitness->MPI_IRecv(helper, individual, m_comm, getNextRequest());
+			pFitness->MPI_Recv(helper, individual, m_comm, m_subRequests);
 			pFitness->setCalculated();
 			// cerr << "Starting receive for " << helper << "," << individual << endl;
+
+			for (auto &r : m_subRequests)
+				m_allRequests.push_back(r);
 		}
 	}
 
-	MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
+	MPI_Waitall(m_allRequests.size(), m_allRequests.data(), MPI_STATUSES_IGNORE);
 	//cerr << "Local: " << localCount << ", remote: " << remoteCount << endl;
 
 	return true;
@@ -205,17 +208,23 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness_MPIHelper()
 		helperGenomes.push_back({genome.get(), fitness.get()});
 	}
 
-	vector<MPI_Request> requests(numGenomes);
+	m_allRequests.clear();
+
 	for (int i = 0 ; i < numGenomes ; i++)
 	{
+		m_subRequests.clear();
+
 		Genome *pGenome = helperGenomes[i].first;
-		auto r = pGenome->MPI_IRecv(m_root, i, m_comm, &requests[i]); 
+		auto r = pGenome->MPI_Recv(m_root, i, m_comm, m_subRequests); 
 		if (!r)
 			return "Error receiving genome in helper: " + r.getErrorString();
+
+		for (auto &r : m_subRequests)
+			m_allRequests.push_back(r);
 	}
 
 	// Wait for everything to be received
-	MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
+	MPI_Waitall(m_allRequests.size(), m_allRequests.data(), MPI_STATUSES_IGNORE);
 	// cerr << "Received genomes in helper" << endl;
 	
 	// TODO: make sure that fitness calculation flags are cleared!!
@@ -226,16 +235,21 @@ bool_t MPIPopulationFitnessCalculation::calculatePopulationFitness_MPIHelper()
 	// Send fitness results back
 	for (int individual = 0 ; individual < (int)helperGenomes.size() ; individual++)
 	{
+		m_subRequests.clear();
+
 		Fitness *pFitness = helperGenomes[individual].second;
-		if (!(r = pFitness->MPI_ISend(m_root, individual, m_comm, &requests[individual])))
+		if (!(r = pFitness->MPI_Send(m_root, individual, m_comm, m_subRequests)))
 			return "Error sending back fitness: " + r.getErrorString();
 		
 		// cerr << "Sending back fitness for " << individual << ": " << pFitness->toString() << endl;
 
 		pFitness->setCalculated(false); // Already clear flag again
+
+		for (auto &r : m_subRequests)
+			m_allRequests.push_back(r);
 	}
 
-	MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
+	MPI_Waitall(m_allRequests.size(), m_allRequests.data(), MPI_STATUSES_IGNORE);
 	
 	return true;
 }

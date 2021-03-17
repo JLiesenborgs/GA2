@@ -39,6 +39,10 @@ private:
 	std::weak_ptr<MPIEventDistributor> m_evtDist;
 
 	std::vector<std::vector<std::pair<Genome *, Fitness *>>> m_helperGenomes;
+
+	// Helper buffers, in class so they don't get allocated/deallocated too often
+	std::vector<MPI_Request> m_allRequests;
+	std::vector<MPI_Request> m_subRequests;
 };
 
 }

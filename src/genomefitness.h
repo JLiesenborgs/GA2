@@ -4,6 +4,7 @@
 #include <mpi.h>
 #include <errut/booltype.h>
 #include <memory>
+#include <vector>
 
 namespace mogal2
 {
@@ -17,8 +18,10 @@ public:
 	virtual std::string toString() const { return "?"; };
 
 	virtual errut::bool_t MPI_BroadcastLayout(int root, MPI_Comm communicator) { return "Not implemented"; }
-	virtual errut::bool_t MPI_ISend(int dest, int tag, MPI_Comm communicator, MPI_Request *pRequest) const { return "Not implemented"; }
-	virtual errut::bool_t MPI_IRecv(int src, int tag, MPI_Comm communicator, MPI_Request *pRequest) { return "Not implemented"; }
+	virtual errut::bool_t MPI_Send(int dest, int tag, MPI_Comm communicator,
+	                               std::vector<MPI_Request> &requests) const { return "Not implemented"; }
+	virtual errut::bool_t MPI_Recv(int src, int tag, MPI_Comm communicator,
+								   std::vector<MPI_Request> &requests) { return "Not implemented"; }
 };
 
 class Fitness
@@ -32,8 +35,10 @@ public:
 	void setCalculated(bool v = true) { m_calculated = v; }
 
 	virtual errut::bool_t MPI_BroadcastLayout(int root, MPI_Comm communicator) { return "Not implemented"; }
-	virtual errut::bool_t MPI_ISend(int dest, int tag, MPI_Comm communicator, MPI_Request *pRequest) const { return "Not implemented"; }
-	virtual errut::bool_t MPI_IRecv(int src, int tag, MPI_Comm communicator, MPI_Request *pRequest) { return "Not implemented"; }
+	virtual errut::bool_t MPI_Send(int dest, int tag, MPI_Comm communicator,
+	                               std::vector<MPI_Request> &requests) const { return "Not implemented"; }
+	virtual errut::bool_t MPI_Recv(int src, int tag, MPI_Comm communicator,
+								   std::vector<MPI_Request> &requests) { return "Not implemented"; }
 protected:
 	bool m_calculated;
 };
