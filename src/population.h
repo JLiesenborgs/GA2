@@ -41,7 +41,7 @@ public:
 			   std::to_string(m_lastMutationGeneration) + ")";
 	}
 
-	std::shared_ptr<Individual> createCopy() const
+	virtual std::shared_ptr<Individual> createCopy() const
 	{
 		auto ind = createNew(m_genome->createCopy(), m_fitness->createCopy(), m_introducedInGeneration);
 		ind->m_lastMutationGeneration = m_lastMutationGeneration;
