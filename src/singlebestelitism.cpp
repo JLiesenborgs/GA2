@@ -27,7 +27,7 @@ bool_t SingleBestElitism::check(const shared_ptr<SelectionPopulation> &selPop)
 }
 
 bool_t SingleBestElitism::introduceElites(size_t generation, const shared_ptr<SelectionPopulation> &selPop,
-                                shared_ptr<Population> &population,
+                                const shared_ptr<Population> &population,
                                 size_t targetPopulationSize)
 {
     if (population->size() != 0)

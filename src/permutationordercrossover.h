@@ -10,7 +10,7 @@ namespace mogal2
 class PermutationOrderCrossover : public GenomeCrossover
 {
 public:
-    PermutationOrderCrossover(std::shared_ptr<RandomNumberGenerator> rng, bool twoOffspring);
+    PermutationOrderCrossover(const std::shared_ptr<RandomNumberGenerator> &rng, bool twoOffspring);
 
 	errut::bool_t check(const std::vector<std::shared_ptr<Genome>> &parents) override;
 	errut::bool_t generateOffspring(const std::vector<std::shared_ptr<Genome>> &parents,

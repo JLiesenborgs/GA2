@@ -6,7 +6,7 @@ using namespace errut;
 namespace mogal2
 {
 
-SingleThreadedPopulationFitnessCalculation::SingleThreadedPopulationFitnessCalculation(shared_ptr<GenomeFitnessCalculation> genomeFitCalc)
+SingleThreadedPopulationFitnessCalculation::SingleThreadedPopulationFitnessCalculation(const shared_ptr<GenomeFitnessCalculation> &genomeFitCalc)
     : m_genomeFitnessCalculation(genomeFitCalc)
 { 
 }

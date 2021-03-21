@@ -19,7 +19,7 @@ MPIPopulationFitnessCalculation::~MPIPopulationFitnessCalculation()
 }
 
 bool_t MPIPopulationFitnessCalculation::init(const Genome &referenceGenome, const Fitness &referenceFitness,
-											 shared_ptr<PopulationFitnessCalculation> popCalc,
+											 const shared_ptr<PopulationFitnessCalculation> &popCalc,
 											 MPI_Comm communicator, int root)
 {
 	int size = 0;

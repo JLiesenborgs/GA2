@@ -10,13 +10,13 @@ namespace mogal2
 
 SingleThreadedPopulationCrossover::SingleThreadedPopulationCrossover(double cloneFraction,
                                     bool keepExistingPopulation,
-                                    shared_ptr<SelectionPopulation> selectionPop,
-                                    shared_ptr<ParentSelection> parentSelection,
-                                    shared_ptr<GenomeCrossover> genomeCrossover,
-                                    shared_ptr<GenomeMutation> genomeMutation,
-                                    shared_ptr<Elitism> elitism,
-                                    shared_ptr<PopulationCrossoverIteration> popIteration,
-                                    shared_ptr<RandomNumberGenerator> rng)
+                                    const shared_ptr<SelectionPopulation> &selectionPop,
+                                    const shared_ptr<ParentSelection> &parentSelection,
+                                    const shared_ptr<GenomeCrossover> &genomeCrossover,
+                                    const shared_ptr<GenomeMutation> &genomeMutation,
+                                    const shared_ptr<Elitism> &elitism,
+                                    const shared_ptr<PopulationCrossoverIteration> &popIteration,
+                                    const shared_ptr<RandomNumberGenerator> &rng)
     : m_keepExistingPopulation(keepExistingPopulation),
       m_cloneFraction(cloneFraction), m_selectionPop(selectionPop), 
       m_parentSelection(parentSelection), m_genomeCrossover(genomeCrossover),
@@ -122,8 +122,8 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(size_t generation,
             return true;
         };
 
-        m_popIteration->startNewIteration(newPopulation, targetPopulationSize);
-        while(m_popIteration->iterate(newPopulation))
+        m_popIteration->startNewIteration(*newPopulation, targetPopulationSize);
+        while(m_popIteration->iterate(*newPopulation))
         {
             double x = m_rng->getRandomDouble();
             if (x < m_cloneFraction) // TODO: can we do this more efficiently?

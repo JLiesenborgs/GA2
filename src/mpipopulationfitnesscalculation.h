@@ -19,7 +19,7 @@ public:
     // Need reference genome/fitness to be able to serialize it
 	errut::bool_t init(const Genome &referenceGenome,
 			    const Fitness &referenceFitness,
-				std::shared_ptr<PopulationFitnessCalculation> popCalc,
+				const std::shared_ptr<PopulationFitnessCalculation> &popCalc,
                 MPI_Comm communicator = MPI_COMM_WORLD,
                 int root = 0);
 

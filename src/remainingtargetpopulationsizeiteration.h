@@ -12,15 +12,15 @@ public:
     RemainingTargetPopulationSizeIteration() : m_remaining(0) { }
     ~RemainingTargetPopulationSizeIteration() { }
 	
-    void startNewIteration(std::shared_ptr<Population> &newPopulation, size_t targetPopulationSize) override
+    void startNewIteration(const Population &newPopulation, size_t targetPopulationSize) override
     {
-        if (targetPopulationSize < newPopulation->size())
+        if (targetPopulationSize < newPopulation.size())
             m_remaining = 0;
         else
-            m_remaining = targetPopulationSize - newPopulation->size();
+            m_remaining = targetPopulationSize - newPopulation.size();
     }
 	
-	bool iterate(std::shared_ptr<Population> &newPopulation) override
+	bool iterate(const Population &newPopulation) override
     {
         if (m_remaining == 0)
             return false;

@@ -80,9 +80,9 @@ public:
 	virtual ~PopulationCrossoverIteration() { }
 
 	// new population can already have some individuals from elitims for example
-	virtual void startNewIteration(std::shared_ptr<Population> &newPopulation, size_t targetPopulationSize) { }
+	virtual void startNewIteration(const Population &newPopulation, size_t targetPopulationSize) { }
 	// TODO: do we need other arguments here?
-	virtual bool iterate(std::shared_ptr<Population> &newPopulation) { return false; }
+	virtual bool iterate(const Population &newPopulation) { return false; }
 };
 
 // Something to give ParentSelection as input, e.g. a simple sorted population,
@@ -97,7 +97,7 @@ public:
 	
 	// May change population! (e.g sort it immediately)
 	// target population size is to allow pruning
-	virtual errut::bool_t processPopulation(std::shared_ptr<Population> &population, size_t targetPopulationSize) { return "Not implemented in base class"; }
+	virtual errut::bool_t processPopulation(const std::shared_ptr<Population> &population, size_t targetPopulationSize) { return "Not implemented in base class"; }
 
 	virtual const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const { return m_emptyBest; }
 private:
@@ -114,7 +114,7 @@ public:
 
 	// Population should be empty, number of genomes to skip should be set in this function
 	virtual errut::bool_t introduceElites(size_t generation, const std::shared_ptr<SelectionPopulation> &selPop,
-										  std::shared_ptr<Population> &population,
+										  const std::shared_ptr<Population> &population,
 										  size_t targetPopulationSize) { return "Not implemented in base class"; }
 };
 

@@ -12,7 +12,7 @@ template<class T>
 class UniformVectorGenomeCrossover : public GenomeCrossover
 {
 public:
-    UniformVectorGenomeCrossover(std::shared_ptr<RandomNumberGenerator> rng, bool twoOffspring = false) 
+    UniformVectorGenomeCrossover(const std::shared_ptr<RandomNumberGenerator> &rng, bool twoOffspring = false) 
         : m_rng(rng), m_twoOffspring(twoOffspring) { }
     ~UniformVectorGenomeCrossover() { }
 	

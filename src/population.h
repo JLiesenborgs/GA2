@@ -11,18 +11,17 @@ namespace mogal2
 {
 
 // TODO: record parents?
-// TODO: generation of creation? To allow age?
 class Individual
 {
 public:
-	Individual(std::shared_ptr<Genome> genome, std::shared_ptr<Fitness> fitness,
+	Individual(const std::shared_ptr<Genome> &genome, const std::shared_ptr<Fitness> &fitness,
 			   size_t introducedInGeneration = std::numeric_limits<size_t>::max())
 		: m_genome(genome), m_fitness(fitness),
 		  m_introducedInGeneration(introducedInGeneration), m_lastMutationGeneration(introducedInGeneration)
 	{
 	}
 
-	virtual std::shared_ptr<Individual> createNew(std::shared_ptr<Genome> genome, std::shared_ptr<Fitness> fitness,
+	virtual std::shared_ptr<Individual> createNew(const std::shared_ptr<Genome> &genome, const std::shared_ptr<Fitness> &fitness,
 			   size_t introducedInGeneration = std::numeric_limits<size_t>::max()) const
 	{
 		return std::make_shared<Individual>(genome, fitness, introducedInGeneration);

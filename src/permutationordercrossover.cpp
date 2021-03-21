@@ -7,7 +7,7 @@ using namespace errut;
 namespace mogal2
 {
 
-PermutationOrderCrossover::PermutationOrderCrossover(shared_ptr<RandomNumberGenerator> rng, bool twoOffspring)
+PermutationOrderCrossover::PermutationOrderCrossover(const shared_ptr<RandomNumberGenerator> &rng, bool twoOffspring)
  : m_rng(rng), m_twoOffspring(twoOffspring)
 {
     

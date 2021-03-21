@@ -11,13 +11,13 @@ class SingleThreadedPopulationCrossover : public PopulationCrossover
 {
 public:
     SingleThreadedPopulationCrossover(double cloneFraction, bool keepExistingPopulation,
-                                      std::shared_ptr<SelectionPopulation> selectionPop,
-                                      std::shared_ptr<ParentSelection> parentSelection,
-                                      std::shared_ptr<GenomeCrossover> genomeCrossover,
-                                      std::shared_ptr<GenomeMutation> genomeMutation,
-                                      std::shared_ptr<Elitism> elitism,
-                                      std::shared_ptr<PopulationCrossoverIteration> popIteration,
-                                      std::shared_ptr<RandomNumberGenerator> rng);
+                                      const std::shared_ptr<SelectionPopulation> &selectionPop,
+                                      const std::shared_ptr<ParentSelection> &parentSelection,
+                                      const std::shared_ptr<GenomeCrossover> &genomeCrossover,
+                                      const std::shared_ptr<GenomeMutation> &genomeMutation,
+                                      const std::shared_ptr<Elitism> &elitism,
+                                      const std::shared_ptr<PopulationCrossoverIteration> &popIteration,
+                                      const std::shared_ptr<RandomNumberGenerator> &rng);
     ~SingleThreadedPopulationCrossover();
     
     errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) override;
@@ -31,7 +31,7 @@ public:
         return m_selectionPop->getBestIndividuals();
     }
 protected:
-    virtual errut::bool_t onSelectionPopulationProcessed(size_t generation, std::shared_ptr<SelectionPopulation> &selPop) { return true; }
+    virtual errut::bool_t onSelectionPopulationProcessed(size_t generation, const std::shared_ptr<SelectionPopulation> &selPop) { return true; }
 private:
     double m_cloneFraction;
     bool m_keepExistingPopulation;

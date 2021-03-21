@@ -9,7 +9,7 @@ namespace mogal2
 class SingleThreadedPopulationFitnessCalculation : public PopulationFitnessCalculation
 {
 public:
-	SingleThreadedPopulationFitnessCalculation(std::shared_ptr<GenomeFitnessCalculation> genomeFitCalc);
+	SingleThreadedPopulationFitnessCalculation(const std::shared_ptr<GenomeFitnessCalculation> &genomeFitCalc);
 	~SingleThreadedPopulationFitnessCalculation();
 
 	errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) override;

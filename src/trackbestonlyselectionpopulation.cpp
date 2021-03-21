@@ -21,7 +21,7 @@ bool_t TrackBestOnlySelectionPopulation::check(const Population &population)
     return true;
 }
 
-bool_t TrackBestOnlySelectionPopulation::processPopulation(std::shared_ptr<Population> &population, size_t targetPopulationSize)
+bool_t TrackBestOnlySelectionPopulation::processPopulation(const std::shared_ptr<Population> &population, size_t targetPopulationSize)
 {
     assert(population->size() > 0);
 

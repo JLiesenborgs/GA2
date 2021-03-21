@@ -70,7 +70,7 @@ public:
     }
 
 protected:
-    bool_t onSelectionPopulationProcessed(size_t generation, std::shared_ptr<SelectionPopulation> &selPop) override
+    bool_t onSelectionPopulationProcessed(size_t generation, const std::shared_ptr<SelectionPopulation> &selPop) override
     {
         const SimpleSortedPopulation *pSortPop = dynamic_cast<const SimpleSortedPopulation *>(selPop.get());
         if (!pSortPop)
