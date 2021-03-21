@@ -9,13 +9,17 @@
 namespace mogal2
 {
 
-class Genome
+template<class T>
+class GenomeFitnessBase
 {
+protected:
+	GenomeFitnessBase() { }
 public:
-	Genome() { }
-	virtual ~Genome() { }
-	virtual std::shared_ptr<Genome> createCopy(bool copyContents = true) const { return nullptr; }
+	virtual ~GenomeFitnessBase() { }
+
 	virtual std::string toString() const { return "?"; };
+
+	virtual std::shared_ptr<T> createCopy(bool copyContents = true) const { return nullptr; }
 
 	virtual errut::bool_t MPI_BroadcastLayout(int root, MPI_Comm communicator) { return "Not implemented"; }
 	virtual errut::bool_t MPI_Send(int dest, int tag, MPI_Comm communicator,
@@ -24,21 +28,21 @@ public:
 								   std::vector<MPI_Request> &requests) { return "Not implemented"; }
 };
 
-class Fitness
+class Genome : public GenomeFitnessBase<Genome>
+{
+public:
+	Genome() { }
+	~Genome() { }
+};
+
+class Fitness : public GenomeFitnessBase<Fitness>
 {
 public:
 	Fitness() : m_calculated(false) { }
-	virtual ~Fitness() { }
-	virtual std::shared_ptr<Fitness> createCopy(bool copyContents = true) const { return nullptr; }
-	virtual std::string toString() const { return "?"; };
+	~Fitness() { }
+
 	bool isCalculated() const { return m_calculated; }
 	void setCalculated(bool v = true) { m_calculated = v; }
-
-	virtual errut::bool_t MPI_BroadcastLayout(int root, MPI_Comm communicator) { return "Not implemented"; }
-	virtual errut::bool_t MPI_Send(int dest, int tag, MPI_Comm communicator,
-	                               std::vector<MPI_Request> &requests) const { return "Not implemented"; }
-	virtual errut::bool_t MPI_Recv(int src, int tag, MPI_Comm communicator,
-								   std::vector<MPI_Request> &requests) { return "Not implemented"; }
 protected:
 	bool m_calculated;
 };
