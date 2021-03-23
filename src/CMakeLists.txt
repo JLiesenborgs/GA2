@@ -3,6 +3,8 @@ add_definitions(-DMOGAL2_COMPILING)
 set(HEADERS
 	basicnondominatedsetcreator.h
 	crossovermutation.h
+	duplicateindividualremoval.h
+	fitnessbasedduplicateremoval.h
 	geneticalgorithm.h
 	genomefitness.h
 	mersennerandomnumbergenerator.h
@@ -10,6 +12,7 @@ set(HEADERS
 	mpipopulationfitnesscalculation.h
 	multithreadedpopulationfitnesscalculation.h
 	ndsortedpopulation.h
+	ndsortedpopulationinterface.h
 	nondominatedsetcreator.h
 	permutationordercrossover.h
 	permutationswapmutation.h
@@ -34,11 +37,13 @@ set(HEADERS
 
 set(SOURCES
 	basicnondominatedsetcreator.cpp
+	fitnessbasedduplicateremoval.cpp
 	geneticalgorithm.cpp
 	mersennerandomnumbergenerator.cpp
 	mpieventdistributor.cpp
 	mpipopulationfitnesscalculation.cpp
 	multithreadedpopulationfitnesscalculation.cpp
+	ndsortedpopulation.cpp
 	permutationordercrossover.cpp
 	permutationswapmutation.cpp
 	rankparentselection.cpp

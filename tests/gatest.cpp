@@ -12,6 +12,9 @@
 #include "valuefitness.h"
 #include "vectorgenomeuniformmutation.h"
 #include "remainingtargetpopulationsizeiteration.h"
+#include "ndsortedpopulation.h"
+#include "basicnondominatedsetcreator.h"
+#include "fitnessbasedduplicateremoval.h"
 #include <cassert>
 #include <iostream>
 
@@ -58,7 +61,11 @@ public:
     MyCrossOver(shared_ptr<RandomNumberGenerator> rng, shared_ptr<GenomeMutation> mutation)
         : SingleThreadedPopulationCrossover(0.1, false,
             // make_shared<SimpleSortedPopulation>(make_shared<VectorFitnessComparison<RealType>>()),
-            make_shared<SimpleSortedPopulation>(make_shared<ValueFitnessComparison<RealType>>()),
+            //make_shared<SimpleSortedPopulation>(make_shared<ValueFitnessComparison<RealType>>()),
+            make_shared<NDSortedPopulation>(
+                make_shared<BasicNonDominatedSetCreator>(make_shared<ValueFitnessComparison<RealType>>(), 1),
+                make_shared<FitnessBasedDuplicateRemoval>(make_shared<ValueFitnessComparison<RealType>>(), 1)
+            ),
             make_shared<RankParentSelection>(2.5, rng),
             make_shared<UniformVectorGenomeCrossover<RealType>>(rng, false),
             mutation,
@@ -72,11 +79,13 @@ public:
 protected:
     bool_t onSelectionPopulationProcessed(size_t generation, const std::shared_ptr<SelectionPopulation> &selPop) override
     {
-        const SimpleSortedPopulation *pSortPop = dynamic_cast<const SimpleSortedPopulation *>(selPop.get());
+        const NDSortedPopulationInterface *pSortPop = dynamic_cast<const NDSortedPopulationInterface *>(selPop.get());
         if (!pSortPop)
             return "Selection population is not of expected type";
         cout << "Sorted population for generation " << generation << ":" << endl;
-        pSortPop->getSortedPopulation()->print();
+        for (size_t s = 0 ; s < pSortPop->getNumberOfSets() ; s++)
+            for (size_t i = 0 ; i < pSortPop->getSetSize(s) ; i++)
+                cout << pSortPop->getIndividual(s, i)->toString() << endl;
         return true;
     }
 };
