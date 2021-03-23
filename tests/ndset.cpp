@@ -1,126 +1,13 @@
 #include "population.h"
 #include "mersennerandomnumbergenerator.h"
 #include "vectorgenomefitness.h"
+#include "basicnondominatedsetcreator.h"
 #include <iostream>
 #include <algorithm>
 
 using namespace std;
 using namespace errut;
 using namespace mogal2;
-
-class BasicNDSetCreator
-{
-public:
-    BasicNDSetCreator(const shared_ptr<FitnessComparison> &fitCmp, size_t numObjectives)
-     : m_cmp(fitCmp), m_numObjectives(numObjectives) { }
-    ~BasicNDSetCreator() { }
-
-    bool_t calculateAllNDSets(const vector<shared_ptr<Individual>> &individuals);
-    bool_t calculateNonDomitatedSet(const vector<shared_ptr<Individual>> &individuals,
-        vector<shared_ptr<Individual>> &ndSet,
-        vector<shared_ptr<Individual>> &remaining);
-
-    size_t getNumberOfSets() const { return m_sets.size(); }
-    const vector<shared_ptr<Individual>> &getSet(size_t idx) const { return m_sets[idx]; }
-private:
-    size_t m_numObjectives;
-    shared_ptr<FitnessComparison> m_cmp;
-    
-    vector<vector<shared_ptr<Individual>>> m_sets;
-    vector<shared_ptr<Individual>> m_tmpND, m_tmpRem[2];
-};
-
-bool_t BasicNDSetCreator::calculateAllNDSets(const vector<shared_ptr<Individual>> &individuals)
-{
-    m_sets.clear();
-
-    const vector<shared_ptr<Individual>> *pIn = &individuals;
-    vector<shared_ptr<Individual>> *pND = &m_tmpND;
-    vector<shared_ptr<Individual>> *pRem = &m_tmpRem[0];
-    size_t rIdx = 0;
-    bool_t r;
-
-    while (true)
-    {
-        if (pIn->size() == 0)
-            break;
-
-        pND->clear();
-        pRem->clear();
-
-        if (!(r = calculateNonDomitatedSet(*pIn, *pND, *pRem)))
-            return "Error calulating one of the sets: " + r.getErrorString();
-
-        size_t newIdx = m_sets.size();
-        m_sets.resize(newIdx+1);
-        swap(m_sets[newIdx], *pND);
-
-        pIn = pRem;
-        rIdx++;
-        pRem = &m_tmpRem[rIdx%2];
-    }
-    return true;
-}
-
-bool_t BasicNDSetCreator::calculateNonDomitatedSet(const vector<shared_ptr<Individual>> &individuals,
-                                                   vector<shared_ptr<Individual>> &ndSet,
-                                                   vector<shared_ptr<Individual>> &remaining)
-{
-    ndSet.clear();
-    remaining.clear();
-
-    const size_t N = m_numObjectives;
-    FitnessComparison &cmp = *m_cmp;
-
-    auto isDominated = [&cmp, N](auto &i, auto &j)
-    {
-        size_t betterCount = 0;
-        size_t betterEqualCount = 0;
-
-        for (size_t k = 0 ; k < N ; k++)
-        {
-            const Fitness &fi = i->fitnessRef();
-            const Fitness &fj = j->fitnessRef();
-            if (cmp.isFitterThan(fj, fi, k))
-            {
-                betterCount++;
-                betterEqualCount++;
-            }
-            else
-            {
-                if (!cmp.isFitterThan(fi, fj, k))
-                    betterEqualCount++;
-            }
-        }
-
-        if (betterEqualCount == N && betterCount > 0)
-            return true;
-        return false;
-    };
-
-    for (auto &i : individuals)
-    {
-        bool found = false;
-
-        for (auto &j : individuals)
-        {
-            if (i.get() == j.get())
-                continue;
-
-            if (isDominated(i, j))
-            {
-                found = true;
-                break;
-            }
-        }
-
-        if (!found)
-            ndSet.push_back(i);
-        else
-            remaining.push_back(i);
-    }
-    return true;
-}
 
 int main(int argc, char const *argv[])
 {
@@ -146,7 +33,7 @@ int main(int argc, char const *argv[])
     vector<shared_ptr<Individual>> ndSet;
     vector<shared_ptr<Individual>> remainder;
 
-    BasicNDSetCreator bndsc(make_shared<VectorFitnessComparison<float>>(), dim);
+    BasicNonDominatedSetCreator bndsc(make_shared<VectorFitnessComparison<float>>(), dim);
     bool_t r;
     
     auto printSet = [dim](auto &v)

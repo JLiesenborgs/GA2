@@ -1,5 +1,5 @@
 #include "rankparentselection.h"
-#include "ndsortedpopulation.h"
+#include "ndsortedpopulationinterface.h"
 #include <cassert>
 #include <cmath>
 
@@ -20,7 +20,7 @@ RankParentSelection::~RankParentSelection()
 
 bool_t RankParentSelection::check(const SelectionPopulation &pop)
 {
-    const NDSortedPopulation *pPop = dynamic_cast<const NDSortedPopulation *>(&pop);
+    const NDSortedPopulationInterface *pPop = dynamic_cast<const NDSortedPopulationInterface *>(&pop);
     if (!pPop)
         return "Expecting an ND sorted population";
 
@@ -31,7 +31,7 @@ bool_t RankParentSelection::selectParents(const Population &population,
                                           const SelectionPopulation &selPop,
                                           std::vector<std::shared_ptr<Individual>> &parents)
 {
-    const NDSortedPopulation &ndPop = static_cast<const NDSortedPopulation &>(selPop);
+    const NDSortedPopulationInterface &ndPop = static_cast<const NDSortedPopulationInterface &>(selPop);
     int numSets = ndPop.getNumberOfSets();
     assert(numSets > 0);
     

@@ -1,13 +1,13 @@
 #pragma once
 
 #include "mogal2config.h"
-#include "ndsortedpopulation.h"
+#include "ndsortedpopulationinterface.h"
 #include <cassert>
 
 namespace mogal2
 {
 
-class SimpleSortedPopulation : public NDSortedPopulation
+class SimpleSortedPopulation : public NDSortedPopulationInterface
 {
 public:
     // TODO: add some kind of pruning operator?
@@ -20,9 +20,9 @@ public:
     errut::bool_t processPopulation(const std::shared_ptr<Population> &population, size_t targetPopulationSize) override;
     std::shared_ptr<Population> getSortedPopulation() const { return m_lastPopulation; }
 
-    int getNumberOfSets() const override { return (int)m_lastPopulation->size(); }
-    int getSetSize(int s) const override { return 1; }
-    std::shared_ptr<Individual> getIndividual(int s, int i) const override
+    size_t getNumberOfSets() const override { return m_lastPopulation->size(); }
+    size_t getSetSize(size_t s) const override { return 1; }
+    std::shared_ptr<Individual> getIndividual(size_t s, size_t i) const override
     {
         assert(m_lastPopulation.get());
         assert(s >= 0 && s < (int)m_lastPopulation->size());

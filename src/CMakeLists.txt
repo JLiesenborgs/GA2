@@ -1,6 +1,7 @@
 add_definitions(-DMOGAL2_COMPILING)
 
 set(HEADERS
+	basicnondominatedsetcreator.h
 	crossovermutation.h
 	geneticalgorithm.h
 	genomefitness.h
@@ -9,6 +10,7 @@ set(HEADERS
 	mpipopulationfitnesscalculation.h
 	multithreadedpopulationfitnesscalculation.h
 	ndsortedpopulation.h
+	nondominatedsetcreator.h
 	permutationordercrossover.h
 	permutationswapmutation.h
 	population.h
@@ -31,6 +33,7 @@ set(HEADERS
 	"${PROJECT_BINARY_DIR}/src/mogal2config.h" )
 
 set(SOURCES
+	basicnondominatedsetcreator.cpp
 	geneticalgorithm.cpp
 	mersennerandomnumbergenerator.cpp
 	mpieventdistributor.cpp
