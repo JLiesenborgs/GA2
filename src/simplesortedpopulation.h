@@ -22,7 +22,7 @@ public:
 
     size_t getNumberOfSets() const override { return m_lastPopulation->size(); }
     size_t getSetSize(size_t s) const override { return 1; }
-    std::shared_ptr<Individual> getIndividual(size_t s, size_t i) const override
+    const std::shared_ptr<Individual> &getIndividual(size_t s, size_t i) const override
     {
         assert(m_lastPopulation.get());
         assert(s >= 0 && s < (int)m_lastPopulation->size());

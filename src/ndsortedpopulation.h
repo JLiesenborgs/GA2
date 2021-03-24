@@ -22,7 +22,7 @@ public:
 
     size_t getNumberOfSets() const override { return m_ndSetCreator->getNumberOfSets(); }
     size_t getSetSize(size_t s) const override { return m_ndSetCreator->getSet(s).size(); }
-    std::shared_ptr<Individual> getIndividual(size_t s, size_t i) const override { return m_ndSetCreator->getSet(s)[i]; }
+    const std::shared_ptr<Individual> &getIndividual(size_t s, size_t i) const override { return m_ndSetCreator->getSet(s)[i]; }
 private:
     std::vector<std::shared_ptr<Individual>> m_best;
     std::shared_ptr<NonDominatedSetCreator> m_ndSetCreator;
