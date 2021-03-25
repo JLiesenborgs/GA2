@@ -135,6 +135,10 @@ public:
 
     // TODO: how to signal error?
     virtual std::shared_ptr<Genome> createInitializedGenome() = 0;
+	
+	// Can override this to bypass e.g. random numbers being generated
+	virtual std::shared_ptr<Genome> createUnInitializedGenome() { return createInitializedGenome(); }
+
     virtual std::shared_ptr<Fitness> createEmptyFitness() = 0;
 	virtual std::shared_ptr<Individual> createReferenceIndividual() { return std::make_shared<Individual>(nullptr, nullptr); }
 };
