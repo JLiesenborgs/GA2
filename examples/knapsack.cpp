@@ -1,4 +1,4 @@
-#include "geneticalgorithm.h"
+#include "evolutionaryalgorithm.h"
 #include "mersennerandomnumbergenerator.h"
 #include "valuefitness.h"
 #include "vectorgenomefitness.h"
@@ -64,7 +64,7 @@ public:
     }
 };
 
-class MyGA : public GeneticAlgorithm
+class MyGA : public EvolutionaryAlgorithm
 {
 protected:
     bool_t onAlgorithmDone(size_t generation, const std::vector<std::shared_ptr<Individual>> &bestIndividuals) override

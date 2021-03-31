@@ -5,7 +5,7 @@ set(HEADERS
 	crossovermutation.h
 	duplicateindividualremoval.h
 	fitnessbasedduplicateremoval.h
-	geneticalgorithm.h
+	evolutionaryalgorithm.h
 	genomefitness.h
 	mersennerandomnumbergenerator.h
 	mpieventdistributor.h
@@ -38,7 +38,7 @@ set(HEADERS
 set(SOURCES
 	basicnondominatedsetcreator.cpp
 	fitnessbasedduplicateremoval.cpp
-	geneticalgorithm.cpp
+	evolutionaryalgorithm.cpp
 	mersennerandomnumbergenerator.cpp
 	mpieventdistributor.cpp
 	mpipopulationfitnesscalculation.cpp

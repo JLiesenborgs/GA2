@@ -1,4 +1,4 @@
-#include "geneticalgorithm.h"
+#include "evolutionaryalgorithm.h"
 
 using namespace std;
 using namespace errut;
@@ -6,19 +6,19 @@ using namespace errut;
 namespace eatk
 {
 
-GeneticAlgorithm::GeneticAlgorithm()
+EvolutionaryAlgorithm::EvolutionaryAlgorithm()
 {
 }
 
-GeneticAlgorithm::~GeneticAlgorithm()
+EvolutionaryAlgorithm::~EvolutionaryAlgorithm()
 {
 }
 
 // Note that the population size does not need to be constant throughout the loop,
 // more could arise so that their fitness is calculated. This is why the population
 // size is passed on to the populationcrossover
-bool_t GeneticAlgorithm::run(IndividualCreation &gfc,
-                             PopulationCrossover &popCross, // We really do need this, it keeps track of the best
+bool_t EvolutionaryAlgorithm::run(IndividualCreation &gfc,
+                             PopulationEvolver &evolver, // We really do need this, it keeps track of the best
                              PopulationFitnessCalculation &fitnessCalc,
                              StopCriterion &stopCriterion,
                              size_t popSize,
@@ -84,10 +84,10 @@ bool_t GeneticAlgorithm::run(IndividualCreation &gfc,
     {        
         if (generation == 0)
         {
-            if (!(r = popCross.check(population)))
-                return "Error in population crossover check: " + r.getErrorString();
+            if (!(r = evolver.check(population)))
+                return "Error in population evolver check: " + r.getErrorString();
         }
-        if (!(r = popCross.createNewPopulation(generation, population, popSize)))
+        if (!(r = evolver.createNewPopulation(generation, population, popSize)))
             return "Error creating new population: " + r.getErrorString();
 
         const size_t curPopSize = population->size();
@@ -109,13 +109,13 @@ bool_t GeneticAlgorithm::run(IndividualCreation &gfc,
 
         bool shouldStop = false;
 
-        if (!(r = stopCriterion.analyze(popCross.getBestIndividuals(), generation, shouldStop)))
+        if (!(r = stopCriterion.analyze(evolver.getBestIndividuals(), generation, shouldStop)))
             return "Error in termination check: " + r.getErrorString();
         if (shouldStop)
             break;
     }
 
-    if (!(r = onAlgorithmDone(generation, popCross.getBestIndividuals())))
+    if (!(r = onAlgorithmDone(generation, evolver.getBestIndividuals())))
         return "Error inspecting best individuals upon algorithm end: " + r.getErrorString();
 
     return true;

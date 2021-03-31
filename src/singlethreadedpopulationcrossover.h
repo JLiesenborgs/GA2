@@ -7,7 +7,7 @@
 namespace eatk
 {
 
-class SingleThreadedPopulationCrossover : public PopulationCrossover
+class SingleThreadedPopulationCrossover : public PopulationEvolver
 {
 public:
     SingleThreadedPopulationCrossover(double cloneFraction, bool keepExistingPopulation,

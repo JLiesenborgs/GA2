@@ -39,11 +39,11 @@ public:
 };
 
 // allow in-place? some children that overwrite older parents?
-class PopulationCrossover
+class PopulationEvolver
 {
 public:
-	PopulationCrossover() { m_tmp.resize(1); }
-	virtual ~PopulationCrossover() { }
+	PopulationEvolver() { m_tmp.resize(1); }
+	virtual ~PopulationEvolver() { }
 
 	virtual errut::bool_t check(const std::shared_ptr<Population> &population)
 	{

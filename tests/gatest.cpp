@@ -1,4 +1,4 @@
-#include "geneticalgorithm.h"
+#include "evolutionaryalgorithm.h"
 #include "vectorgenomefitness.h"
 #include "mersennerandomnumbergenerator.h"
 #include "uniformvectorgenomecrossover.h"
@@ -27,7 +27,7 @@ using namespace eatk;
 
 typedef double RealType;
 
-class MyGA : public GeneticAlgorithm
+class MyGA : public EvolutionaryAlgorithm
 {
 protected:
     bool_t onBeforeFitnessCalculation(size_t generation, std::shared_ptr<Population> &population) override
@@ -114,7 +114,7 @@ public:
         //return make_shared<VectorFitness<RealType>>(1);
     }
 
-    shared_ptr<PopulationCrossover> getPopulationCrossover()
+    shared_ptr<PopulationEvolver> getPopulationCrossover()
     {
         return m_crossover;
     }

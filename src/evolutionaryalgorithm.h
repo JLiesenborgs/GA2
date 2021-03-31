@@ -7,14 +7,14 @@
 namespace eatk
 {
 
-class GeneticAlgorithm
+class EvolutionaryAlgorithm
 {
 public:
-    GeneticAlgorithm();
-    virtual ~GeneticAlgorithm();
+    EvolutionaryAlgorithm();
+    virtual ~EvolutionaryAlgorithm();
 
     errut::bool_t run(IndividualCreation &gfc,
-               PopulationCrossover &crossover,
+               PopulationEvolver &evolver,
                PopulationFitnessCalculation &fitnessCalc,
                StopCriterion &stopCriterion,
                size_t popSize,
