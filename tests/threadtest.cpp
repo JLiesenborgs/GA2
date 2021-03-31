@@ -9,7 +9,7 @@
 #include <cstdio>
 
 // TODO: for genome and fitness, a copyInto function? So that memory doesn't need to be
-//       allocated/reallocated often
+//	   allocated/reallocated often
 
 using namespace std;
 using namespace errut;

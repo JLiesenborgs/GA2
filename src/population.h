@@ -36,7 +36,7 @@ public:
 	std::string toString() const
 	{
 		return m_genome->toString() + ": " + m_fitness->toString() + "(" +
-		       std::to_string(m_introducedInGeneration)+ "/" +
+			   std::to_string(m_introducedInGeneration)+ "/" +
 			   std::to_string(m_lastMutationGeneration) + ")";
 	}
 
@@ -105,9 +105,9 @@ public:
 		using namespace std;
 
 		cout << "Population: " << endl;
-	    for (auto &i : m_individuals)
-    	    cout << i->toString() << endl;
-    	cout << endl;
+		for (auto &i : m_individuals)
+			cout << i->toString() << endl;
+		cout << endl;
 	}
 private:
 	std::vector<std::shared_ptr<Individual>> m_individuals;
@@ -133,13 +133,13 @@ public:
 	IndividualCreation() { }
 	virtual ~IndividualCreation() { }
 
-    // TODO: how to signal error?
-    virtual std::shared_ptr<Genome> createInitializedGenome() = 0;
+	// TODO: how to signal error?
+	virtual std::shared_ptr<Genome> createInitializedGenome() = 0;
 	
 	// Can override this to bypass e.g. random numbers being generated
 	virtual std::shared_ptr<Genome> createUnInitializedGenome() { return createInitializedGenome(); }
 
-    virtual std::shared_ptr<Fitness> createEmptyFitness() = 0;
+	virtual std::shared_ptr<Fitness> createEmptyFitness() = 0;
 	virtual std::shared_ptr<Individual> createReferenceIndividual() { return std::make_shared<Individual>(nullptr, nullptr); }
 };
 

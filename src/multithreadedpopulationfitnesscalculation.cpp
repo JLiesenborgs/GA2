@@ -24,7 +24,7 @@ bool_t MultiThreadedPopulationFitnessCalculation::initThreadPool(const std::vect
 		return "Need at least one thread";
 
 	// TODO: for now we're not using a real thread pool, for simplicity we'll just
-	//       spawn threads when needed
+	//	   spawn threads when needed
 	return true;
 }
 
@@ -33,7 +33,7 @@ class Countdown
 public:
 	Countdown(size_t n) : m_num (n) { }
 	~Countdown() { }
-    void wait()
+	void wait()
 	{
 		unique_lock<mutex> l(m_mut);
 		if (m_num == 0)
@@ -53,8 +53,8 @@ public:
 	}
 private:
 	size_t m_num;
-    condition_variable m_cond;
-    mutex m_mut;
+	condition_variable m_cond;
+	mutex m_mut;
 };
 
 errut::bool_t MultiThreadedPopulationFitnessCalculation::check(const std::vector<std::shared_ptr<Population>> &populations)
@@ -150,7 +150,7 @@ bool_t MultiThreadedPopulationFitnessCalculation::calculatePopulationFitness(con
 
 	for (size_t id = 0 ; id < helpers.size() ; id++)
 		helpers[id] = thread(helperThread, id, helpers.size(), m_threadGenomeCalculations[id].get(),
-		                     &errors[id], &errorMessages[id], &barrier);
+							 &errors[id], &errorMessages[id], &barrier);
 	
 	for (auto &t : helpers)
 		t.join();

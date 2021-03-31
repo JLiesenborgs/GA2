@@ -22,7 +22,7 @@ public:
 	virtual errut::bool_t check(const std::vector<std::shared_ptr<Genome>> &parents) { return "Not implemented in base class"; }
 
 	virtual errut::bool_t generateOffspring(const std::vector<std::shared_ptr<Genome>> &parents,
-	                                        std::vector<std::shared_ptr<Genome>> &generatedOffspring) { return "Not implemented in base class"; }
+											std::vector<std::shared_ptr<Genome>> &generatedOffspring) { return "Not implemented in base class"; }
 private:
 	size_t m_numParents;
 };
@@ -127,7 +127,7 @@ public:
 	virtual errut::bool_t check(const SelectionPopulation &pop) { return "Not implemented in base class"; }
 	// The length of 'parents' describes the number of parents that should be
 	// TODO: just a single parent? Letting the amount and possibly inbreeding be
-	//       controlled outside?
+	//	   controlled outside?
 	// Note that population might have been changed (e.g. the order) by the SelectionPopulation
 	// step that precedes it
 	virtual errut::bool_t selectParents(const Population &population, const SelectionPopulation &selPop, std::vector<std::shared_ptr<Individual>> &parents) { return "Not implemented in base class"; }

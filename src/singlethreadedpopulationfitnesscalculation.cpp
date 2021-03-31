@@ -7,7 +7,7 @@ namespace eatk
 {
 
 SingleThreadedPopulationFitnessCalculation::SingleThreadedPopulationFitnessCalculation(const shared_ptr<GenomeFitnessCalculation> &genomeFitCalc)
-    : m_genomeFitnessCalculation(genomeFitCalc)
+	: m_genomeFitnessCalculation(genomeFitCalc)
 { 
 }
 

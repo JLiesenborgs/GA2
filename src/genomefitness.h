@@ -28,7 +28,7 @@ public:
 #ifdef EATKCONFIG_MPISUPPORT
 	virtual errut::bool_t MPI_BroadcastLayout(int root, MPI_Comm communicator) { return "Not implemented"; }
 	virtual errut::bool_t MPI_Send(int dest, int tag, MPI_Comm communicator,
-	                               std::vector<MPI_Request> &requests) const { return "Not implemented"; }
+								   std::vector<MPI_Request> &requests) const { return "Not implemented"; }
 	virtual errut::bool_t MPI_Recv(int src, int tag, MPI_Comm communicator,
 								   std::vector<MPI_Request> &requests) { return "Not implemented"; }
 #endif // EATKCONFIG_MPISUPPORT

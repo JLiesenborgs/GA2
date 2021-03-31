@@ -19,12 +19,12 @@ public:
 
 	// Layout will be exchanged between master and helpers, should be called
 	// at same time at master and helpers
-    // Need reference genome/fitness to be able to serialize it
+	// Need reference genome/fitness to be able to serialize it
 	errut::bool_t init(const Genome &referenceGenome,
-			    const Fitness &referenceFitness,
+				const Fitness &referenceFitness,
 				const std::shared_ptr<PopulationFitnessCalculation> &popCalc,
-                MPI_Comm communicator = MPI_COMM_WORLD,
-                int root = 0);
+				MPI_Comm communicator = MPI_COMM_WORLD,
+				int root = 0);
 
 	errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) override;
 	errut::bool_t calculatePopulationFitness(const std::vector<std::shared_ptr<Population>> &populations) override;
@@ -36,8 +36,8 @@ private:
 	std::shared_ptr<Fitness> m_referenceFitness;
 	std::shared_ptr<Population> m_localPop;
 	std::shared_ptr<PopulationFitnessCalculation> m_localPopulationFitnessCalculation;
-    MPI_Comm m_comm;
-    int m_root, m_mpiSize;
+	MPI_Comm m_comm;
+	int m_root, m_mpiSize;
 
 	std::weak_ptr<MPIEventDistributor> m_evtDist;
 
