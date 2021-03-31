@@ -3,7 +3,7 @@
 using namespace std;
 using namespace errut;
 
-namespace mogal2
+namespace eatk
 {
 
 SingleThreadedPopulationFitnessCalculation::SingleThreadedPopulationFitnessCalculation(const shared_ptr<GenomeFitnessCalculation> &genomeFitCalc)

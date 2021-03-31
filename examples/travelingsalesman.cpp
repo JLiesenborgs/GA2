@@ -16,7 +16,7 @@
 
 using namespace errut;
 using namespace std;
-using namespace mogal2;
+using namespace eatk;
 
 class Creation : public IndividualCreation
 {

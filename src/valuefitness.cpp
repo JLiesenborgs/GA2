@@ -1,6 +1,6 @@
 #include "valuefitness.h"
 
-namespace mogal2
+namespace eatk
 {
 
 template<> MPI_Datatype ValueFitness<float>::m_mpiType = MPI_FLOAT;

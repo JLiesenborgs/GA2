@@ -7,7 +7,7 @@
 
 using namespace std;
 using namespace errut;
-using namespace mogal2;
+using namespace eatk;
 
 int main(int argc, char const *argv[])
 {

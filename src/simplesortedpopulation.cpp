@@ -4,7 +4,7 @@
 using namespace std;
 using namespace errut;
 
-namespace mogal2
+namespace eatk
 {
 
 SimpleSortedPopulation::SimpleSortedPopulation(shared_ptr<FitnessComparison> fitComp, size_t objectiveNumber)

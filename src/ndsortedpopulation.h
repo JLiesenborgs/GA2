@@ -1,11 +1,11 @@
 #pragma once
 
-#include "mogal2config.h"
+#include "eatkconfig.h"
 #include "ndsortedpopulationinterface.h"
 #include "nondominatedsetcreator.h"
 #include "duplicateindividualremoval.h"
 
-namespace mogal2
+namespace eatk
 {
 
 class NDSortedPopulation : public NDSortedPopulationInterface

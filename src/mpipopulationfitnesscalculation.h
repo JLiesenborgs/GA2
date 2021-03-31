@@ -1,11 +1,11 @@
 #pragma once
 
-#include "mogal2config.h"
+#include "eatkconfig.h"
 #include "population.h"
 #include "mpieventdistributor.h"
 
 // TODO: MPI_Comm seems to be a pointer in OpenMPI
-namespace mogal2
+namespace eatk
 {
 
 class MPIPopulationFitnessCalculation : public PopulationFitnessCalculation, public MPIEventHandler

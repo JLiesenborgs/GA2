@@ -1,11 +1,11 @@
 #pragma once
 
-#include "mogal2config.h"
+#include "eatkconfig.h"
 #include "valuevector.h"
 #include "genomefitness.h"
 #include <cassert>
 
-namespace mogal2
+namespace eatk
 {
 
 template<class T>

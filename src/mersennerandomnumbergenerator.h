@@ -1,10 +1,10 @@
 #pragma once
 
-#include "mogal2config.h"
+#include "eatkconfig.h"
 #include "randomnumbergenerator.h"
 #include <random>
 
-namespace mogal2
+namespace eatk
 {
 
 class MersenneRandomNumberGenerator : public RandomNumberGenerator

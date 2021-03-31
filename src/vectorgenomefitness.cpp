@@ -2,7 +2,7 @@
 
 using namespace std;
 
-namespace mogal2
+namespace eatk
 {
 
 template<> MPI_Datatype ValueVector<Genome, float>::m_mpiType = MPI_FLOAT;

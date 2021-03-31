@@ -1,6 +1,6 @@
 #include "mersennerandomnumbergenerator.h"
 
-namespace mogal2
+namespace eatk
 {
 
 MersenneRandomNumberGenerator::MersenneRandomNumberGenerator(unsigned int seed) : m_rng(seed)

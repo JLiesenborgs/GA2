@@ -1,10 +1,10 @@
 #pragma once
 
-#include "mogal2config.h"
+#include "eatkconfig.h"
 #include "nondominatedsetcreator.h"
 #include "genomefitness.h"
 
-namespace mogal2
+namespace eatk
 {
 
 class BasicNonDominatedSetCreator : public NonDominatedSetCreator

@@ -3,7 +3,7 @@
 using namespace std;
 using namespace errut;
 
-namespace mogal2
+namespace eatk
 {
 
 FitnessBasedDuplicateRemoval::FitnessBasedDuplicateRemoval(const shared_ptr<FitnessComparison> &fitComp, size_t numObjectives)

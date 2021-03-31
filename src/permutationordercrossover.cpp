@@ -4,7 +4,7 @@
 using namespace std;
 using namespace errut;
 
-namespace mogal2
+namespace eatk
 {
 
 PermutationOrderCrossover::PermutationOrderCrossover(const shared_ptr<RandomNumberGenerator> &rng, bool twoOffspring)

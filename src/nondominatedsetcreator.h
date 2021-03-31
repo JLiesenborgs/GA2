@@ -1,9 +1,9 @@
 #pragma once
 
-#include "mogal2config.h"
+#include "eatkconfig.h"
 #include "population.h"
 
-namespace mogal2
+namespace eatk
 {
 
 class NonDominatedSetCreator

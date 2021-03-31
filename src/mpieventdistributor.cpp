@@ -4,7 +4,7 @@
 using namespace errut;
 using namespace std;
 
-namespace mogal2
+namespace eatk
 {
 
 MPIEventDistributor::MPIEventDistributor(int root, MPI_Comm communicator)

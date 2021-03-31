@@ -1,10 +1,10 @@
 #pragma once
 
-#include "mogal2config.h"
+#include "eatkconfig.h"
 #include "duplicateindividualremoval.h"
 #include "genomefitness.h"
 
-namespace mogal2
+namespace eatk
 {
 
 class FitnessBasedDuplicateRemoval : public DuplicateIndividualRemoval

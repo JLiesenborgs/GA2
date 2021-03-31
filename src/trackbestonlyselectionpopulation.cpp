@@ -4,7 +4,7 @@
 using namespace std;
 using namespace errut;
 
-namespace mogal2
+namespace eatk
 {
 
 TrackBestOnlySelectionPopulation::TrackBestOnlySelectionPopulation(std::shared_ptr<FitnessComparison> fitComp, size_t objectiveNumber)

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(mogal2)
+project(eatk)
 set(VERSION 0.0.1)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -21,43 +21,43 @@ endif()
 
 get_install_directory(LIBRARY_INSTALL_DIR)
 
-set(MOGAL2_EXTERNAL_INCLUDES "")
-set(MOGAL2_INTERNAL_INCLUDES "")
-set(MOGAL2_LINK_LIBS "")
+set(EATK_EXTERNAL_INCLUDES "")
+set(EATK_INTERNAL_INCLUDES "")
+set(EATK_LINK_LIBS "")
 
-add_additional_stuff(MOGAL2_EXTERNAL_INCLUDES MOGAL2_LINK_LIBS)
+add_additional_stuff(EATK_EXTERNAL_INCLUDES EATK_LINK_LIBS)
 get_install_directory(LIBRARY_INSTALL_DIR)
 
 find_package(ErrUt REQUIRED)
-list(APPEND MOGAL2_EXTERNAL_INCLUDES "${ERRUT_INCLUDE_DIRS}")
-list(APPEND MOGAL2_LINK_LIBS "${ERRUT_LIBRARIES}")
+list(APPEND EATK_EXTERNAL_INCLUDES "${ERRUT_INCLUDE_DIRS}")
+list(APPEND EATK_LINK_LIBS "${ERRUT_LIBRARIES}")
 
 find_package(MPI REQUIRED) # TODO: for now it's required
-list(APPEND MOGAL2_LINK_LIBS "${MPI_LIBRARIES}")
-list(APPEND MOGAL2_EXTERNAL_INCLUDES "${MPI_INCLUDE_PATH}")
+list(APPEND EATK_LINK_LIBS "${MPI_LIBRARIES}")
+list(APPEND EATK_EXTERNAL_INCLUDES "${MPI_INCLUDE_PATH}")
 
 find_package(Threads REQUIRED)
-list(APPEND MOGAL2_LINK_LIBS "${CMAKE_THREAD_LIBS_INIT}")
+list(APPEND EATK_LINK_LIBS "${CMAKE_THREAD_LIBS_INIT}")
 
-list(APPEND MOGAL2_INTERNAL_INCLUDES "${PROJECT_BINARY_DIR}/src/")
-apply_include_paths("${MOGAL2_INTERNAL_INCLUDES}")
-apply_include_paths("${MOGAL2_EXTERNAL_INCLUDES}")
+list(APPEND EATK_INTERNAL_INCLUDES "${PROJECT_BINARY_DIR}/src/")
+apply_include_paths("${EATK_INTERNAL_INCLUDES}")
+apply_include_paths("${EATK_EXTERNAL_INCLUDES}")
 
 if (MSVC)
-	set(MOGAL2_COMPILE_STATIC ON CACHE BOOL "Flag indicating if a static library should be built, or a dynamic one")
+	set(EATK_COMPILE_STATIC ON CACHE BOOL "Flag indicating if a static library should be built, or a dynamic one")
 endif (MSVC)
-if (NOT MSVC OR MOGAL2_COMPILE_STATIC)
-	set(MOGAL2_IMPORT "")
-	set(MOGAL2_EXPORT "")
-else (NOT MSVC OR MOGAL2_COMPILE_STATIC)
-	set(MOGAL2_IMPORT "__declspec(dllimport)")
-	set(MOGAL2_EXPORT "__declspec(dllexport)")
-endif (NOT MSVC OR MOGAL2_COMPILE_STATIC)
+if (NOT MSVC OR EATK_COMPILE_STATIC)
+	set(EATK_IMPORT "")
+	set(EATK_EXPORT "")
+else (NOT MSVC OR EATK_COMPILE_STATIC)
+	set(EATK_IMPORT "__declspec(dllimport)")
+	set(EATK_EXPORT "__declspec(dllexport)")
+endif (NOT MSVC OR EATK_COMPILE_STATIC)
 
-configure_file("${PROJECT_SOURCE_DIR}/src/mogal2config.h.in" "${PROJECT_BINARY_DIR}/src/mogal2config.h")
+configure_file("${PROJECT_SOURCE_DIR}/src/eatkconfig.h.in" "${PROJECT_BINARY_DIR}/src/eatkconfig.h")
 
-list(APPEND MOGAL2_INTERNAL_INCLUDES "${PROJECT_SOURCE_DIR}/src/")
-list(APPEND MOGAL2_INTERNAL_INCLUDES "${PROJECT_BINARY_DIR}/src/")
+list(APPEND EATK_INTERNAL_INCLUDES "${PROJECT_SOURCE_DIR}/src/")
+list(APPEND EATK_INTERNAL_INCLUDES "${PROJECT_BINARY_DIR}/src/")
 
 add_subdirectory(src)
 #add_subdirectory(programs)
@@ -65,27 +65,27 @@ add_subdirectory(tests)
 add_subdirectory(examples)
 
 if (NOT MSVC)
-	set(MOGAL2_LIBS "-L${LIBRARY_INSTALL_DIR}" "-lmogal2")
+	set(EATK_LIBS "-L${LIBRARY_INSTALL_DIR}" "-leatk")
 else (NOT MSVC)
-	set(MOGAL2_LIBS optimized "${LIBRARY_INSTALL_DIR}/mogal2.lib" 
-		        debug "${LIBRARY_INSTALL_DIR}/mogal2_d.lib")
+	set(EATK_LIBS optimized "${LIBRARY_INSTALL_DIR}/eatk.lib" 
+		        debug "${LIBRARY_INSTALL_DIR}/eatk_d.lib")
 endif (NOT MSVC)
 
-set(MOGAL2_INCDIRS "${MOGAL2_EXTERNAL_INCLUDES};${CMAKE_INSTALL_PREFIX}/include")
-set(MOGAL2_LIBS "${MOGAL2_LIBS};${MOGAL2_LINK_LIBS}")
-remove_empty(MOGAL2_INCDIRS)
-list(REMOVE_DUPLICATES MOGAL2_INCDIRS)
-remove_empty(MOGAL2_LIBS)
+set(EATK_INCDIRS "${EATK_EXTERNAL_INCLUDES};${CMAKE_INSTALL_PREFIX}/include")
+set(EATK_LIBS "${EATK_LIBS};${EATK_LINK_LIBS}")
+remove_empty(EATK_INCDIRS)
+list(REMOVE_DUPLICATES EATK_INCDIRS)
+remove_empty(EATK_LIBS)
 
-foreach(ARG ${MOGAL2_LIBS})
-	set(MOGAL2_LIBS_CMAKECONFIG "${MOGAL2_LIBS_CMAKECONFIG} \"${ARG}\"")
+foreach(ARG ${EATK_LIBS})
+	set(EATK_LIBS_CMAKECONFIG "${EATK_LIBS_CMAKECONFIG} \"${ARG}\"")
 endforeach()
-foreach(ARG ${MOGAL2_INCDIRS})
-	set(MOGAL2_INCDIRS_CMAKECONFIG "${MOGAL2_INCDIRS_CMAKECONFIG} \"${ARG}\"")
+foreach(ARG ${EATK_INCDIRS})
+	set(EATK_INCDIRS_CMAKECONFIG "${EATK_INCDIRS_CMAKECONFIG} \"${ARG}\"")
 endforeach()
 
-configure_file("${PROJECT_SOURCE_DIR}/cmake/MOGAL2Config.cmake.in" "${PROJECT_BINARY_DIR}/cmake/MOGAL2Config.cmake")
-install(FILES "${PROJECT_BINARY_DIR}/cmake/MOGAL2Config.cmake" 
-	DESTINATION ${LIBRARY_INSTALL_DIR}/cmake/MOGAL2)
+configure_file("${PROJECT_SOURCE_DIR}/cmake/EATKConfig.cmake.in" "${PROJECT_BINARY_DIR}/cmake/EATKConfig.cmake")
+install(FILES "${PROJECT_BINARY_DIR}/cmake/EATKConfig.cmake" 
+	DESTINATION ${LIBRARY_INSTALL_DIR}/cmake/EATK)
 
 

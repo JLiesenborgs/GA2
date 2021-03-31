@@ -3,7 +3,7 @@
 using namespace errut;
 using namespace std;
 
-namespace mogal2
+namespace eatk
 {
 
 NDSortedPopulation::NDSortedPopulation(const std::shared_ptr<NonDominatedSetCreator> &setCreator,

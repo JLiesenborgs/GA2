@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mogal2config.h"
+#include "eatkconfig.h"
 #include <mpi.h>
 #include <errut/booltype.h>
 #include <vector>
@@ -10,7 +10,7 @@
 #include <cassert>
 #include <sstream>
 
-namespace mogal2
+namespace eatk
 {
 
 template<class Base, class Type>

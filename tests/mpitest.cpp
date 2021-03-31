@@ -13,7 +13,7 @@
 
 using namespace std;
 using namespace errut;
-using namespace mogal2;
+using namespace eatk;
 
 class DummyGenomeFitnessCalculation : public GenomeFitnessCalculation
 {

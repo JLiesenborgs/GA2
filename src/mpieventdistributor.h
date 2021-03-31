@@ -1,12 +1,12 @@
 #pragma once
 
-#include "mogal2config.h"
+#include "eatkconfig.h"
 #include <errut/booltype.h>
 #include <mpi.h>
 #include <memory>
 #include <vector>
 
-namespace mogal2
+namespace eatk
 {
 
 // To avoid circular references, no shared_ptr is used, but a weak_ptr

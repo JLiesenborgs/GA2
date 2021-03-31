@@ -1,10 +1,10 @@
 #pragma once
 
-#include "mogal2config.h"
+#include "eatkconfig.h"
 #include "ndsortedpopulationinterface.h"
 #include <cassert>
 
-namespace mogal2
+namespace eatk
 {
 
 class SimpleSortedPopulation : public NDSortedPopulationInterface

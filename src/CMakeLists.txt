@@ -1,4 +1,4 @@
-add_definitions(-DMOGAL2_COMPILING)
+add_definitions(-DEATK_COMPILING)
 
 set(HEADERS
 	basicnondominatedsetcreator.h
@@ -33,7 +33,7 @@ set(HEADERS
 	vectorgenomefitness.h
 	vectorgenomeflipmutation.h
 	vectorgenomeuniformmutation.h
-	"${PROJECT_BINARY_DIR}/src/mogal2config.h" )
+	"${PROJECT_BINARY_DIR}/src/eatkconfig.h" )
 
 set(SOURCES
 	basicnondominatedsetcreator.cpp
@@ -60,26 +60,26 @@ if (MSVC)
 	set(CMAKE_DEBUG_POSTFIX _d)
 endif (MSVC)
 
-if (NOT MSVC OR MOGAL2_COMPILE_STATIC)
-	add_library(mogal2-static STATIC ${SOURCES} ${HEADERS})
-	set_target_properties(mogal2-static PROPERTIES OUTPUT_NAME mogal2)
-	set_target_properties(mogal2-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
-	set(MOGAL2_INSTALLTARGETS mogal2-static)
-	target_link_libraries(mogal2-static ${MOGAL2_LINK_LIBS})
-endif (NOT MSVC OR MOGAL2_COMPILE_STATIC)
+if (NOT MSVC OR EATK_COMPILE_STATIC)
+	add_library(eatk-static STATIC ${SOURCES} ${HEADERS})
+	set_target_properties(eatk-static PROPERTIES OUTPUT_NAME eatk)
+	set_target_properties(eatk-static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+	set(EATK_INSTALLTARGETS eatk-static)
+	target_link_libraries(eatk-static ${EATK_LINK_LIBS})
+endif (NOT MSVC OR EATK_COMPILE_STATIC)
 
-if (NOT MSVC OR NOT MOGAL2_COMPILE_STATIC)
-	add_library(mogal2-shared SHARED ${SOURCES} ${HEADERS})
-	set_target_properties(mogal2-shared PROPERTIES OUTPUT_NAME mogal2)
-	set_target_properties(mogal2-shared PROPERTIES VERSION ${VERSION})
-	set_target_properties(mogal2-shared PROPERTIES CLEAN_DIRECT_OUTPUT 1)
-	set(MOGAL2_INSTALLTARGETS ${MOGAL2_INSTALLTARGETS} mogal2-shared)
-	target_link_libraries(mogal2-shared ${MOGAL2_LINK_LIBS})
-endif (NOT MSVC OR NOT MOGAL2_COMPILE_STATIC)
+if (NOT MSVC OR NOT EATK_COMPILE_STATIC)
+	add_library(eatk-shared SHARED ${SOURCES} ${HEADERS})
+	set_target_properties(eatk-shared PROPERTIES OUTPUT_NAME eatk)
+	set_target_properties(eatk-shared PROPERTIES VERSION ${VERSION})
+	set_target_properties(eatk-shared PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+	set(EATK_INSTALLTARGETS ${EATK_INSTALLTARGETS} eatk-shared)
+	target_link_libraries(eatk-shared ${EATK_LINK_LIBS})
+endif (NOT MSVC OR NOT EATK_COMPILE_STATIC)
 
-apply_include_paths("${MOGAL2_INTERNAL_INCLUDES}")
-apply_include_paths("${MOGAL2_EXTERNAL_INCLUDES}")
+apply_include_paths("${EATK_INTERNAL_INCLUDES}")
+apply_include_paths("${EATK_EXTERNAL_INCLUDES}")
 
-install(FILES ${HEADERS} DESTINATION include/mogal2)
-install(TARGETS ${MOGAL2_INSTALLTARGETS} DESTINATION ${LIBRARY_INSTALL_DIR})
+install(FILES ${HEADERS} DESTINATION include/eatk)
+install(TARGETS ${EATK_INSTALLTARGETS} DESTINATION ${LIBRARY_INSTALL_DIR})
 

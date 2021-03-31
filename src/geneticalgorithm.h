@@ -1,10 +1,10 @@
 #pragma once
 
-#include "mogal2config.h"
+#include "eatkconfig.h"
 #include "crossovermutation.h"
 #include "stopcriterion.h"
 
-namespace mogal2
+namespace eatk
 {
 
 class GeneticAlgorithm

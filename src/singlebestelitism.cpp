@@ -5,7 +5,7 @@
 using namespace errut;
 using namespace std;
 
-namespace mogal2
+namespace eatk
 {
 
 SingleBestElitism::SingleBestElitism(bool eliteWithoutMutation, const shared_ptr<GenomeMutation> &mutation)

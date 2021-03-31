@@ -1,13 +1,13 @@
 #pragma once
 
-#include "mogal2config.h"
+#include "eatkconfig.h"
 #include "genomefitness.h"
 #include <vector>
 #include <iostream>
 #include <cassert>
 #include <limits>
 
-namespace mogal2
+namespace eatk
 {
 
 // TODO: record parents?

@@ -1,11 +1,11 @@
 #pragma once
 
-#include "mogal2config.h"
+#include "eatkconfig.h"
 #include "vectorgenomefitness.h"
 #include "crossovermutation.h"
 #include "randomnumbergenerator.h"
 
-namespace mogal2
+namespace eatk
 {
 
 template<class T>

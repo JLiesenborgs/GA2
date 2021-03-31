@@ -3,7 +3,7 @@
 using namespace std;
 using namespace errut;
 
-namespace mogal2
+namespace eatk
 {
 
 BasicNonDominatedSetCreator::BasicNonDominatedSetCreator(const shared_ptr<FitnessComparison> &fitCmp, size_t numObjectives)

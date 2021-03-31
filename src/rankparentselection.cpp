@@ -6,7 +6,7 @@
 using namespace std;
 using namespace errut;
 
-namespace mogal2
+namespace eatk
 {
 
 RankParentSelection::RankParentSelection(double beta, shared_ptr<RandomNumberGenerator> rng)

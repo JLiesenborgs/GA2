@@ -2,7 +2,7 @@
 
 #include "crossovermutation.h"
 
-namespace mogal2
+namespace eatk
 {
 
 class TrackBestOnlySelectionPopulation : public SelectionPopulation

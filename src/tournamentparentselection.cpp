@@ -5,7 +5,7 @@
 using namespace std;
 using namespace errut;
 
-namespace mogal2
+namespace eatk
 {
 
 TournamentParentSelection::TournamentParentSelection(const shared_ptr<RandomNumberGenerator> &rng,

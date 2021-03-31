@@ -1,11 +1,11 @@
 #pragma once
 
-#include "mogal2config.h"
+#include "eatkconfig.h"
 #include "genomefitness.h"
 #include "population.h"
 #include <vector>
 
-namespace mogal2
+namespace eatk
 {
 
 class GenomeCrossover

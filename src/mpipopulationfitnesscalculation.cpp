@@ -6,7 +6,7 @@
 using namespace errut;
 using namespace std;
 
-namespace mogal2
+namespace eatk
 {
 
 MPIPopulationFitnessCalculation::MPIPopulationFitnessCalculation(const std::weak_ptr<MPIEventDistributor> &mpiDist)

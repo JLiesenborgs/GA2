@@ -1,9 +1,9 @@
 #pragma once
 
-#include "mogal2config.h"
+#include "eatkconfig.h"
 #include "crossovermutation.h"
 
-namespace mogal2
+namespace eatk
 {
 
 class RemainingTargetPopulationSizeIteration : public PopulationCrossoverIteration
