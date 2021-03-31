@@ -1,4 +1,7 @@
 #include "mpieventdistributor.h"
+
+#ifdef EATKCONFIG_MPISUPPORT
+
 #include <string>
 
 using namespace errut;
@@ -60,3 +63,5 @@ bool_t MPIEventDistributor::eventLoop()
 }
 
 }
+
+#endif // EATKCONFIG_MPISUPPORT

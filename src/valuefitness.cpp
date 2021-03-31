@@ -1,5 +1,7 @@
 #include "valuefitness.h"
 
+#ifdef EATKCONFIG_MPISUPPORT
+
 namespace eatk
 {
 
@@ -11,3 +13,5 @@ template<> MPI_Datatype ValueFitness<char>::m_mpiType = MPI_CHAR;
 template<> MPI_Datatype ValueFitness<unsigned char>::m_mpiType = MPI_UNSIGNED_CHAR;
 
 }
+
+#endif // EATKCONFIG_MPISUPPORT

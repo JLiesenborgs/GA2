@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 		if (!r)
 		{
 			cerr << "Error in calculatePopulationFitness: " << r.getErrorString() << endl;
-			MPI_Abort(MPI_COMM_WORLD, -1);
+			return -1;
 		}
 
 		for (auto &i : pop->individuals())

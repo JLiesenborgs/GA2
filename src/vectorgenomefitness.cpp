@@ -1,6 +1,6 @@
 #include "vectorgenomefitness.h"
 
-using namespace std;
+#ifdef EATKCONFIG_MPISUPPORT
 
 namespace eatk
 {
@@ -24,3 +24,5 @@ template<> MPI_Datatype ValueVector<Genome, unsigned char>::m_mpiType = MPI_UNSI
 template<> MPI_Datatype ValueVector<Fitness, unsigned char>::m_mpiType = MPI_UNSIGNED_CHAR;
 
 }
+
+#endif // EATKCONFIG_MPISUPPORT

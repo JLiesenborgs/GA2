@@ -1,7 +1,11 @@
 #pragma once
 
 #include "eatkconfig.h"
+
+#ifdef EATKCONFIG_MPISUPPORT
 #include <mpi.h>
+#endif // EATKCONFIG_MPISUPPORT
+
 #include <errut/booltype.h>
 #include <vector>
 #include <string>
@@ -35,6 +39,7 @@ public:
 		return ss.str();
 	}
 
+#ifdef EATKCONFIG_MPISUPPORT
 	errut::bool_t MPI_BroadcastLayout(int root, MPI_Comm communicator) override
 	{
 		int num = m_values.size();
@@ -63,6 +68,7 @@ public:
 		// ::MPI_Recv(m_values.data(), m_values.size(), m_mpiType, src, tag, communicator, MPI_STATUS_IGNORE);
 		return true;
 	}
+#endif // EATKCONFIG_MPISUPPORT
 
 	template<class Derived>
 	std::shared_ptr<Derived> createCopy(bool copyContents = true) const
@@ -77,7 +83,9 @@ public:
 	}
 protected:
 	std::vector<Type> m_values;
+#ifdef EATKCONFIG_MPISUPPORT
 	static MPI_Datatype m_mpiType;
+#endif // EATKCONFIG_MPISUPPORT
 };
 
 }

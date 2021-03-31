@@ -1,3 +1,7 @@
+#include "eatkconfig.h"
+
+#ifdef EATKCONFIG_MPISUPPORT
+
 #include "vectorgenomefitness.h"
 #include "mpipopulationfitnesscalculation.h"
 #include "singlethreadedpopulationfitnesscalculation.h"
@@ -149,3 +153,12 @@ int main(int argc, char *argv[])
 	return r;
 }
 
+#else
+#include <iostream>
+
+int main(void)
+{
+	std::cerr << "No MPI support enabled" << std::endl;
+	return -1;
+}
+#endif // EATKCONFIG_MPISUPPORT

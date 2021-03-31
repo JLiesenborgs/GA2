@@ -1,6 +1,9 @@
 #pragma once
 
 #include "eatkconfig.h"
+
+#ifdef EATKCONFIG_MPISUPPORT
+
 #include <errut/booltype.h>
 #include <mpi.h>
 #include <memory>
@@ -37,3 +40,5 @@ private:
 };
 
 }
+
+#endif // EATKCONFIG_MPISUPPORT

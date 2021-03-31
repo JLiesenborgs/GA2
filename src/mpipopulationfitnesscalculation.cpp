@@ -1,4 +1,7 @@
 #include "mpipopulationfitnesscalculation.h"
+
+#ifdef EATKCONFIG_MPISUPPORT
+
 #include <iostream>
 #include <cassert>
 #include <typeinfo>
@@ -262,3 +265,5 @@ bool_t MPIPopulationFitnessCalculation::handleEvent(MPIEventHandler::EventType t
 }
 
 }
+
+#endif // EATKCONFIG_MPISUPPORT

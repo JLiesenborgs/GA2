@@ -170,8 +170,10 @@ bool_t real_main(int argc, char *argv[], int rank)
 
     shared_ptr<SingleThreadedPopulationFitnessCalculation> calcSingle;
     shared_ptr<MultiThreadedPopulationFitnessCalculation> calcMulti;
+#ifdef EATKCONFIG_MPISUPPORT
     shared_ptr<MPIPopulationFitnessCalculation> calcMPI;
     shared_ptr<MPIEventDistributor> mpiDist;
+#endif // EATKCONFIG_MPISUPPORT
 
     shared_ptr<PopulationFitnessCalculation> calc;
     if (calcType == 0)
@@ -186,6 +188,7 @@ bool_t real_main(int argc, char *argv[], int rank)
         calcMulti = make_shared<MultiThreadedPopulationFitnessCalculation>();
         calc = calcMulti;
     }
+#ifdef EATKCONFIG_MPISUPPORT
     else if (calcType == 2)
     {
         // MPI
@@ -194,6 +197,7 @@ bool_t real_main(int argc, char *argv[], int rank)
         mpiDist->setHandler(MPIEventHandler::Calculation, calcMPI);
         calc = calcMPI;
     }
+#endif // EATKCONFIG_MPISUPPORT
     else
         return "Unknown calculation type " + to_string(calcType);
     
@@ -209,6 +213,7 @@ bool_t real_main(int argc, char *argv[], int rank)
         if (!r)
             return "Couldn't init thread based fitness calculator: " + r.getErrorString();
     }
+#ifdef EATKCONFIG_MPISUPPORT
     else if (calcType == 2)
     {
         auto refGenome = factory.createInitializedGenome();
@@ -218,9 +223,14 @@ bool_t real_main(int argc, char *argv[], int rank)
         if (!r)
             return "Couldn't init MPI fitness calculator: " + r.getErrorString();
     }
+#endif // EATKCONFIG_MPISUPPORT
+    else
+        return "Unknown calculation type " + to_string(calcType);
 
     if (rank == 0) // Should also work for the non MPI versions
     {
+        #ifdef EATKCONFIG_MPISUPPORT
+
         // At this point, on the other ranks, the event loop will be waiting what
         // to do, so we should send a Done signal 
         auto cleanup = [mpiDist]()
@@ -228,6 +238,9 @@ bool_t real_main(int argc, char *argv[], int rank)
             if (mpiDist.get())
                 mpiDist->signal(MPIEventHandler::Done);
         };
+        #else
+        auto cleanup = [](){};
+        #endif // EATKCONFIG_MPISUPPORT
 
         FixedGenerationsStopCriterion stop(100);
         MyGA ga;
@@ -245,9 +258,11 @@ bool_t real_main(int argc, char *argv[], int rank)
     }
     else
     {
+        #ifdef EATKCONFIG_MPISUPPORT
         r = mpiDist->eventLoop();
         if (!r)
             return "Error in event loop: " + r.getErrorString();
+        #endif // EATKCONFIG_MPISUPPORT
     }
 
     return true;
@@ -267,6 +282,8 @@ int main(int argc, char *argv[])
 #else
 int main(int argc, char *argv[])
 {
+    #ifdef EATKCONFIG_MPISUPPORT
+
     MPI_Init(&argc, &argv);
     int rank = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -277,6 +294,9 @@ int main(int argc, char *argv[])
         MPI_Abort(MPI_COMM_WORLD, -1);
     }
     MPI_Finalize();
+    #else
+    cerr << "No MPI support enabled" << endl;
+    #endif // EATKCONFIG_MPISUPPORT
     return 0;
 }
 #endif

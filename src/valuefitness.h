@@ -34,6 +34,7 @@ public:
         return std::to_string(m_value);
     }
 
+#ifdef EATKCONFIG_MPISUPPORT
 	errut::bool_t MPI_BroadcastLayout(int root, MPI_Comm communicator) override
     {
         // Nothing to do here - I think we can safely omit this
@@ -55,9 +56,12 @@ public:
         // ::MPI_Recv(&m_value, 1, m_mpiType, src, tag, communicator, MPI_STATUS_IGNORE);
         return true;
     }
+#endif // EATKCONFIG_MPISUPPORT
 private:
     T m_value;
+#ifdef EATKCONFIG_MPISUPPORT
     static MPI_Datatype m_mpiType;
+#endif // EATKCONFIG_MPISUPPORT
 };
 
 template<class T, bool minimum = true>

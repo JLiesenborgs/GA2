@@ -1,6 +1,9 @@
 #pragma once
 
 #include "eatkconfig.h"
+
+#ifdef EATKCONFIG_MPISUPPORT
+
 #include "population.h"
 #include "mpieventdistributor.h"
 
@@ -46,3 +49,5 @@ private:
 };
 
 }
+
+#endif // EATKCONFIG_MPISUPPORT
