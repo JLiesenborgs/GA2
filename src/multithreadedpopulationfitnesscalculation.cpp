@@ -15,47 +15,151 @@ MultiThreadedPopulationFitnessCalculation::MultiThreadedPopulationFitnessCalcula
 
 MultiThreadedPopulationFitnessCalculation::~MultiThreadedPopulationFitnessCalculation()
 {
+	destroyThreadPool();
 }
 
 bool_t MultiThreadedPopulationFitnessCalculation::initThreadPool(const std::vector<std::shared_ptr<GenomeFitnessCalculation>> &threadGenomeCalculations)
 {
-	m_threadGenomeCalculations = threadGenomeCalculations;
-	if (m_threadGenomeCalculations.size() < 1)
+	if (m_workers.size() > 0)
+		return "Thread pool already exists";
+
+	if (threadGenomeCalculations.size() < 1)
 		return "Need at least one thread";
 
-	// TODO: for now we're not using a real thread pool, for simplicity we'll just
-	//	   spawn threads when needed
+	m_threadGenomeCalculations = threadGenomeCalculations;
+	m_workers.resize(m_threadGenomeCalculations.size());
+
+	m_allThreadsWaiter = make_unique<ThreadsReadyWaiter>(m_workers.size());
+	m_individualWaiters = make_unique<IndividualWaiters>(m_workers.size());
+
+	for (size_t i = 0 ; i < m_workers.size() ; i++)
+		m_workers[i] = thread(staticWorkerThread, this, i);
+
+	m_allThreadsWaiter->wait();
+
+	m_errors.resize(m_workers.size());
+	m_errorStrings.resize(m_workers.size());
+
 	return true;
 }
 
-class Countdown
+void MultiThreadedPopulationFitnessCalculation::staticWorkerThread(MultiThreadedPopulationFitnessCalculation *pInstance, size_t idx)
 {
-public:
-	Countdown(size_t n) : m_num (n) { }
-	~Countdown() { }
-	void wait()
+	pInstance->workerThread(idx);
+}
+
+void MultiThreadedPopulationFitnessCalculation::workerThread(size_t idx)
+{
+	bool done = false;
+	auto performActions = [this, idx, &done]()
 	{
-		unique_lock<mutex> l(m_mut);
-		if (m_num == 0)
-			return;
-		m_cond.wait(l);
+		// cerr << "In thread " + to_string(idx) + ", m_pPopulations = " + to_string((long int)((void*)m_pPopulations)) + "\n";
+		if (!m_pPopulations)
+			done = true;
+		else
+		{
+			m_errors[idx] = false;
+			m_errorStrings[idx].clear();
+			bool_t r = workerCalculatePopulationFitness(*m_pPopulations, idx);
+			if (!r)
+			{
+				m_errors[idx] = true;
+				m_errorStrings[idx] = r.getErrorString();
+			}
+		}
+	};
+
+	while (!done)
+	{
+		// cerr << "Thread " + to_string(idx) + " waiting to start\n";
+		m_allThreadsWaiter->signal(idx);
+		
+		// Wait till we get some work
+		m_individualWaiters->wait(idx);
+
+		performActions();
+	}	
+
+	// cerr << "Thread " + to_string(idx) +  " exiting\n";
+}
+
+void MultiThreadedPopulationFitnessCalculation::destroyThreadPool()
+{
+	if (m_workers.size() == 0)
+		return;
+
+	m_pPopulations = nullptr; // Signals that we're done
+	
+	m_individualWaiters->signalAll();
+
+	for (auto &t : m_workers)
+		t.join();
+
+	m_workers.resize(0);
+}
+
+bool_t MultiThreadedPopulationFitnessCalculation::workerCalculatePopulationFitness(const vector<shared_ptr<Population>> &populations, size_t workerIdx)
+{
+	auto performIndividualActionForWorker = [this, workerIdx, &populations](auto action) -> bool_t
+	{
+		size_t count = 0;
+		bool_t r;
+		for (auto &pop : populations)
+		{
+			for (auto &ind : pop->individuals())
+			{
+				if (count % m_workers.size() == workerIdx)
+				{
+					if (!(r = action(ind)))
+						return r;
+				}
+				count++;
+			}
+		}
+		return true;
+	};			
+
+	auto pGenomeCalc = m_threadGenomeCalculations[workerIdx].get();
+
+	// Start new calculation
+	bool_t r = performIndividualActionForWorker([pGenomeCalc](auto ind) -> bool_t {
+		Genome *pGenome = ind->genomePtr();
+		Fitness *pFitness = ind->fitnessPtr();
+
+		if (!pFitness->isCalculated())
+			return pGenomeCalc->startNewCalculation(*pGenome);
+		return true;
+	});
+
+	if (!r)
+		return "Error starting new calculation for a genome: " + r.getErrorString();
+
+	bool allCalculated = false;
+	while (!allCalculated)
+	{
+		allCalculated = true;
+		r = performIndividualActionForWorker([&allCalculated, pGenomeCalc](auto ind) -> bool_t {
+			Genome *pGenome = ind->genomePtr();
+			Fitness *pFitness = ind->fitnessPtr();
+
+			if (!pFitness->isCalculated())
+			{
+				bool_t r = pGenomeCalc->pollCalculate(*pGenome, *pFitness);
+				if (!r)
+					return r;
+				if (!pFitness->isCalculated()) // Still not done
+					allCalculated = false;
+			}
+
+			return true;
+		});
+
+		if (!r)
+			return "Error in calculation for a genome: " + r.getErrorString();
 	}
 
-	void decrement()
-	{
-		lock_guard<mutex> l(m_mut);
-		if (m_num == 0)
-			return;
-		
-		m_num--;
-		if (m_num == 0)
-			m_cond.notify_all();
-	}
-private:
-	size_t m_num;
-	condition_variable m_cond;
-	mutex m_mut;
-};
+	return true;
+}
 
 errut::bool_t MultiThreadedPopulationFitnessCalculation::check(const std::vector<std::shared_ptr<Population>> &populations)
 {
@@ -66,99 +170,19 @@ errut::bool_t MultiThreadedPopulationFitnessCalculation::check(const std::vector
 
 bool_t MultiThreadedPopulationFitnessCalculation::calculatePopulationFitness(const vector<shared_ptr<Population>> &populations)
 {
-	// TODO: use actual thread pool
 	if (m_threadGenomeCalculations.size() < 1)
 		return "Need at least one thread";
 
-	// A very simple approach
-	auto helperThread = [populations](size_t id, size_t numThreads, GenomeFitnessCalculation *pGenomeCalc,
-									  int *pError, string *pErrStr, Countdown *pBarrier)
+	m_pPopulations = &populations;
+
+	m_individualWaiters->signalAll();
+
+	m_allThreadsWaiter->wait();
+
+	for (size_t i = 0 ; i < m_errors.size() ; i++)
 	{
-		vector<pair<Genome *, Fitness *>> work;
-
-		int count = 0;
-		for (auto &pop : populations)
-		{
-			for (auto &ind : pop->individuals())
-			{
-				if (!ind->fitnessRef().isCalculated())
-				{
-					if (count%numThreads == id)
-					{
-						Genome *pGenome = ind->genomePtr();
-						Fitness *pFitness = ind->fitnessPtr();
-
-						bool_t r = pGenomeCalc->startNewCalculation(*pGenome);
-						if (!r)
-						{
-							*pError = 1;
-							*pErrStr = "Error starting genome calculation: " + r.getErrorString();
-							return;
-						}
-						// fprintf(stderr, "Picking up work for %d on thread %d\n", count, id);
-						work.push_back({ pGenome, pFitness });
-					}
-					// else
-					// 	fprintf(stderr, "Skipping work for %d on thread %d\n", count, id);
-
-					count++;
-				}
-			}
-			// fprintf(stderr, "End count on thread %d is %d\n", id, count);
-		}
-
-		if (count == 0) // Nothing needed to be done, will be detected by all threads
-		{
-			// cerr << "Nothing to do in thread, bailing early\n";
-			return;
-		}
-
-		// Need sync here, as we're changing the isCalculated flags
-		pBarrier->decrement();
-		pBarrier->wait();
-
-		// Calculate until all is done
-		bool allCalculated;
-		do
-		{
-			allCalculated = true;
-			for (auto &gf : work)
-			{
-				Fitness &f = *gf.second;
-				if (!f.isCalculated())
-				{
-					Genome &g = *gf.first;
-					auto r = pGenomeCalc->pollCalculate(g, f);
-					if (!r)
-					{
-						*pError = 1;
-						*pErrStr = "Error calculating fitness for genome: " + r.getErrorString();
-						return;
-					}
-
-					if (!f.isCalculated())
-						allCalculated = false;
-				}
-			}
-		} while (!allCalculated);
-	};
-
-	vector<thread> helpers(m_threadGenomeCalculations.size());
-	vector<int> errors(helpers.size(), 0);
-	vector<string> errorMessages(helpers.size());
-	Countdown barrier(helpers.size());
-
-	for (size_t id = 0 ; id < helpers.size() ; id++)
-		helpers[id] = thread(helperThread, id, helpers.size(), m_threadGenomeCalculations[id].get(),
-							 &errors[id], &errorMessages[id], &barrier);
-	
-	for (auto &t : helpers)
-		t.join();
-
-	for (size_t i = 0 ; i < errors.size() ; i++)
-	{
-		if (errors[i])
-			return errorMessages[i];
+		if (m_errors[i])
+			return m_errorStrings[i];
 	}
 
 	return true;

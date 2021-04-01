@@ -156,7 +156,7 @@ const int CalcTypeSingle = 0;
 const int CalcTypeMulti = 1;
 const int CalcTypeMPI = 2;
 
-const int calcType = CalcTypeMPI;
+const int calcType = CalcTypeMulti;
 
 bool_t real_main(int argc, char *argv[], int rank)
 {
@@ -268,7 +268,7 @@ bool_t real_main(int argc, char *argv[], int rank)
 	return true;
 }
 
-#if 0
+#if 1
 int main(int argc, char *argv[])
 {
 	bool_t r = real_main(argc, argv, 0);
