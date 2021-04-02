@@ -10,6 +10,7 @@ namespace eatk
 {
 
 MultiThreadedPopulationFitnessCalculation::MultiThreadedPopulationFitnessCalculation()
+ : m_totalThreads(0)
 {
 }
 
@@ -26,16 +27,20 @@ bool_t MultiThreadedPopulationFitnessCalculation::initThreadPool(const std::vect
 	if (threadGenomeCalculations.size() < 1)
 		return "Need at least one thread";
 
+	m_totalThreads = threadGenomeCalculations.size();
 	m_threadGenomeCalculations = threadGenomeCalculations;
-	m_workers.resize(m_threadGenomeCalculations.size());
+	m_workers.resize(m_totalThreads-1);
 
 	m_allThreadsWaiter = make_unique<ThreadsReadyWaiter>(m_workers.size());
 	m_individualWaiters = make_unique<IndividualWaiters>(m_workers.size());
 
+	m_helperGenomes.resize(m_totalThreads);
+
 	for (size_t i = 0 ; i < m_workers.size() ; i++)
 		m_workers[i] = thread(staticWorkerThread, this, i);
 
-	m_allThreadsWaiter->wait();
+	if (m_workers.size() > 0)
+		m_allThreadsWaiter->wait();
 
 	m_errors.resize(m_workers.size());
 	m_errorStrings.resize(m_workers.size());
@@ -51,23 +56,6 @@ void MultiThreadedPopulationFitnessCalculation::staticWorkerThread(MultiThreaded
 void MultiThreadedPopulationFitnessCalculation::workerThread(size_t idx)
 {
 	bool done = false;
-	auto performActions = [this, idx, &done]()
-	{
-		// cerr << "In thread " + to_string(idx) + ", m_pPopulations = " + to_string((long int)((void*)m_pPopulations)) + "\n";
-		if (!m_pPopulations)
-			done = true;
-		else
-		{
-			m_errors[idx] = false;
-			m_errorStrings[idx].clear();
-			bool_t r = workerCalculatePopulationFitness(*m_pPopulations, idx);
-			if (!r)
-			{
-				m_errors[idx] = true;
-				m_errorStrings[idx] = r.getErrorString();
-			}
-		}
-	};
 
 	while (!done)
 	{
@@ -77,7 +65,20 @@ void MultiThreadedPopulationFitnessCalculation::workerThread(size_t idx)
 		// Wait till we get some work
 		m_individualWaiters->wait(idx);
 
-		performActions();
+		// cerr << "In thread " + to_string(idx) + ", m_pPopulations = " + to_string((long int)((void*)m_pPopulations)) + "\n";
+		if (m_helperGenomes.empty())
+			done = true;
+		else
+		{
+			m_errors[idx] = false;
+			m_errorStrings[idx].clear();
+			bool_t r = workerCalculatePopulationFitness(idx);
+			if (!r)
+			{
+				m_errors[idx] = true;
+				m_errorStrings[idx] = r.getErrorString();
+			}
+		}
 	}	
 
 	// cerr << "Thread " + to_string(idx) +  " exiting\n";
@@ -85,12 +86,13 @@ void MultiThreadedPopulationFitnessCalculation::workerThread(size_t idx)
 
 void MultiThreadedPopulationFitnessCalculation::destroyThreadPool()
 {
-	if (m_workers.size() == 0)
+	if (m_helperGenomes.size() == 0)
 		return;
 
-	m_pPopulations = nullptr; // Signals that we're done
+	m_helperGenomes.clear();
 	
-	m_individualWaiters->signalAll();
+	if (m_workers.size() > 0)
+		m_individualWaiters->signalAll();
 
 	for (auto &t : m_workers)
 		t.join();
@@ -98,64 +100,34 @@ void MultiThreadedPopulationFitnessCalculation::destroyThreadPool()
 	m_workers.resize(0);
 }
 
-bool_t MultiThreadedPopulationFitnessCalculation::workerCalculatePopulationFitness(const vector<shared_ptr<Population>> &populations, size_t workerIdx)
+bool_t MultiThreadedPopulationFitnessCalculation::workerCalculatePopulationFitness(size_t workerIdx)
 {
-	auto performIndividualActionForWorker = [this, workerIdx, &populations](auto action) -> bool_t
-	{
-		size_t count = 0;
-		bool_t r;
-		for (auto &pop : populations)
-		{
-			for (auto &ind : pop->individuals())
-			{
-				if (count % m_workers.size() == workerIdx)
-				{
-					if (!(r = action(ind)))
-						return r;
-				}
-				count++;
-			}
-		}
-		return true;
-	};			
-
 	auto pGenomeCalc = m_threadGenomeCalculations[workerIdx].get();
+	bool_t r;
 
-	// Start new calculation
-	bool_t r = performIndividualActionForWorker([pGenomeCalc](auto ind) -> bool_t {
-		Genome *pGenome = ind->genomePtr();
-		Fitness *pFitness = ind->fitnessPtr();
-
-		if (!pFitness->isCalculated())
-			return pGenomeCalc->startNewCalculation(*pGenome);
-		return true;
-	});
-
-	if (!r)
-		return "Error starting new calculation for a genome: " + r.getErrorString();
+	for (auto &gf : m_helperGenomes[workerIdx])
+	{
+		if (!(r = pGenomeCalc->startNewCalculation(*gf.first)))
+			return "Error starting new calculation for a genome: " + r.getErrorString();
+	}
 
 	bool allCalculated = false;
 	while (!allCalculated)
 	{
 		allCalculated = true;
-		r = performIndividualActionForWorker([&allCalculated, pGenomeCalc](auto ind) -> bool_t {
-			Genome *pGenome = ind->genomePtr();
-			Fitness *pFitness = ind->fitnessPtr();
 
+		for (auto &gf : m_helperGenomes[workerIdx])
+		{
+			Genome *pGenome = gf.first;
+			Fitness *pFitness = gf.second;
 			if (!pFitness->isCalculated())
 			{
-				bool_t r = pGenomeCalc->pollCalculate(*pGenome, *pFitness);
-				if (!r)
-					return r;
+				if (!(r = pGenomeCalc->pollCalculate(*pGenome, *pFitness)))
+					return "Error calculating genome fitness: " + r.getErrorString();
 				if (!pFitness->isCalculated()) // Still not done
 					allCalculated = false;
 			}
-
-			return true;
-		});
-
-		if (!r)
-			return "Error in calculation for a genome: " + r.getErrorString();
+		}
 	}
 
 	return true;
@@ -163,22 +135,48 @@ bool_t MultiThreadedPopulationFitnessCalculation::workerCalculatePopulationFitne
 
 errut::bool_t MultiThreadedPopulationFitnessCalculation::check(const std::vector<std::shared_ptr<Population>> &populations)
 {
-	if (m_threadGenomeCalculations.size() < 1)
+	if (m_totalThreads < 1)
 		return "Need at least one thread";
 	return true;
 }
 
 bool_t MultiThreadedPopulationFitnessCalculation::calculatePopulationFitness(const vector<shared_ptr<Population>> &populations)
 {
-	if (m_threadGenomeCalculations.size() < 1)
+	if (m_totalThreads < 1)
 		return "Need at least one thread";
 
-	m_pPopulations = &populations;
+	for (auto &h : m_helperGenomes)
+		h.clear();
 
-	m_individualWaiters->signalAll();
+	size_t nextHelper = 0;
 
-	m_allThreadsWaiter->wait();
+	// Split the work over the helpers
+	for (auto pPop : populations)
+	{		
+		for (auto &i : pPop->individuals())
+		{
+			if (!i->fitnessRef().isCalculated())
+			{
+				m_helperGenomes[nextHelper].push_back({i->genomePtr(), i->fitnessPtr()});
+				nextHelper = (nextHelper + 1)%m_totalThreads;
+			}
+		}
+	}
 
+	if (m_totalThreads > 1)
+		m_individualWaiters->signalAll();
+
+	// Calculate part ourselves
+	bool_t r = workerCalculatePopulationFitness(m_totalThreads-1);
+
+	if (m_totalThreads > 1)
+		m_allThreadsWaiter->wait();
+
+	// Check our own error
+	if (!r)
+		return r;
+
+	// Check other threads' errors
 	for (size_t i = 0 ; i < m_errors.size() ; i++)
 	{
 		if (m_errors[i])

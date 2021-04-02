@@ -24,13 +24,16 @@ public:
 private:
 	static void staticWorkerThread(MultiThreadedPopulationFitnessCalculation *pInstance, size_t idx);
 	void workerThread(size_t idx);
-	errut::bool_t workerCalculatePopulationFitness(const std::vector<std::shared_ptr<Population>> &populations, size_t workerIdx);
+	errut::bool_t workerCalculatePopulationFitness(size_t workerIdx);
 
+	size_t m_totalThreads;
 	std::vector<std::shared_ptr<GenomeFitnessCalculation>> m_threadGenomeCalculations;
 	std::vector<std::thread> m_workers;
 	std::vector<bool> m_errors;
 	std::vector<std::string> m_errorStrings;
-	const std::vector<std::shared_ptr<Population>> *m_pPopulations;
+
+	std::vector<std::vector<std::pair<Genome *, Fitness *>>> m_helperGenomes;
+
 
 	class ThreadsReadyWaiter
 	{

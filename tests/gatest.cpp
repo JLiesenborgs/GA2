@@ -203,12 +203,16 @@ bool_t real_main(int argc, char *argv[], int rank)
 	
 	TestFactory factory(seed);
 
-	if (calcType == 1)
+	if (calcType == 0)
+	{
+		// Nothing to do
+	}
+	else if (calcType == 1)
 	{
 		r = calcMulti->initThreadPool({
 			make_shared<TestFitnessCalculation>(),
-			make_shared<TestFitnessCalculation>(),
-			make_shared<TestFitnessCalculation>(),
+			// make_shared<TestFitnessCalculation>(),
+			// make_shared<TestFitnessCalculation>(),
 			make_shared<TestFitnessCalculation>() });
 		if (!r)
 			return "Couldn't init thread based fitness calculator: " + r.getErrorString();
@@ -242,7 +246,7 @@ bool_t real_main(int argc, char *argv[], int rank)
 		auto cleanup = [](){};
 		#endif // EATKCONFIG_MPISUPPORT
 
-		FixedGenerationsStopCriterion stop(100);
+		FixedGenerationsStopCriterion stop(10);
 		MyGA ga;
 
 		r = ga.run(factory,
