@@ -6,6 +6,7 @@ set(HEADERS
 	duplicateindividualremoval.h
 	fitnessbasedduplicateremoval.h
 	evolutionaryalgorithm.h
+	fasternondominatedsetcreator.h
 	genomefitness.h
 	mersennerandomnumbergenerator.h
 	mpieventdistributor.h
@@ -39,6 +40,7 @@ set(SOURCES
 	basicnondominatedsetcreator.cpp
 	fitnessbasedduplicateremoval.cpp
 	evolutionaryalgorithm.cpp
+	fasternondominatedsetcreator.cpp
 	mersennerandomnumbergenerator.cpp
 	mpieventdistributor.cpp
 	mpipopulationfitnesscalculation.cpp
