@@ -1,3 +1,4 @@
+#define _USE_MATH_DEFINES // For M_PI
 #include "evolutionaryalgorithm.h"
 #include "mersennerandomnumbergenerator.h"
 #include "valuefitness.h"
