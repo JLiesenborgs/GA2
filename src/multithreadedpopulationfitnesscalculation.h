@@ -20,7 +20,7 @@ public:
 
 	errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) override;
 	// TODO: all populations should have exactly the same genomes! (ie same number of floats)
-	errut::bool_t calculatePopulationFitness(const std::vector<std::shared_ptr<Population>> &populations);
+	errut::bool_t calculatePopulationFitness(const std::vector<std::shared_ptr<Population>> &populations) override;
 private:
 	static void staticWorkerThread(MultiThreadedPopulationFitnessCalculation *pInstance, size_t idx);
 	void workerThread(size_t idx);

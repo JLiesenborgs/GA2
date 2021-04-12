@@ -29,7 +29,7 @@ public:
 		return m_lastPopulation->individual(s);
 	};
 
-	const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const { return m_best; }
+	const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const override { return m_best; }
 private:
 	size_t m_objectiveNumber;
 	std::shared_ptr<FitnessComparison> m_fitnessComp;
