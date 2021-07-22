@@ -4,6 +4,9 @@ apply_include_paths("${EATK_EXTERNAL_INCLUDES}")
 add_executable(mpitest mpitest.cpp)
 target_link_libraries(mpitest eatk-static "${EATK_LINK_LIBS}")
 
+add_executable(mpiandthreadstest mpiandthreadstest)
+target_link_libraries(mpiandthreadstest eatk-static "${EATK_LINK_LIBS}")
+
 add_executable(threadtest threadtest.cpp)
 target_link_libraries(threadtest eatk-static "${EATK_LINK_LIBS}")
 
