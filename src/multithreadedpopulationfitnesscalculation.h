@@ -33,6 +33,7 @@ private:
 	std::vector<std::string> m_errorStrings;
 
 	std::vector<std::vector<std::pair<Genome *, Fitness *>>> m_helperGenomes;
+	size_t m_genomesToCalculateInThisIteration;
 
 
 	class ThreadsReadyWaiter

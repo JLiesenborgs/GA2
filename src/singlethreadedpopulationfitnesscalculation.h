@@ -16,6 +16,7 @@ public:
 	errut::bool_t calculatePopulationFitness(const std::vector<std::shared_ptr<Population>> &populations) override;
 private:
 	std::shared_ptr<GenomeFitnessCalculation> m_genomeFitnessCalculation;
+	std::vector<Individual*> m_tmpIndividuals;
 };
 
 }

@@ -73,6 +73,13 @@ public:
 
 	// TODO: do we need a check function here?
 
+	// genomesForPopulationCalculator is e.g. the number that needs to be calculated across threads
+	// The MPI implementation itself uses a different local calculator, so doesn't call this itself
+	// This means that it's mainly a multi-thread thing
+	virtual errut::bool_t onNewCalculationStart(size_t genomesForThisCalculator, size_t genomesForPopulationCalculator)  { return true; }
+	virtual errut::bool_t onCalculationStarted() { return true; }
+	virtual errut::bool_t onCalculationEnded() { return true; }
+
 	// These are to allow a more async version, but by default the sync version is called
 	virtual errut::bool_t startNewCalculation(const Genome &genome) { return true; }
 	

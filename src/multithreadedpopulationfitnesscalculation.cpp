@@ -105,11 +105,17 @@ bool_t MultiThreadedPopulationFitnessCalculation::workerCalculatePopulationFitne
 	auto pGenomeCalc = m_threadGenomeCalculations[workerIdx].get();
 	bool_t r;
 
+	if (!(r = pGenomeCalc->onNewCalculationStart(m_helperGenomes[workerIdx].size(), m_genomesToCalculateInThisIteration)))
+		return "Error signalling new calculation iteration start: " + r.getErrorString();
+
 	for (auto &gf : m_helperGenomes[workerIdx])
 	{
 		if (!(r = pGenomeCalc->startNewCalculation(*gf.first)))
 			return "Error starting new calculation for a genome: " + r.getErrorString();
 	}
+
+	if (!(r = pGenomeCalc->onCalculationStarted()))
+		return "Error signalling calculation started: " + r.getErrorString();
 
 	bool allCalculated = false;
 	while (!allCalculated)
@@ -130,6 +136,9 @@ bool_t MultiThreadedPopulationFitnessCalculation::workerCalculatePopulationFitne
 		}
 	}
 
+	if (!(r = pGenomeCalc->onCalculationEnded()))
+		return "Error signalling calculation end: " + r.getErrorString();
+
 	return true;
 }
 
@@ -149,6 +158,7 @@ bool_t MultiThreadedPopulationFitnessCalculation::calculatePopulationFitness(con
 		h.clear();
 
 	size_t nextHelper = 0;
+	size_t genomesToCalculate = 0;
 
 	// Split the work over the helpers
 	for (auto pPop : populations)
@@ -159,9 +169,12 @@ bool_t MultiThreadedPopulationFitnessCalculation::calculatePopulationFitness(con
 			{
 				m_helperGenomes[nextHelper].push_back({i->genomePtr(), i->fitnessPtr()});
 				nextHelper = (nextHelper + 1)%m_totalThreads;
+				genomesToCalculate++;
 			}
 		}
 	}
+
+	m_genomesToCalculateInThisIteration = genomesToCalculate;
 
 	if (m_totalThreads > 1)
 		m_individualWaiters->signalAll();
