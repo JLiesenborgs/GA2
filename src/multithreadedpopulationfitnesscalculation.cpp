@@ -2,6 +2,8 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <sstream>
+#include <set>
 
 using namespace std;
 using namespace errut;
@@ -186,14 +188,35 @@ bool_t MultiThreadedPopulationFitnessCalculation::calculatePopulationFitness(con
 		m_allThreadsWaiter->wait();
 
 	// Check our own error
+	set<string> errors;
 	if (!r)
-		return r;
+		errors.insert(r.getErrorString());
 
 	// Check other threads' errors
 	for (size_t i = 0 ; i < m_errors.size() ; i++)
 	{
 		if (m_errors[i])
-			return m_errorStrings[i];
+			errors.insert(m_errorStrings[i]);
+	}
+
+	if (errors.size() > 0)
+	{
+		stringstream ss;
+		if (errors.size() > 1)
+			ss << "(";
+
+		auto it = errors.begin();
+		ss << *it;
+		it++;
+
+		while (it != errors.end())
+		{
+			ss << "," << *it;
+			it++;
+		}
+		if (errors.size() > 1)
+			ss << ")";
+		return ss.str();
 	}
 
 	return true;
