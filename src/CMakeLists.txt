@@ -34,6 +34,8 @@ set(HEADERS
 	vectorgenomefitness.h
 	vectorgenomeflipmutation.h
 	vectorgenomeuniformmutation.h
+	differentialevolutionevolver.h
+	vectordifferentialevolution.h
 	"${PROJECT_BINARY_DIR}/src/eatkconfig.h" )
 
 set(SOURCES
@@ -56,7 +58,9 @@ set(SOURCES
 	tournamentparentselection.cpp
 	trackbestonlyselectionpopulation.cpp
 	valuefitness.cpp
-	vectorgenomefitness.cpp)
+	vectorgenomefitness.cpp
+	differentialevolutionevolver.cpp
+	)
 
 if (MSVC)
 	set(CMAKE_DEBUG_POSTFIX _d)
