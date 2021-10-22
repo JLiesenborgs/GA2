@@ -99,12 +99,23 @@ inline errut::bool_t VectorDifferentialEvolutionCrossover<T>::crossover(Genome &
 	const std::vector<T> &v1 = g1.getValues();
 	assert(v0.size() == v1.size());
 
+#if 1
 	size_t rndIdx = ((size_t)m_rng->getRandomUint32())%(v0.size());
 	for (size_t i = 0 ; i < v0.size() ; i++)
 	{
 		if (i != rndIdx && m_rng->getRandomDouble() > m_CR)
 			v0[i] = v1[i];
 	}
+#else
+	size_t j = (size_t)m_rng->getRandomUint32()%(v0.size());
+	for (size_t k = 1 ; k <= v0.size() ; k++)
+	{
+		if (k != v0.size() && m_rng->getRandomDouble() > m_CR)
+			v0[j] = v1[j];
+
+		j = (j+1)%v0.size();
+	}
+#endif
 	return true;
 }
 

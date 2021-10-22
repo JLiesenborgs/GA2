@@ -14,53 +14,74 @@ template<class VT, class FT>
 class VectorValueFitnessCalculation : public GenomeFitnessCalculation
 {
 public:
-	VectorValueFitnessCalculation() { };
+	VectorValueFitnessCalculation() : m_evaluations(0) { };
 
 	errut::bool_t calculate(const Genome &genome, Fitness &fitness)
 	{
 		const VectorGenome<VT> &vg = static_cast<const VectorGenome<VT> &>(genome);
 		ValueFitness<FT> &vf = static_cast<ValueFitness<FT> &>(fitness);
 
+		m_evaluations++;
+
 		vf.setValue(calculate(vg.getValues()));
 		return true;
 	}
 
 	virtual FT calculate(const vector<VT> &x) = 0;
+protected:
+	size_t m_evaluations;
 };
 
-template<class VT, class FT>
-class Rosenbrock : public VectorValueFitnessCalculation<VT,FT>
+class BaseCalculation : public VectorValueFitnessCalculation<double,double>
 {
 public:
-	FT calculate(const vector<VT> &x) override
-	{
-		assert(x.size() == 2);
-		VT x1 = x[0];
-		VT x2 = x[1];
+	size_t getNumberOfEvaluations() const { return m_evaluations; }
+	void resetEvaluationCount() { m_evaluations = 0; }
+};
 
-		return (FT)((VT)100.0 * (x1*x1 - x2) * (x1*x1 - x2) + ((VT)1 - x1)*((VT)1 - x1));
+class f1_Sphere : public BaseCalculation
+{
+public:
+	double calculate(const vector<double> &x) override
+	{
+		assert(x.size() == 3);
+		double sumSquared = 0;
+		for (auto v : x)
+			sumSquared += v*v;
+		return sumSquared;
 	}
 };
 
-template<class VT, class FT>
-class Zimmermann : public VectorValueFitnessCalculation<VT,FT>
+class f2_Rosenbrock : public BaseCalculation
 {
 public:
-	FT calculate(const vector<VT> &x) override
+	double calculate(const vector<double> &x) override
 	{
 		assert(x.size() == 2);
-		VT x1 = x[0];
-		VT x2 = x[1];
+		double x1 = x[0];
+		double x2 = x[1];
 
-		auto h1 = (VT)9-x1-x2;
-		auto h2 = (x1-(VT)3)*(x1-(VT)3) + (x2-(VT)2)*(x2-(VT)2) - (VT)16;
-		auto h3 = x1*x2 - (VT)14;
+		return (100.0 * (x1*x1 - x2) * (x1*x1 - x2) + (1.0 - x1)*(1.0 - x1));
+	}
+};
 
-		auto p = [](auto delta) { return (VT)100 * ((VT)1 + delta); };
-		auto sgn = [] (auto x) { return (x >= 0)?(VT)1:(VT)0; };
+class f8_Zimmermann : public BaseCalculation
+{
+public:
+	double calculate(const vector<double> &x) override
+	{
+		assert(x.size() == 2);
+		double x1 = x[0];
+		double x2 = x[1];
+
+		auto h1 = 9.0-x1-x2;
+		auto h2 = (x1-3.0)*(x1-3.0) + (x2-2.0)*(x2-2.0) - 16.0;
+		auto h3 = x1*x2 - 14.0;
+
+		auto p = [](auto delta) { return 100.0 * (1.0 + delta); };
+		auto sgn = [] (auto x) { return (x >= 0)?1.0:0.0; };
 
 		return std::max(h1,
-		
 			std::max(
 				std::max(p(h2)*sgn(h2),p(h3)*sgn(h3)), 
 				std::max(p(-x1)*sgn(-x1),p(-x2)*sgn(-x2))
@@ -73,66 +94,138 @@ template<class T>
 class ValueToReachStop : public StopCriterion
 {
 public:
-	ValueToReachStop(T value) : m_value(value) { }
+	ValueToReachStop(T value, size_t maxGenerations) : m_value(value), m_maxGen(maxGenerations),m_numGen(0)
+	{
+		m_dump = (getenv("DUMPPROGRESS"))?true:false;
+	}
+
 	bool_t analyze(const std::vector<std::shared_ptr<Individual>> &currentBest, size_t generationNumber, bool &shouldStop)
 	{
 		if (currentBest.size() != 1)
 			return "Expecting current best size 1";
 		
-		cerr << generationNumber << " " << currentBest[0]->toString() << endl;
+		if (m_dump)
+			cerr << generationNumber << " " << currentBest[0]->toString() << endl;
+
+		m_numGen = generationNumber;
 		const ValueFitness<T> &vf = static_cast<const ValueFitness<T> &>(currentBest[0]->fitnessRef());
 		if (vf.getValue() <= m_value)
+		{
 			shouldStop = true;
+			m_best = currentBest[0]->createCopy();
+		}
+		else
+		{
+			if (generationNumber >= m_maxGen)
+			{
+				shouldStop = true;
+				m_numGen = generationNumber;
+			}
+		}
 		return true;			
 	}
+
+	size_t getNumberOfGenerations() const { return m_numGen; }
+	bool converged() const { return (m_best.get())?true:false; }
+	const Individual &bestSolution() const { return *m_best; }
 private:
-	T m_value;
+	const T m_value;
+	const size_t m_maxGen;
+	size_t m_numGen;
+	shared_ptr<Individual> m_best;
+	bool m_dump;
+};
+
+struct Test
+{
+	string name;
+	size_t popSize;
+	double F;
+	double CR;
+	vector<double> bottom;
+	vector<double> top;
+	double VTR; // Value to reach
+	size_t maxGenerations;
+	shared_ptr<BaseCalculation> calculator;
 };
 
 class MyEA : public EvolutionaryAlgorithm
 {
-private:
-	bool_t onAlgorithmDone(size_t generation, const std::vector<std::shared_ptr<Individual>> &bestIndividuals)
+public:
+	MyEA()
 	{
-		cout << "EA done after " << generation << " generations, best:" << endl;
-		for (auto &ind : bestIndividuals)
-			cout << ind->toString() << endl;
+		m_dumpPop = (getenv("DUMPPOP"))?true:false;
+	}
+private:
+	bool_t onFitnessCalculated(size_t generation, std::shared_ptr<Population> &population) override
+	{
+		if (m_dumpPop)
+		{
+			cerr << "Generation " << generation << ":" << endl;
+			for (size_t i = 0 ; i < population->individuals().size() ; i++)
+				cerr << "  [" << i << "] = " << population->individual(i)->toString() << endl;
+			cerr << endl;
+		}
 		return true;
 	}
+
+	bool m_dumpPop;
 };
 
 int main(int argc, char const *argv[])
 {
 	random_device rndDev;
-	shared_ptr<RandomNumberGenerator> rng = make_shared<MersenneRandomNumberGenerator>(rndDev());
-	VectorDifferentialEvolutionIndividualCreation<double,double> creation(
-		// { -2.048, -2.048}, { 2.048, 2.048 },
-		{ 0.0, 0.0 }, { 100.0, 100.0 },
-		rng);
+	unsigned int seed = rndDev();
+	if (getenv("SEED"))
+		seed = (unsigned int)stoul(getenv("SEED"));
 
-	double F = 0.9;
-	float CR = 0.1;
-	auto mut = make_shared<VectorDifferentialEvolutionMutation<double>>(F);
-	auto cross = make_shared<VectorDifferentialEvolutionCrossover<double>>(CR, rng);
+	cout << "# Seed = " << seed << endl;
+
+	shared_ptr<RandomNumberGenerator> rng = make_shared<MersenneRandomNumberGenerator>(seed);
+
+	vector<Test> tests {
+		{ "f1_Sphere",     10, 0.9, 0.1, { -5.12, -5.12, -5.12 }, { 5.12, 5.12, 5.12 }, 1e-6, 100000, make_shared<f1_Sphere>() },
+		{ "f2_Rosenbrock", 20, 0.9, 0.9, { -2.048, -2.048 }, { 2.048, 2.048 }, 1e-6, 100000, make_shared<f2_Rosenbrock>() },
+		{ "f8_Zimmermann", 20, 0.9, 0.9, { 0.0, 0.0 }, { 100.0, 100.0 }, 1e-6, 100000, make_shared<f8_Zimmermann>() },
+	};
+
 	auto comp = make_shared<ValueFitnessComparison<double>>();
-	DifferentialEvolutionEvolver evolver(rng, mut, cross, comp);
-	
-	size_t popSize = 10;
-	ValueToReachStop<double> stop(1e-6);
-	//auto calc = make_shared<Rosenbrock<double,double>>();
-	auto calc = make_shared<Zimmermann<double,double>>();
-	
-	SingleThreadedPopulationFitnessCalculation popCalc(calc);
 
-	MyEA ea;
-
-	cout << "Running EA" << endl;
-	bool_t r = ea.run(creation, evolver, popCalc, stop, popSize, popSize, popSize*2);
-	if (!r)
+	for (const auto &test : tests)
 	{
-		cerr << r.getErrorString() << endl;
-		return -1;
+		cout << "Running EA for: " << test.name << endl; 
+
+		size_t numRuns = 20;
+		for (size_t run = 0 ; run < numRuns ; run++)
+		{
+			auto mut = make_shared<VectorDifferentialEvolutionMutation<double>>(test.F);
+			auto cross = make_shared<VectorDifferentialEvolutionCrossover<double>>(test.CR, rng);
+			
+			VectorDifferentialEvolutionIndividualCreation<double,double> creation(test.bottom, test.top, rng);
+			ValueToReachStop<double> stop(test.VTR, test.maxGenerations);
+		
+			DifferentialEvolutionEvolver evolver(rng, mut, cross, comp);
+			SingleThreadedPopulationFitnessCalculation popCalc(test.calculator);
+
+			MyEA ea;
+			bool_t r = ea.run(creation, evolver, popCalc, stop, test.popSize, test.popSize, test.popSize*2);
+			if (!r)
+			{
+				cerr << r.getErrorString() << endl;
+				return -1;
+			}
+
+			if (!stop.converged())
+				cout << "  Failed to converge after " << stop.getNumberOfGenerations() << " generations" << endl;
+			else
+			{
+				cout << "  Found after " << stop.getNumberOfGenerations() << " generations, " << test.calculator->getNumberOfEvaluations()
+					 << " evaluations: " << stop.bestSolution().toString() << endl;
+			}
+
+			test.calculator->resetEvaluationCount();
+		}
 	}
-	cout << "Finishing..." << endl;
+
 	return 0;
 }

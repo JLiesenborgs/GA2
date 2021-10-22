@@ -130,9 +130,17 @@ bool_t DifferentialEvolutionEvolver::createNewPopulation(size_t generation, std:
 		if (!newGenome.get())
 			return "Unable to create new genome from three reference genomes";
 
+		//cerr << "Orig (" << i << "): " << pop.individual(i)->genome()->toString() << endl;
+		//cerr << "  r1 (" << r1 << "): " << pop.individual(r1)->genome()->toString() << endl;
+		//cerr << "  r2 (" << r2 << "): " << pop.individual(r2)->genome()->toString() << endl;
+		//cerr << "  r3 (" << r3 << "): " << pop.individual(r3)->genome()->toString() << endl;
+		//cerr << "  before crossover: " << newGenome->toString() << endl;
+
 		bool_t r = m_cross->crossover(*newGenome, pop.individual(i)->genomeRef());
 		if (!r)
 			return "Unable to crossover genomes: " + r.getErrorString();
+
+		//cerr << "  after crossover: " << newGenome->toString() << endl;
 
 		shared_ptr<Fitness> newFitness = refFitness.createCopy();
 		newFitness->setCalculated(false);
