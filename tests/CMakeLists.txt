@@ -21,3 +21,5 @@ target_link_libraries(deidxtest eatk-static "${EATK_LINK_LIBS}")
 
 add_executable(detest detest.cpp)
 target_link_libraries(detest eatk-static "${EATK_LINK_LIBS}")
+
+add_executable(debasictest debasictest.cpp)
