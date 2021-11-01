@@ -2,6 +2,9 @@
 #include <random>
 #include <limits>
 #include <cmath>
+#include <map>
+#include <memory>
+#include <algorithm>
 
 using namespace std;
 
@@ -909,10 +912,8 @@ struct f30_Function : public Problem // Doesn't seem to work?
 const vector<double> f30_Function::z = { 1219, 1371, 1377, 1144, 1201, 1225, 1244, 1254, 1304, 1328, 1351, 1356, 1370, 1390 };
 const vector<double> f30_Function::delta = { 0,0,0, 1,1,1, 1,1,1, 1,1,1, 1,1 };
 
-int main(int argc, char *argv[])
+bool runDEonProblem(mt19937 &rng, Problem &problem)
 {
-	random_device rd;
-	mt19937 rng(rd());
 	uniform_real_distribution<> dist(0, 1);
 	auto rnd_uni = [&rng, &dist]()
 	{
@@ -921,55 +922,6 @@ int main(int argc, char *argv[])
 
 	size_t count = 0, gen_max = 100000;
 	size_t evaluation_count = 0;
-	
-	//f1_Sphere problem;
-	//f2_Rosenbrock problem;
-	//f3_Step problem;
-	//f5_Foxholes problem;
-	//f6_Corana problem;
-	//f7_Griewangk problem;
-	//f8_Zimmermann problem;
-	//f9_k4_Poly problem;
-	//f9_k8_Poly problem;
-	//f11_HyperEllipsoid problem(30);
-	//f11_HyperEllipsoid problem(100);
-	//f12_Katsuura problem(10);
-	//f12_Katsuura problem(30);
-	//f13_Rastrigin problem(20);
-	//f13_Rastrigin problem(100);
-	//f14_Griewangk problem(20);
-	//f14_Griewangk problem(100);
-	//f15_Ackley problem(30);
-	//f15_Ackley problem(100);
-	//f16_Goldstein problem;
-	//f17_PenalizedShubert problem;
-	//f18_2DPenalizedShubert problem;
-	//f19_Modified2DPenalizedShubert problem(0.5);
-	//f19_Modified2DPenalizedShubert problem(1.0);
-	//f20_SixHumpCamel problem;
-	//f21_Function problem(2);
-	//f21_Function problem(3);
-	//f21_Function problem(4);
-	//f22_Function problem(5);
-	//f22_Function problem(8);
-	//f22_Function problem(10);
-	//f23_Function problem(2);
-	//f23_Function problem(3);
-	//f23_Function problem(4);
-	//f24_Function problem(5);
-	//f24_Function problem(6);
-	//f24_Function problem(7);
-	//f25_Function problem;
-	//f26_Function problem;
-	//f27_Function problem;
-	//f28_Function problem(1, -1);
-	//f28_Function problem(2, -2);
-	//f28_Function problem(3, -3);
-	//f28_Function problem(4, -4);
-	//f28_Function problem(5, -5);
-	//f28_Function problem(6, -6);
-	f29_Function problem;
-	//f30_Function problem; // Doesn't seem to work well
 
 	size_t NP = problem.NP();
 	size_t D = problem.D();
@@ -1020,13 +972,14 @@ int main(int argc, char *argv[])
 
 			if (score < VTR)
 			{
-				cout << "generations = " << count << " evaluations = " << evaluation_count;
-				cout << " score = " << score;
-				cout << " solution =";
+				cout << "NP: " << NP << " D: " << D << " F: " << F << " CR: " << CR;
+				cout << " gen: " << count << " eval: " << evaluation_count;
+				cout << " score: " << score;
+				cout << " sol: [";
 				for (auto v : trial)
 					cout << " " << v;
-				cout << endl;
-				exit(0);
+				cout << " ]" << endl;
+				return true;
 			}
 
 			if (score <= cost[i])
@@ -1053,4 +1006,142 @@ int main(int argc, char *argv[])
 
 	cout << "No solution found after " << gen_max << " generations" << endl;
 	return -1;
+
+}
+
+int main(int argc, char *argv[])
+{
+	random_device rd;
+	mt19937 rng(rd());
+	
+	map<string, shared_ptr<Problem>> problems {
+		{ "f1", make_shared<f1_Sphere>() },
+		{ "f2", make_shared<f2_Rosenbrock>() },
+		{ "f3", make_shared<f3_Step>() },
+		// { "f4",  },
+		{ "f5", make_shared<f5_Foxholes>() },
+		{ "f6", make_shared<f6_Corana>() },
+		{ "f7", make_shared<f7_Griewangk>() },
+		{ "f8", make_shared<f8_Zimmermann>() },
+		{ "f9_k4", make_shared<f9_k4_Poly>() },
+		{ "f9_k8", make_shared<f9_k8_Poly>() },
+		{ "f11_30", make_shared<f11_HyperEllipsoid>(30) },
+		{ "f11_100", make_shared<f11_HyperEllipsoid>(100) },
+		{ "f12_10", make_shared<f12_Katsuura>(10) },
+		{ "f12_30", make_shared<f12_Katsuura>(30) },
+		{ "f13_20", make_shared<f13_Rastrigin>(20) },
+		{ "f13_100", make_shared<f13_Rastrigin>(100) },
+		{ "f14_20", make_shared<f14_Griewangk>(20) },
+		{ "f14_100", make_shared<f14_Griewangk>(100) },
+		{ "f15_30", make_shared<f15_Ackley>(30) },
+		{ "f15_100", make_shared<f15_Ackley>(100) },
+		{ "f16", make_shared<f16_Goldstein>() },
+		{ "f17", make_shared<f17_PenalizedShubert>() },
+		{ "f18", make_shared<f18_2DPenalizedShubert>() },
+		{ "f19_0.5", make_shared<f19_Modified2DPenalizedShubert>(0.5) },
+		{ "f19_1", make_shared<f19_Modified2DPenalizedShubert>(1.0) },
+		{ "f20", make_shared<f20_SixHumpCamel>() },
+		{ "f21_2", make_shared<f21_Function>(2) },
+		{ "f21_3", make_shared<f21_Function>(3) },
+		{ "f21_4", make_shared<f21_Function>(4) },
+		{ "f22_5", make_shared<f22_Function>(5) },
+		{ "f22_8", make_shared<f22_Function>(8) },
+		{ "f22_10", make_shared<f22_Function>(10) },
+		{ "f23_2", make_shared<f23_Function>(2) },
+		{ "f23_3", make_shared<f23_Function>(3) },
+		{ "f23_4", make_shared<f23_Function>(4) },
+		{ "f24_5", make_shared<f24_Function>(5) },
+		{ "f24_6", make_shared<f24_Function>(6) },
+		{ "f24_7", make_shared<f24_Function>(7) },
+		{ "f25", make_shared<f25_Function>() },
+		{ "f26", make_shared<f26_Function>() },
+		{ "f27", make_shared<f27_Function>() },
+		{ "f28_1", make_shared<f28_Function>(1, -1) },
+		{ "f28_2", make_shared<f28_Function>(2, -2) },
+		{ "f28_3", make_shared<f28_Function>(3, -3) },
+		{ "f28_4", make_shared<f28_Function>(4, -4) },
+		{ "f28_5", make_shared<f28_Function>(5, -5) },
+		{ "f28_6", make_shared<f28_Function>(6, -6) },
+		{ "f29", make_shared<f29_Function>() },
+		//{ "f30", make_shared<f30_Function>() },
+	};
+
+	//f1_Sphere problem;
+	//f2_Rosenbrock problem;
+	//f3_Step problem;
+	//f5_Foxholes problem;
+	//f6_Corana problem;
+	//f7_Griewangk problem;
+	//f8_Zimmermann problem;
+	//f9_k4_Poly problem;
+	//f9_k8_Poly problem;
+	//f11_HyperEllipsoid problem(30);
+	//f11_HyperEllipsoid problem(100);
+	//f12_Katsuura problem(10);
+	//f12_Katsuura problem(30);
+	//f13_Rastrigin problem(20);
+	//f13_Rastrigin problem(100);
+	//f14_Griewangk problem(20);
+	//f14_Griewangk problem(100);
+	//f15_Ackley problem(30);
+	//f15_Ackley problem(100);
+	//f16_Goldstein problem;
+	//f17_PenalizedShubert problem;
+	//f18_2DPenalizedShubert problem;
+	//f19_Modified2DPenalizedShubert problem(0.5);
+	//f19_Modified2DPenalizedShubert problem(1.0);
+	//f20_SixHumpCamel problem;
+	//f21_Function problem(2);
+	//f21_Function problem(3);
+	//f21_Function problem(4);
+	//f22_Function problem(5);
+	//f22_Function problem(8);
+	//f22_Function problem(10);
+	//f23_Function problem(2);
+	//f23_Function problem(3);
+	//f23_Function problem(4);
+	//f24_Function problem(5);
+	//f24_Function problem(6);
+	//f24_Function problem(7);
+	//f25_Function problem;
+	//f26_Function problem;
+	//f27_Function problem;
+	//f28_Function problem(1, -1);
+	//f28_Function problem(2, -2);
+	//f28_Function problem(3, -3);
+	//f28_Function problem(4, -4);
+	//f28_Function problem(5, -5);
+	//f28_Function problem(6, -6);
+	//f29_Function problem;
+	//f30_Function problem; // Doesn't seem to work well
+
+	auto listProblems = [&problems]()
+	{
+		vector<string> names;
+		for (auto it : problems)
+			names.push_back(it.first);
+		sort(names.begin(), names.end());
+		cerr << "Available function names:" << endl;
+		for (auto &n : names)
+			cerr << "    " << n << endl;
+	};
+
+	if (argc != 2)
+	{
+		cerr << "Specify a problem name!" << endl;
+		listProblems();
+		return -1;
+	}
+
+	auto it = problems.find(argv[1]);
+	if (it == problems.end())
+	{
+		cerr << "Specified problem name not found" << endl;
+		listProblems();
+		return -1;
+	}
+
+	if (!(runDEonProblem(rng, *(it->second))))
+		return -1;
+	return 0;
 }
