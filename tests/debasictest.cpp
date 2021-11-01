@@ -21,14 +21,14 @@ struct Problem
 
 struct f1_Sphere : public Problem // Parameters from deshort1.ps
 {
-	size_t NP() override { return 10; }
+	size_t NP() override { return 5; }
 	size_t D() override { return 3; }
 	vector<vector<double>> IPR() override
 	{
 		return { { -5.12, 5.12 }, { -5.12, 5.12 }, { -5.12, 5.12 } };
 	}
-	double F() override { return 0.5; }
-	double CR() override { return 0.3; }
+	double F() override { return 0.9; }
+	double CR() override { return 0.1; }
 	double VTR() override { return 1e-6; }
 	double evaluate(const vector<double> &x) override
 	{
@@ -185,7 +185,7 @@ struct f7_Griewangk : public Problem
 	}
 };
 
-struct f8_Zimmermann : public Problem // settings from deshort1.ps
+struct f8_Zimmermann : public Problem // (settings from deshort1.ps) back to settings from paper
 {
 	size_t NP() override { return 10; }
 	size_t D() override { return 2; }
@@ -193,8 +193,8 @@ struct f8_Zimmermann : public Problem // settings from deshort1.ps
 	{
 		return { { 0, 100 }, { 0, 100 } };
 	}
-	double F() override { return 0.8; }
-	double CR() override { return 0.5; }
+	double F() override { return 0.9; }
+	double CR() override { return 0.9; }
 	double VTR() override { return 1e-6; }
 	double evaluate(const vector<double> &x) override
 	{
