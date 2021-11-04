@@ -83,6 +83,39 @@ struct f3_Step : public Problem
 	}
 };
 
+struct f4_Quartic : public Problem // Is this right?
+{
+	f4_Quartic(mt19937 &rng) : m_rng(rng) { }
+
+	size_t NP() override { return 10; }
+	size_t D() override { return 30; }
+	vector<vector<double>> IPR() override
+	{
+		vector<vector<double>> ipr;
+		for (size_t i = 0 ; i < 30 ; i++)
+			ipr.push_back({-1.28, 1.28});
+		return ipr;
+	}
+	double F() override { return 0.9; }
+	double CR() override { return 0.0; }
+	double VTR() override { return 15.0; }
+	double evaluate(const vector<double> &x) override
+	{
+		uniform_real_distribution<> dist(0, 1);
+
+		double s = 0;
+		for (size_t j = 0 ; j < 30 ; j++)
+		{
+			double eta = dist(m_rng);
+			s += (x[j]*x[j]*x[j]*x[j]*(j+1) + eta);
+		}
+		return s;
+
+	}
+
+	mt19937 &m_rng;
+};
+
 struct f5_Foxholes : public Problem
 {
 	vector<vector<double>> a;
@@ -1018,7 +1051,7 @@ int main(int argc, char *argv[])
 		{ "f1", make_shared<f1_Sphere>() },
 		{ "f2", make_shared<f2_Rosenbrock>() },
 		{ "f3", make_shared<f3_Step>() },
-		// { "f4",  },
+		// { "f4", make_shared<f4_Quartic>(rng) },
 		{ "f5", make_shared<f5_Foxholes>() },
 		{ "f6", make_shared<f6_Corana>() },
 		{ "f7", make_shared<f7_Griewangk>() },
