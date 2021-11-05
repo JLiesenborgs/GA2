@@ -496,13 +496,13 @@ int main(int argc, char const *argv[])
 
 		for (size_t run = 0 ; run < numRuns ; run++)
 		{
-			auto mut = make_shared<VectorDifferentialEvolutionMutation<double>>(test.F);
-			auto cross = make_shared<VectorDifferentialEvolutionCrossover<double>>(test.CR, rng);
+			auto mut = make_shared<VectorDifferentialEvolutionMutation<double>>();
+			auto cross = make_shared<VectorDifferentialEvolutionCrossover<double>>(rng);
 			
 			VectorDifferentialEvolutionIndividualCreation<double,double> creation(test.bottom, test.top, rng);
 			ValueToReachStop<double> stop(test.VTR, test.maxGenerations);
 		
-			DifferentialEvolutionEvolver evolver(rng, mut, cross, comp);
+			DifferentialEvolutionEvolver evolver(rng, mut, test.F, cross, test.CR, comp);
 			SingleThreadedPopulationFitnessCalculation popCalc(test.calculator);
 
 			MyEA ea;

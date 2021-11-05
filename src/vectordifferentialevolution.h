@@ -12,25 +12,20 @@ template<class T>
 class VectorDifferentialEvolutionMutation : public DifferentialEvolutionMutation
 {
 public:
-	VectorDifferentialEvolutionMutation(T factor) : m_factor(factor) { }
-
 	errut::bool_t check(const Genome &g) override;
-	std::shared_ptr<Genome> mutate(const Genome &r1, const Genome &r2, const Genome &r3) override;
-private:
-	const T m_factor;
+	std::shared_ptr<Genome> mutate(const std::vector<const Genome*> &genomes, const std::vector<double> &weights) override;
 };
 
 template<class T>
 class VectorDifferentialEvolutionCrossover : public DifferentialEvolutionCrossover
 {
 public:
-	VectorDifferentialEvolutionCrossover(double CR, const std::shared_ptr<RandomNumberGenerator> &rng)
-		: m_CR(CR), m_rng(rng) { }
+	VectorDifferentialEvolutionCrossover(const std::shared_ptr<RandomNumberGenerator> &rng)
+		: m_rng(rng) { }
 
 	errut::bool_t check(const Genome &g) override;
-	errut::bool_t crossover(Genome &mutantDest, const Genome &origVector) override;
+	errut::bool_t crossover(double CR, Genome &mutantDest, const Genome &origVector) override;
 private:
-	double m_CR;
 	std::shared_ptr<RandomNumberGenerator> m_rng;
 };
 
@@ -50,7 +45,7 @@ private:
 };
 
 template<class T>
-errut::bool_t VectorDifferentialEvolutionMutation<T>::check(const Genome &g)
+inline errut::bool_t VectorDifferentialEvolutionMutation<T>::check(const Genome &g)
 {
 	const VectorGenome<T> *pGenome = dynamic_cast<const VectorGenome<T>*>(&g);
 	if (!pGenome)
@@ -59,22 +54,29 @@ errut::bool_t VectorDifferentialEvolutionMutation<T>::check(const Genome &g)
 }
 
 template<class T>
-inline std::shared_ptr<Genome> VectorDifferentialEvolutionMutation<T>::mutate(const Genome &r1, const Genome &r2, const Genome &r3)
+inline std::shared_ptr<Genome> VectorDifferentialEvolutionMutation<T>::mutate(const std::vector<const Genome*> &genomes, const std::vector<double> &weights)
 {
-	std::shared_ptr<Genome> result = r1.createCopy();
-	VectorGenome<T> &g1 = static_cast<VectorGenome<T>&>(*result);
-	const VectorGenome<T> &g2 = static_cast<const VectorGenome<T>&>(r2);
-	const VectorGenome<T> &g3 = static_cast<const VectorGenome<T>&>(r3);
+	assert(genomes.size() > 0);
+	assert(genomes.size() == weights.size());
+
+	std::shared_ptr<Genome> result = genomes[0]->createCopy();
+	VectorGenome<T> &g0 = static_cast<VectorGenome<T>&>(*result);
+	std::vector<T> &v0 = g0.getValues();
+
+	v0.assign(v0.size(), 0);
+
+	for (size_t j = 0 ; j < genomes.size() ; j++)
+	{
+		T f = (T)weights[j];
+
+		const VectorGenome<T> &g1 = static_cast<const VectorGenome<T>&>(*genomes[j]);
+		const std::vector<T> &v1 = g1.getValues();
 	
-	std::vector<T> &v1 = g1.getValues();
-	const std::vector<T> &v2 = g2.getValues();
-	const std::vector<T> &v3 = g3.getValues();
-
-	assert(v1.size() == v2.size());
-	assert(v1.size() == v3.size());
-
-	for (size_t i = 0 ; i < v1.size() ; i++)
-		v1[i] += m_factor*(v2[i] - v3[i]);
+		assert(v1.size() == v0.size());
+		
+		for (size_t i = 0 ; i < v0.size() ; i++)
+			v0[i] += f * v1[i];
+	}
 
 	return result;
 }
@@ -90,7 +92,7 @@ inline errut::bool_t VectorDifferentialEvolutionCrossover<T>::check(const Genome
 }
 
 template<class T>
-inline errut::bool_t VectorDifferentialEvolutionCrossover<T>::crossover(Genome &mutantDest, const Genome &origVector)
+inline errut::bool_t VectorDifferentialEvolutionCrossover<T>::crossover(double CR, Genome &mutantDest, const Genome &origVector)
 {
 	VectorGenome<T> &g0 = static_cast<VectorGenome<T>&>(mutantDest);
 	const VectorGenome<T> &g1 = static_cast<const VectorGenome<T>&>(origVector);
@@ -103,14 +105,14 @@ inline errut::bool_t VectorDifferentialEvolutionCrossover<T>::crossover(Genome &
 	size_t rndIdx = ((size_t)m_rng->getRandomUint32())%(v0.size());
 	for (size_t i = 0 ; i < v0.size() ; i++)
 	{
-		if (i != rndIdx && m_rng->getRandomDouble() > m_CR)
+		if (i != rndIdx && m_rng->getRandomDouble() > CR)
 			v0[i] = v1[i];
 	}
 #else
 	size_t j = (size_t)m_rng->getRandomUint32()%(v0.size());
 	for (size_t k = 1 ; k <= v0.size() ; k++)
 	{
-		if (k != v0.size() && m_rng->getRandomDouble() > m_CR)
+		if (k != v0.size() && m_rng->getRandomDouble() > CR)
 			v0[j] = v1[j];
 
 		j = (j+1)%v0.size();

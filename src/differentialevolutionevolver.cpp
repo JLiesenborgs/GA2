@@ -9,15 +9,19 @@ namespace eatk
 DifferentialEvolutionEvolver::DifferentialEvolutionEvolver(
 	const shared_ptr<RandomNumberGenerator> &rng,
 	const shared_ptr<DifferentialEvolutionMutation> &mut,
+	double F,
 	const shared_ptr<DifferentialEvolutionCrossover> &cross,
+	double CR,
 	const shared_ptr<FitnessComparison> &fitComp, size_t objectiveNumber)
 	: m_rng(rng),
 	  m_mut(mut),
 	  m_cross(cross),
+	  m_CR(CR),
 	  m_fitComp(fitComp),
 	  m_objectiveNumber(objectiveNumber)
 {
-
+	m_mutationFactors = { 1.0, F, -F };
+	m_mutationGenomes = { nullptr, nullptr, nullptr };
 }
 
 DifferentialEvolutionEvolver::~DifferentialEvolutionEvolver()
@@ -124,9 +128,11 @@ bool_t DifferentialEvolutionEvolver::createNewPopulation(size_t generation, std:
 		size_t r1, r2, r3;
 		pickRandomIndices(i, r1, r2, r3);
 
-		shared_ptr<Genome> newGenome = m_mut->mutate(pop.individual(r1)->genomeRef(),
-		                                 pop.individual(r2)->genomeRef(),
-										 pop.individual(r3)->genomeRef());
+		m_mutationGenomes[0] = pop.individual(r1)->genomePtr();
+		m_mutationGenomes[1] = pop.individual(r2)->genomePtr();
+		m_mutationGenomes[2] = pop.individual(r3)->genomePtr();
+
+		shared_ptr<Genome> newGenome = m_mut->mutate(m_mutationGenomes, m_mutationFactors);
 		if (!newGenome.get())
 			return "Unable to create new genome from three reference genomes";
 
@@ -136,7 +142,7 @@ bool_t DifferentialEvolutionEvolver::createNewPopulation(size_t generation, std:
 		//cerr << "  r3 (" << r3 << "): " << pop.individual(r3)->genome()->toString() << endl;
 		//cerr << "  before crossover: " << newGenome->toString() << endl;
 
-		bool_t r = m_cross->crossover(*newGenome, pop.individual(i)->genomeRef());
+		bool_t r = m_cross->crossover(m_CR, *newGenome, pop.individual(i)->genomeRef());
 		if (!r)
 			return "Unable to crossover genomes: " + r.getErrorString();
 

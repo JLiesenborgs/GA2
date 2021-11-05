@@ -14,7 +14,7 @@ public:
 	virtual ~DifferentialEvolutionMutation() { }
 
 	virtual errut::bool_t check(const Genome &g) { return "Not implemented in base class"; }
-	virtual std::shared_ptr<Genome> mutate(const Genome &r1, const Genome &r2, const Genome &r3) { return nullptr; }
+	virtual std::shared_ptr<Genome> mutate(const std::vector<const Genome*> &genomes, const std::vector<double> &weights) { return nullptr; }
 };
 
 class DifferentialEvolutionCrossover
@@ -24,7 +24,7 @@ public:
 	virtual ~DifferentialEvolutionCrossover() { }
 
 	virtual errut::bool_t check(const Genome &g) { return "Not implemented in base class"; }
-	virtual errut::bool_t crossover(Genome &mutantDest, const Genome &origVector) { return "Not implemented in base class"; }
+	virtual errut::bool_t crossover(double CR, Genome &mutantDest, const Genome &origVector) { return "Not implemented in base class"; }
 };
 
 class DifferentialEvolutionEvolver : public PopulationEvolver
@@ -33,7 +33,9 @@ public:
 	DifferentialEvolutionEvolver(
 		const std::shared_ptr<RandomNumberGenerator> &rng,
 		const std::shared_ptr<DifferentialEvolutionMutation> &mut,
+		double F,
 		const std::shared_ptr<DifferentialEvolutionCrossover> &cross,
+		double CR,
 		const std::shared_ptr<FitnessComparison> &fitComp, size_t objectiveNumber = 0);
 	~DifferentialEvolutionEvolver();
 
@@ -46,6 +48,10 @@ private:
 	std::shared_ptr<DifferentialEvolutionCrossover> m_cross;
 	std::shared_ptr<FitnessComparison> m_fitComp;
 	size_t m_objectiveNumber;
+
+	std::vector<const Genome*> m_mutationGenomes;
+	std::vector<double> m_mutationFactors;
+	double m_CR;
 
 	std::vector<std::shared_ptr<Individual>> m_bestIndividual;
 };
