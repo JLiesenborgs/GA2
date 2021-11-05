@@ -47,7 +47,7 @@ private:
 	std::shared_ptr<DifferentialEvolutionMutation> m_mut;
 	std::shared_ptr<DifferentialEvolutionCrossover> m_cross;
 	std::shared_ptr<FitnessComparison> m_fitComp;
-	size_t m_objectiveNumber;
+	const size_t m_objectiveNumber;
 
 	std::vector<const Genome*> m_mutationGenomes;
 	std::vector<double> m_mutationFactors;

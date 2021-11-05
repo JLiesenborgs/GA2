@@ -36,6 +36,7 @@ set(HEADERS
 	vectorgenomeuniformmutation.h
 	differentialevolutionevolver.h
 	vectordifferentialevolution.h
+	jadeevolver.h
 	"${PROJECT_BINARY_DIR}/src/eatkconfig.h" )
 
 set(SOURCES
@@ -60,6 +61,7 @@ set(SOURCES
 	valuefitness.cpp
 	vectorgenomefitness.cpp
 	differentialevolutionevolver.cpp
+	jadeevolver.cpp
 	)
 
 if (MSVC)
