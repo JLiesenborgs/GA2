@@ -82,9 +82,9 @@ inline double chooseTruncatedDistribution(RandomNumberGenerator &rng, double mu,
 	struct G
 	{
 		G(RandomNumberGenerator &_rng) : rng(_rng) { }
-		double operator()() { return rng.getRandomDouble(); }
+		double operator()() { return (double)rng.getRandomUint32(); }
 		double min() { return 0; }
-		double max() { return 1; }
+		double max() { return 0x100000000; }
 
 		RandomNumberGenerator &rng;
 	};
@@ -102,7 +102,7 @@ inline double chooseTruncatedDistribution(RandomNumberGenerator &rng, double mu,
 bool_t JADEEvolver::createNewPopulation(size_t generation, vector<shared_ptr<Population>> &populations, size_t targetPopulationSize)
 {
 	if (populations.size() != 1)
-		return "DE evolver only works with one population";
+		return "JADE evolver only works with one population";
 	
 	Population &pop = *(populations[0]);
 
@@ -161,12 +161,17 @@ bool_t JADEEvolver::createNewPopulation(size_t generation, vector<shared_ptr<Pop
 	else
 		return "Unexpected population size: should be the target (" + to_string(targetPopulationSize) + ") or twice that, but is " + to_string(pop.size());
 
+	onMutationCrossoverSettings(m_muF, m_muCR);
+
 	// Sort the population, we need this to select the p fraction of best
 	auto comp = [this](auto &i1, auto &i2)
 	{
 		return m_fitComp->isFitterThan(i1->fitnessRef(), i2->fitnessRef(), m_objectiveNumber);
 	};
 	sort(pop.individuals().begin(), pop.individuals().end(), comp);
+
+	// for (auto &ind : pop.individuals())
+	// 	cout << ind->toString() << endl;
 
 	// Keep the best
 	const auto &firstAfterSort = pop.individuals()[0];
@@ -177,6 +182,7 @@ bool_t JADEEvolver::createNewPopulation(size_t generation, vector<shared_ptr<Pop
 		if (comp(firstAfterSort, m_bestIndividual[0]))
 			m_bestIndividual[0] = firstAfterSort->createCopy();
 	}
+	// cout << m_bestIndividual[0]->toString() << endl;
 
 	// Do mutation/crossover
 
@@ -190,6 +196,7 @@ bool_t JADEEvolver::createNewPopulation(size_t generation, vector<shared_ptr<Pop
 		bestPartSize = targetPopulationSize;
 	if (bestPartSize == 0)
 		bestPartSize = 1;
+	// cout << "bestPartSize = " << bestPartSize << endl;
 	
 	auto pickIndex = [this](size_t num) { return ((size_t)m_rng->getRandomUint32())%(num); };
 	auto adjust = [](size_t &idx, size_t refIdx) { if (idx >= refIdx) idx++; };
@@ -213,8 +220,8 @@ bool_t JADEEvolver::createNewPopulation(size_t generation, vector<shared_ptr<Pop
 
 	for (size_t i = 0 ; i < targetPopulationSize ; i++) // Note: not using pop.size() since we'll be changing the size!
 	{
-		m_CRi[i] = chooseTruncatedDistribution<cauchy_distribution<>>(*m_rng, m_muCR, 0.1, 0, 1);
-		m_Fi[i] = chooseTruncatedDistribution<normal_distribution<>>(*m_rng, m_muF, 0.1, 0, 1);
+		m_CRi[i] = chooseTruncatedDistribution<normal_distribution<>>(*m_rng, m_muCR, 0.1, 0, 1);
+		m_Fi[i] = chooseTruncatedDistribution<cauchy_distribution<>>(*m_rng, m_muF, 0.1, 0, 1);
 
 		size_t bestp = (size_t)m_rng->getRandomUint32() % bestPartSize;
 
@@ -238,6 +245,7 @@ bool_t JADEEvolver::createNewPopulation(size_t generation, vector<shared_ptr<Pop
 			size_t archIdx = r2-targetPopulationSize;
 			assert(archIdx < archiveSize);
 			m_mutationGenomes[4] = m_archive[archIdx].get();
+			// cout << "Choosing " << archIdx << " from archive" << endl;
 		}
 
 		shared_ptr<Genome> newGenome = m_mut->mutate(m_mutationGenomes, m_mutationFactors);

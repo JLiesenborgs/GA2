@@ -13,7 +13,7 @@ public:
 		const std::shared_ptr<DifferentialEvolutionMutation> &mut,
 		const std::shared_ptr<DifferentialEvolutionCrossover> &cross,
 		const std::shared_ptr<FitnessComparison> &fitComp, size_t objectiveNumber = 0,
-		double p = 0.1, double c = 0.1,
+		double p = 0.05, double c = 0.1,
 		bool useArchive = true,
 		double initMuF = 0.5,
 		double initMuCR = 0.5
@@ -23,6 +23,8 @@ public:
 	errut::bool_t check(const std::shared_ptr<Population> &population) override;
 	errut::bool_t createNewPopulation(size_t generation, std::vector<std::shared_ptr<Population>> &populations, size_t targetPopulationSize) override;
 	const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const override { return m_bestIndividual; }
+protected:
+	virtual void onMutationCrossoverSettings(double muF, double muCR) const { }
 private:
 	void trimArchive(size_t targetPopulationSize);
 
