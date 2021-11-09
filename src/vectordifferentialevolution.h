@@ -5,6 +5,10 @@
 #include "vectorgenomefitness.h"
 #include "valuefitness.h"
 
+
+
+#include <iostream>
+
 namespace eatk
 {
 
@@ -20,13 +24,19 @@ template<class T>
 class VectorDifferentialEvolutionCrossover : public DifferentialEvolutionCrossover
 {
 public:
-	VectorDifferentialEvolutionCrossover(const std::shared_ptr<RandomNumberGenerator> &rng)
-		: m_rng(rng) { }
+	VectorDifferentialEvolutionCrossover(const std::shared_ptr<RandomNumberGenerator> &rng,
+										 const std::vector<T> &lowerBounds = {}, const std::vector<T> &upperBounds = {})
+		: m_rng(rng), m_lower(lowerBounds), m_upper(upperBounds)
+	{
+		m_useBounds = (m_lower.size()||m_upper.size() > 0)?true:false;
+	}
 
 	errut::bool_t check(const Genome &g) override;
 	errut::bool_t crossover(double CR, Genome &mutantDest, const Genome &origVector) override;
 private:
 	std::shared_ptr<RandomNumberGenerator> m_rng;
+	std::vector<T> m_lower, m_upper;
+	bool m_useBounds;
 };
 
 template<class VT, class FT>
@@ -88,6 +98,16 @@ inline errut::bool_t VectorDifferentialEvolutionCrossover<T>::check(const Genome
 	if (!pGenome)
 		return "Genome is not a VectorGenome of the correct type";
 
+	if (m_useBounds)
+	{
+		if (m_upper.size() != m_lower.size())
+			return "Specified bound have different sizes";
+		for (size_t i = 0 ; i < m_lower.size() ; i++)
+		{
+			if (m_lower[i] >= m_upper[i])
+				return "Lower bound " + std::to_string(i) + " is larger or equal than upper bound";
+		}
+	}
 	return true;
 }
 
@@ -101,23 +121,27 @@ inline errut::bool_t VectorDifferentialEvolutionCrossover<T>::crossover(double C
 	const std::vector<T> &v1 = g1.getValues();
 	assert(v0.size() == v1.size());
 
-#if 1
 	size_t rndIdx = ((size_t)m_rng->getRandomUint32())%(v0.size());
 	for (size_t i = 0 ; i < v0.size() ; i++)
 	{
 		if (i != rndIdx && m_rng->getRandomDouble() > CR)
 			v0[i] = v1[i];
 	}
-#else
-	size_t j = (size_t)m_rng->getRandomUint32()%(v0.size());
-	for (size_t k = 1 ; k <= v0.size() ; k++)
-	{
-		if (k != v0.size() && m_rng->getRandomDouble() > CR)
-			v0[j] = v1[j];
 
-		j = (j+1)%v0.size();
+	if (m_useBounds) // v1 should already be within bounds, we won't check this (only in assert)!
+	{
+		for (size_t i = 0 ; i < v0.size() ; i++)
+		{
+			if (v0[i] < m_lower[i])
+				v0[i] = (m_lower[i] + v1[i])/2.0;
+			
+			if (v0[i] > m_upper[i])
+				v0[i] = (m_upper[i] + v1[i])/2.0;
+
+			assert(v0[i] >= m_lower[i] && v0[i] <= m_upper[i]);
+			assert(v1[i] >= m_lower[i] && v1[i] <= m_upper[i]);
+		}
 	}
-#endif
 	return true;
 }
 

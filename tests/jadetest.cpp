@@ -55,6 +55,25 @@ private:
 	const size_t m_D;
 };
 
+class f2 : public BaseCalculation
+{
+public:
+	f2(size_t D) : m_D(D) { }
+	double calculate(const vector<double> &x) override
+	{
+		assert(x.size() == m_D);
+		double sum = 0, prod = 1;
+		for (auto v : x)
+		{
+			sum += std::abs(v);
+			prod *= std::abs(v);
+		}
+		return sum + prod;
+	}
+private:
+	const size_t m_D;
+};
+
 class f3 : public BaseCalculation
 {
 public:
@@ -71,6 +90,203 @@ public:
 				sub += x[j];
 			sum += sub*sub;
 		}
+		return sum;
+	}
+private:
+	const size_t m_D;
+};
+
+class f4 : public BaseCalculation
+{
+public:
+	f4(size_t D) : m_D(D) { }
+	double calculate(const vector<double> &x) override
+	{
+		assert(x.size() == m_D);
+		double max = -numeric_limits<double>::max();
+		for (auto v : x)
+			if (std::abs(v) > max)
+				max = std::abs(v);
+		return max;
+	}
+private:
+	const size_t m_D;
+};
+
+class f5 : public BaseCalculation
+{
+public:
+	f5(size_t D) : m_D(D) { }
+	double calculate(const vector<double> &x) override
+	{
+		assert(x.size() == m_D);
+		double sum = 0;
+		for (size_t i = 0 ; i < m_D-1 ; i++)
+			sum += 100.0*(x[i+1]-x[i]*x[i])*(x[i+1]-x[i]*x[i]) + (x[i] - 1.0)*(x[i] - 1.0);
+		return sum;
+	}
+private:
+	const size_t m_D;
+};
+
+class f6 : public BaseCalculation
+{
+public:
+	f6(size_t D) : m_D(D) { }
+	double calculate(const vector<double> &x) override
+	{
+		assert(x.size() == m_D);
+		double sum = 0;
+		for (auto v : x)
+			sum += std::floor(v+0.5)*std::floor(v+0.5);
+		return sum;
+	}
+private:
+	const size_t m_D;
+};
+
+class f7 : public BaseCalculation // Doesn't seem to work well
+{
+public:
+	f7(size_t D, const shared_ptr<RandomNumberGenerator> &rng) : m_D(D), m_rng(rng) { }
+	double calculate(const vector<double> &x) override
+	{
+		assert(x.size() == m_D);
+		double sum = 0;
+		for (size_t i = 0 ; i < m_D ; i++)
+			sum += (i+1.0)*x[i]*x[i]*x[i]*x[i];
+		return sum + m_rng->getRandomDouble();
+	}
+private:
+	const size_t m_D;
+	shared_ptr<RandomNumberGenerator> m_rng;
+};
+
+class f8 : public BaseCalculation
+{
+public:
+	f8(size_t D) : m_D(D) { }
+	double calculate(const vector<double> &x) override
+	{
+		assert(x.size() == m_D);
+
+		double sum = 0;
+		for (auto v : x)
+			sum += -v*std::sin(std::sqrt(std::abs(v)));
+		return sum + 418.98288727243369*m_D;
+	}
+private:
+	const size_t m_D;
+};
+
+class f9 : public BaseCalculation
+{
+public:
+	f9(size_t D) : m_D(D) { }
+	double calculate(const vector<double> &x) override
+	{
+		assert(x.size() == m_D);
+		double sum = 0;
+		for (auto v : x)
+			sum += v*v -10.0*std::cos(2.0*M_PI*v) + 10.0;
+		return sum;
+	}
+private:
+	const size_t m_D;
+};
+
+class f10 : public BaseCalculation
+{
+public:
+	f10(size_t D) : m_D(D) { }
+	double calculate(const vector<double> &x) override
+	{
+		assert(x.size() == m_D);
+		double sum1 = 0, sum2 = 0;
+		for (auto v : x)
+		{
+			sum1 += v*v;
+			sum2 += std::cos(2.0*M_PI*v);
+		}
+
+		return -20.0*std::exp(-0.2*std::sqrt(sum1/m_D)) - std::exp(sum2/m_D) + 20 + std::exp(1);
+	}
+private:
+	const size_t m_D;
+};
+
+class f11 : public BaseCalculation
+{
+public:
+	f11(size_t D) : m_D(D) { }
+	double calculate(const vector<double> &x) override
+	{
+		assert(x.size() == m_D);
+		double sum = 0, prod = 1;
+		for (size_t i = 0 ; i < m_D ; i++)
+		{
+			sum += x[i]*x[i];
+			prod *= std::cos(x[i]/std::sqrt(i+1.0));
+		}
+		return sum/4000.0 - prod + 1.0;
+	}
+private:
+	const size_t m_D;
+};
+
+inline double u(double z, double a, double k, double m)
+{
+	if (z > a)
+		return k*std::pow(z-a, m);
+	if (z < -a)
+		return k*std::pow(-z-a, m);
+	return 0;
+};
+
+class f12 : public BaseCalculation
+{
+public:
+	f12(size_t D) : m_D(D) { }
+	double calculate(const vector<double> &x) override
+	{
+		assert(x.size() == m_D);
+		auto y = [&x](size_t i) { return 1.0+0.25*(x[i] + 1.0); };
+
+		double sum = 10.0*std::sin(M_PI*y(0))*std::sin(M_PI*y(0));
+
+		for (size_t i = 0 ; i < m_D-1 ; i++)
+			sum += (y(i)-1.0)*(y(i)-1.0)*(1.0+10.0*std::sin(M_PI*y(i+1))*std::sin(M_PI*y(i+1)));
+
+		sum += (y(m_D-1)-1.0)*(y(m_D-1)-1.0);
+		sum *= M_PI/m_D;
+
+		for (size_t i = 0 ; i < m_D ; i++)
+			sum += u(x[i], 10, 100, 4);
+		return sum;
+	}
+private:
+	const size_t m_D;
+};
+
+class f13 : public BaseCalculation
+{
+public:
+	f13(size_t D) : m_D(D) { }
+	double calculate(const vector<double> &x) override
+	{
+		assert(x.size() == m_D);
+
+		double sum = std::sin(3*M_PI*x[0])*std::sin(3*M_PI*x[0]);
+
+		for (size_t i = 0 ; i < m_D-1 ; i++)
+			sum += (x[i] - 1.0)*(x[i] - 1.0)*(1.0+std::sin(3*M_PI*x[i+1])*std::sin(3*M_PI*x[i+1]));
+
+		sum += (x[m_D-1]-1.0)*(x[m_D-1]-1.0)*(1.0*std::sin(2*M_PI*x[m_D-1])*std::sin(2*M_PI*x[m_D-1]));
+		sum *= 0.1;
+
+		for (size_t i = 0 ; i < m_D ; i++)
+			sum += u(x[i], 5, 100, 4);
+
 		return sum;
 	}
 private:
@@ -130,10 +346,11 @@ struct Test
 {
 	string name;
 	size_t popSize;
-	bool archive;
 	vector<double> bottom;
 	vector<double> top;
+	bool constrained;
 	double VTR; // Value to reach
+	bool recalc;
 	size_t maxGenerations;
 	shared_ptr<BaseCalculation> calculator;
 };
@@ -163,11 +380,21 @@ private:
 class MyEA : public EvolutionaryAlgorithm
 {
 public:
-	MyEA()
+	MyEA(bool alwaysRecalc = false) : m_alwaysRecalc(alwaysRecalc)
 	{
 		m_dumpPop = (getenv("DUMPPOP"))?true:false;
 	}
 private:
+	bool_t onBeforeFitnessCalculation(size_t generation, std::shared_ptr<Population> &population) override
+	{
+		if (m_alwaysRecalc)
+		{
+			for (auto &i : population->individuals())
+				i->fitness()->setCalculated(false);
+		}
+		return true;
+	}
+
 	bool_t onFitnessCalculated(size_t generation, std::shared_ptr<Population> &population) override
 	{
 		if (m_dumpPop)
@@ -181,10 +408,23 @@ private:
 	}
 
 	bool m_dumpPop;
+	bool m_alwaysRecalc;
 };
 
 int main(int argc, char const *argv[])
 {
+	string testName;
+	if (argc <= 1) { } // nothing to do
+	else if (argc == 2)
+		testName = argv[1];
+	else
+	{
+		cerr << "Usage: " << argv[0] << " [testname]" << endl;
+		return -1;
+	}
+
+	bool didRunTest = false;
+
 	random_device rndDev;
 	unsigned int seed = rndDev();
 	if (getenv("SEED"))
@@ -194,24 +434,56 @@ int main(int argc, char const *argv[])
 	if (getenv("NUMRUNS"))
 		numRuns = stoi(getenv("NUMRUNS"));
 
+	bool archive = true;
+	if (getenv("NOARCH"))
+		archive = false;
+
 	cout << "# Seed = " << seed << endl;
 	cout << "# Runs = " << numRuns << endl;
 
 	shared_ptr<RandomNumberGenerator> rng = make_shared<MersenneRandomNumberGenerator>(seed);
 
 	vector<Test> tests {
-		// { "f1_Sphere_30_arch", 100, true, vector<double>(30, -100), vector<double>(30, 100), 1e-8, 100000, make_shared<f1_Sphere>(30) },
-		// { "f1_Sphere_30_noarch", 100, false, vector<double>(30, -100), vector<double>(30, 100), 1e-8, 100000, make_shared<f1_Sphere>(30) },
-		// { "f1_Sphere_100_arch", 400, true, vector<double>(100, -100), vector<double>(100, 100), 1e-8, 100000, make_shared<f1_Sphere>(100) },
-		// { "f1_Sphere_100_noarch", 400, false, vector<double>(100, -100), vector<double>(100, 100), 1e-8, 100000, make_shared<f1_Sphere>(100) },
-		// { "f3_30_arch", 100, true, vector<double>(30, -100), vector<double>(30, 100), 1e-8, 100000, make_shared<f3>(30) },
-		{ "f3_30_noarch", 100, false, vector<double>(30, -100), vector<double>(30, 100), 1e-8, 100000, make_shared<f3>(30) },
+		{ "f1_Sphere_30", 100, vector<double>(30, -100), vector<double>(30, 100), false, 1e-8, false, 100000, make_shared<f1_Sphere>(30) },
+		{ "f1_Sphere_100", 400, vector<double>(100, -100), vector<double>(100, 100), false, 1e-8, false, 100000, make_shared<f1_Sphere>(100) },
+		{ "f2_30", 100, vector<double>(30, -10), vector<double>(30, 10), false, 1e-8, false, 100000, make_shared<f2>(30) },
+		{ "f2_100", 400, vector<double>(100, -10), vector<double>(100, 10), false, 1e-8, false, 100000, make_shared<f2>(100) },
+		{ "f3_30", 100, vector<double>(30, -100), vector<double>(30, 100), false, 1e-8, false, 100000, make_shared<f3>(30) },
+		{ "f3_100", 100, vector<double>(100, -100), vector<double>(100, 100), false, 1e-8, false, 100000, make_shared<f3>(100) },
+		{ "f4_30", 100, vector<double>(30, -100), vector<double>(30, 100), false, 1e-8, false, 100000, make_shared<f4>(30) },
+		{ "f4_100", 400, vector<double>(100, -100), vector<double>(100, 100), false, 1e-8, false, 100000, make_shared<f4>(100) },
+		{ "f5_30", 100, vector<double>(30, -30), vector<double>(30, 30), false, 1e-8, false, 100000, make_shared<f5>(30) },
+		{ "f5_100", 400, vector<double>(100, -30), vector<double>(100, 30), false, 1e-8, false, 100000, make_shared<f5>(100) },
+		{ "f6_30", 100, vector<double>(30, -100), vector<double>(30, 100), false, 1e-8, false, 100000, make_shared<f6>(30) },
+		{ "f6_100", 400, vector<double>(100, -100), vector<double>(100, 100), false, 1e-8, false, 100000, make_shared<f6>(100) },
+		// Doesn't seem to work??
+		// { "f7_30", 100, vector<double>(30, -1.28), vector<double>(30, 1.28), false, 1e-2, true, 100000, make_shared<f7>(30, rng) },
+		// { "f7_100", 400, vector<double>(100, -1.28), vector<double>(100, 1.28), false, 1e-2, true, 100000, make_shared<f7>(100, rng) },
+		{ "f8_30", 100, vector<double>(30, -500), vector<double>(30, 500), true, 1e-8, false, 100000, make_shared<f8>(30) },
+		{ "f8_100", 400, vector<double>(100, -500), vector<double>(100, 500), true, 1e-8, false, 100000, make_shared<f8>(100) },
+		{ "f9_30", 100, vector<double>(30, -5.12), vector<double>(30, 5.12), false, 1e-8, false, 100000, make_shared<f9>(30) },
+		{ "f9_100", 400, vector<double>(100, -5.12), vector<double>(100, 5.12), false, 1e-8, false, 100000, make_shared<f9>(100) },
+		{ "f10_30", 100, vector<double>(30, -32), vector<double>(30, 32), false, 1e-8, false, 100000, make_shared<f10>(30) },
+		{ "f10_100", 400, vector<double>(100, -32), vector<double>(100, 32), false, 1e-8, false, 100000, make_shared<f10>(100) },
+		{ "f11_30", 100, vector<double>(30, -600), vector<double>(30, 600), false, 1e-8, false, 100000, make_shared<f11>(30) },
+		{ "f11_100", 400, vector<double>(100, -600), vector<double>(100, 600), false, 1e-8, false, 100000, make_shared<f11>(100) },
+		{ "f12_30", 100, vector<double>(30, -50), vector<double>(30, 50), false, 1e-8, false, 100000, make_shared<f12>(30) },
+		{ "f12_100", 400, vector<double>(100, -50), vector<double>(100, 50), false, 1e-8, false, 100000, make_shared<f12>(100) },
+		{ "f13_30", 100, vector<double>(30, -50), vector<double>(30, 50), false, 1e-8, false, 100000, make_shared<f13>(30) },
+		{ "f13_100", 400, vector<double>(100, -50), vector<double>(100, 50), false, 1e-8, false, 100000, make_shared<f13>(100) },
+
 	};
 
 	auto comp = make_shared<ValueFitnessComparison<double>>();
 
 	for (const auto &test : tests)
 	{
+		if (testName.size() > 0)
+		{
+			if (test.name != testName)
+				continue;
+		}
+		didRunTest = true;
 		cout << test.name << ": "; 
 
 		size_t successCount = 0;
@@ -220,15 +492,20 @@ int main(int argc, char const *argv[])
 		for (size_t run = 0 ; run < numRuns ; run++)
 		{
 			auto mut = make_shared<VectorDifferentialEvolutionMutation<double>>();
-			auto cross = make_shared<VectorDifferentialEvolutionCrossover<double>>(rng);
+			shared_ptr<VectorDifferentialEvolutionCrossover<double>> cross;
+			
+			if (test.constrained)
+				cross = make_shared<VectorDifferentialEvolutionCrossover<double>>(rng, test.bottom, test.top);
+			else
+				cross = make_shared<VectorDifferentialEvolutionCrossover<double>>(rng);
 			
 			VectorDifferentialEvolutionIndividualCreation<double,double> creation(test.bottom, test.top, rng);
 			ValueToReachStop<double> stop(test.VTR, test.maxGenerations);
 		
-			MyJADE evolver(rng, mut, cross, comp, test.archive);
+			MyJADE evolver(rng, mut, cross, comp, archive);
 			SingleThreadedPopulationFitnessCalculation popCalc(test.calculator);
 
-			MyEA ea;
+			MyEA ea(test.recalc);
 			bool_t r = ea.run(creation, evolver, popCalc, stop, test.popSize, test.popSize, test.popSize*2);
 			if (!r)
 			{
@@ -253,10 +530,17 @@ int main(int argc, char const *argv[])
 		}
 
 		cout << successCount << "/" << numRuns;
-		cout << ", nfe " << totalCalc/numRuns << ", NP = " << test.popSize << ((test.archive)?", archive":", noarchive");
+		cout << ", nfe " << totalCalc/numRuns << ", NP = " << test.popSize << ((archive)?", archive":", noarchive");
 		if (successCount != numRuns)
 			cout << " !!";
 		cout << endl;
+	}
+
+	if (!didRunTest)
+	{
+		cerr << "No tests executed, available names are: " << endl;
+		for (const auto &test : tests)
+			cerr << "  " << test.name << endl;
 	}
 
 	return 0;
