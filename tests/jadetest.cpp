@@ -293,6 +293,161 @@ private:
 	const size_t m_D;
 };
 
+class f14_Branin : public BaseCalculation
+{
+public:
+	double calculate(const vector<double> &x) override
+	{
+		assert(x.size() == 2);
+		const double a = 1.0;
+		const double b = 5.1/(4.0*M_PI*M_PI);
+		const double c = 5.0/M_PI;
+		const double r = 6.0;
+		const double s = 10.0;
+		const double t = 1.0/(8.0*M_PI);
+
+		return a*std::pow(x[1] - b*x[0]*x[0] + c*x[0] - r,2) + s*(1.0-t)*std::cos(x[0]) + s;
+	}
+};
+
+class f15_GoldsteinPrice : public BaseCalculation
+{
+public:
+	double calculate(const vector<double> &x) override
+	{
+		assert(x.size() == 2);
+
+		return (1.0+std::pow(x[0]+x[1]+1.0,2)*(19.0-14.0*x[0]+3.0*x[0]*x[0]-14.0*x[1]+6.0*x[0]*x[1]+3.0*x[1]*x[1]))*(
+			30.0+std::pow(2.0*x[0]-3.0*x[1],2)*(18.0-32.0*x[0]+12.0*x[0]*x[0]+48.0*x[1]-36.0*x[0]*x[1]+27.0*x[1]*x[1])
+		);
+	}
+};
+
+class f16_Hartman3D : public BaseCalculation
+{
+public:
+	f16_Hartman3D()
+	{
+		alpha = { 1.0, 1.2, 3.0, 3.2 };
+		A = {
+			{ 3.0, 10.0, 30.0},
+			{ 0.1, 10.0, 35.0},
+			{ 3.0, 10.0, 30.0},
+			{ 0.1, 10.0, 35.0}
+		};
+
+		P = {
+			{ 3689, 1170, 2673 },
+			{ 4699, 4387, 7470 },
+			{ 1091, 8732, 5547 },
+			{  381, 5743, 8828 }
+		};
+		for (auto &v : P)
+			for (auto &x : v)
+				x *= 1e-4;
+	}
+
+	double calculate(const vector<double> &x) override
+	{
+		assert(x.size() == 3);
+		double sum = 0;
+		for (size_t i = 0 ; i < 4 ; i++)
+		{
+			double s = 0;
+			for (size_t j = 0 ; j < 3 ; j++)
+				s += A[i][j]*std::pow(x[j]-P[i][j],2);
+
+			sum += alpha[i]*std::exp(-s);
+		}
+		return -sum;
+	}
+private:
+	vector<double> alpha;
+	vector<vector<double>> A, P;
+};
+
+class f17_Hartman6D : public BaseCalculation
+{
+public:
+	f17_Hartman6D()
+	{
+		alpha = { 1.0, 1.2, 3.0, 3.2 };
+		A = {
+			{ 10, 3, 17, 3.5, 1.7, 8 },
+			{ 0.05, 10, 17, 0.1, 8, 14 },
+			{ 3, 3.5, 1.7, 10, 17, 8 },
+			{ 17, 8, 0.05, 10, 0.1, 14 }
+		};
+
+		P = {
+			{ 1312, 1696, 5569, 124, 8283, 5886 },
+			{ 2329, 4135, 8307, 3736, 1004, 9991 },
+			{ 2348, 1451, 3522, 2883, 3047, 6650 },
+			{ 4047, 8828, 8732, 5743, 1091, 381 }
+		};
+		for (auto &v : P)
+			for (auto &x : v)
+				x *= 1e-4;
+	}
+
+	double calculate(const vector<double> &x) override
+	{
+		assert(x.size() == 6);
+		double sum = 0;
+		for (size_t i = 0 ; i < 4 ; i++)
+		{
+			double s = 0;
+			for (size_t j = 0 ; j < 6 ; j++)
+				s += A[i][j]*std::pow(x[j]-P[i][j],2);
+
+			sum += alpha[i]*std::exp(-s);
+		}
+		return -sum;
+	}
+private:
+	vector<double> alpha;
+	vector<vector<double>> A, P;
+};
+
+class f_Shekel : public BaseCalculation
+{
+public:
+	f_Shekel(size_t m) : m_m(m)
+	{
+		beta = { 1, 2, 2, 4, 4, 6, 3, 7, 5, 5 };
+		for (auto &b : beta)
+			b *= 0.1;
+		
+		C = {
+			{ 4, 1, 8, 6, 3, 2, 5, 8, 6, 7 },
+			{ 4, 1, 8, 6, 7, 9, 3, 1, 2, 3.6 },
+			{ 4, 1, 8, 6, 3, 2, 5, 8, 6, 7 },
+			{ 4, 1, 8, 6, 7, 9, 3, 1, 2, 3.6 }
+		};
+	}
+
+	double calculate(const vector<double> &x) override
+	{
+		assert(x.size() == 4);
+		assert(m_m <= 10);
+		double sum = 0;
+		for (size_t i = 0 ; i < m_m ; i++)
+		{
+			double s = beta[i];
+			for (size_t j = 0 ; j < 4 ; j++)
+				s += std::pow(x[j] - C[j][i],2);
+
+			sum += 1.0/s;
+		}
+		return -sum;
+	}
+private:
+	const size_t m_m;
+	vector<double> beta;
+	vector<vector<double>> C;
+};
+
+
 template<class T>
 class ValueToReachStop : public StopCriterion
 {
@@ -326,6 +481,9 @@ public:
 			{
 				shouldStop = true;
 				m_numGen = generationNumber;
+
+				if (getenv("DUMPFINAL"))
+					cerr << "NOT FINISHED, CURRENT BEST: " << currentBest[0]->toString() << endl;
 			}
 		}
 		return true;			
@@ -471,7 +629,13 @@ int main(int argc, char const *argv[])
 		{ "f12_100", 400, vector<double>(100, -50), vector<double>(100, 50), false, 1e-8, false, 100000, make_shared<f12>(100) },
 		{ "f13_30", 100, vector<double>(30, -50), vector<double>(30, 50), false, 1e-8, false, 100000, make_shared<f13>(30) },
 		{ "f13_100", 400, vector<double>(100, -50), vector<double>(100, 50), false, 1e-8, false, 100000, make_shared<f13>(100) },
-
+		{ "f14_Branin", 30, { -5.0, 0.0 }, { 10.0, 15.0 }, false,  0.3978873577 + 1e-8, false, 100000, make_shared<f14_Branin>() },
+		{ "f15_GoldsteinPrice", 30, { -2.0, -2.0 }, { 2.0, 2.0 }, false,  3.0 + 1e-8, false, 100000, make_shared<f15_GoldsteinPrice>() },
+		{ "f16_Hartman3D", 30, { 0, 0, 0 }, { 1, 1, 1 }, false,  -3.862779787 + 1e-8, false, 100000, make_shared<f16_Hartman3D>() },
+		{ "f17_Hartman6D", 30, { 0, 0, 0, 0, 0, 0 }, { 1, 1, 1, 1, 1, 1 }, false,  -3.322368011 + 1e-8, false, 100000, make_shared<f17_Hartman6D>() },
+		{ "f18_Shekel5", 30, { 0, 0, 0, 0 }, { 10, 10, 10, 10 }, false, -10.153199679 + 1e-8, false, 100000, make_shared<f_Shekel>(5) },
+		{ "f19_Shekel7", 30, { 0, 0, 0, 0 }, { 10, 10, 10, 10 }, false, -10.402915336 + 1e-8, false, 100000, make_shared<f_Shekel>(7) },
+		{ "f20_Shekel10", 30, { 0, 0, 0, 0 }, { 10, 10, 10, 10 }, false, -10.536443153 + 1e-8, false, 100000, make_shared<f_Shekel>(10) },
 	};
 
 	auto comp = make_shared<ValueFitnessComparison<double>>();
