@@ -4,6 +4,7 @@
 #include "genomefitness.h"
 #include <memory>
 #include <string>
+#include <sstream>
 
 namespace eatk
 {
@@ -31,7 +32,14 @@ public:
 	{
 		if (!Fitness::isCalculated())
 			return Fitness::toString();
+#if 1
 		return std::to_string(m_value);
+#else
+		std::stringstream ss;
+		ss.precision(15);
+		ss << m_value;
+		return ss.str();
+#endif
 	}
 
 #ifdef EATKCONFIG_MPISUPPORT
