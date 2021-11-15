@@ -23,6 +23,7 @@ add_executable(detest detest.cpp)
 target_link_libraries(detest eatk-static "${EATK_LINK_LIBS}")
 
 add_executable(debasictest debasictest.cpp)
+add_executable(jadebasictest jadebasictest.cpp)
 
 add_executable(jadetest jadetest.cpp)
 target_link_libraries(jadetest eatk-static "${EATK_LINK_LIBS}")
