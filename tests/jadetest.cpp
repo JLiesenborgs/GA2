@@ -607,7 +607,7 @@ int main(int argc, char const *argv[])
 		{ "f2_30", 100, vector<double>(30, -10), vector<double>(30, 10), false, 1e-8, false, 100000, make_shared<f2>(30) },
 		{ "f2_100", 400, vector<double>(100, -10), vector<double>(100, 10), false, 1e-8, false, 100000, make_shared<f2>(100) },
 		{ "f3_30", 100, vector<double>(30, -100), vector<double>(30, 100), false, 1e-8, false, 100000, make_shared<f3>(30) },
-		{ "f3_100", 100, vector<double>(100, -100), vector<double>(100, 100), false, 1e-8, false, 100000, make_shared<f3>(100) },
+		{ "f3_100", 400, vector<double>(100, -100), vector<double>(100, 100), false, 1e-8, false, 100000, make_shared<f3>(100) },
 		{ "f4_30", 100, vector<double>(30, -100), vector<double>(30, 100), false, 1e-8, false, 100000, make_shared<f4>(30) },
 		{ "f4_100", 400, vector<double>(100, -100), vector<double>(100, 100), false, 1e-8, false, 100000, make_shared<f4>(100) },
 		{ "f5_30", 100, vector<double>(30, -30), vector<double>(30, 30), false, 1e-8, false, 100000, make_shared<f5>(30) },
