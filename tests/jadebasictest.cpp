@@ -686,6 +686,10 @@ int main(int argc, char const *argv[])
 					cout << " ] => " << score << endl;
 				}
 			}
+
+			if (getenv("LOGFCR"))
+				for (auto mu : muLog)
+					cerr << mu.first << " " << mu.second << endl;
 		}
 
 		double avgEvals = (double)totalEvals / (double)successCount;
