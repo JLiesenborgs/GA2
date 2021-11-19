@@ -46,6 +46,11 @@ bool_t JADEEvolver::check(const shared_ptr<Population> &population)
 			return "Can't handle fitness type: " + r.getErrorString();
 	}
 
+	if (m_c < 0 || m_c > 1)
+		return "Invalid value for 'c', should lie between 0 and 1 but is " + to_string(m_c);
+	if (m_p < 0 || m_p > 1)
+		return "Invalid value for 'p', should lie between 0 and 1 but is " + to_string(m_p);
+
 	return true;
 }
 
@@ -119,6 +124,7 @@ bool_t JADEEvolver::createNewPopulation(size_t generation, vector<shared_ptr<Pop
 		m_muCR = m_initMuCR;
 		m_Fi.assign(targetPopulationSize, numeric_limits<double>::quiet_NaN());
 		m_CRi.assign(targetPopulationSize, numeric_limits<double>::quiet_NaN());
+		m_archive.clear();
 	}
 	else if (pop.size() == targetPopulationSize*2)
 	{
@@ -190,13 +196,6 @@ bool_t JADEEvolver::createNewPopulation(size_t generation, vector<shared_ptr<Pop
 
 	size_t archiveSize = m_archive.size();
 	assert(archiveSize <= targetPopulationSize);
-
-	size_t bestPartSize = (size_t)(m_p*(double)targetPopulationSize);
-	if (bestPartSize > targetPopulationSize)
-		bestPartSize = targetPopulationSize;
-	if (bestPartSize == 0)
-		bestPartSize = 1;
-	// cout << "bestPartSize = " << bestPartSize << endl;
 	
 	auto pickIndex = [this](size_t num) { return ((size_t)m_rng->getRandomUint32())%(num); };
 	auto adjust = [](size_t &idx, size_t refIdx) { if (idx >= refIdx) idx++; };
@@ -223,7 +222,10 @@ bool_t JADEEvolver::createNewPopulation(size_t generation, vector<shared_ptr<Pop
 		m_CRi[i] = chooseTruncatedDistribution<normal_distribution<>>(*m_rng, m_muCR, 0.1, 0, 1);
 		m_Fi[i] = chooseTruncatedDistribution<cauchy_distribution<>>(*m_rng, m_muF, 0.1, 0, 1);
 
-		size_t bestp = (size_t)m_rng->getRandomUint32() % bestPartSize;
+		size_t bestp = (size_t)(m_rng->getRandomDouble(0, m_p) * targetPopulationSize);
+		assert(bestp < targetPopulationSize);
+		if (bestp >= targetPopulationSize)
+			bestp = targetPopulationSize-1;
 
 		m_mutationFactors[0] = 1.0;
 		m_mutationFactors[1] = m_Fi[i];
