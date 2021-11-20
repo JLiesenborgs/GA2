@@ -590,6 +590,29 @@ struct Test
 	bool enforceBounds;
 };
 
+class AvgStd
+{
+public:
+	AvgStd() : m_sum(0), m_sum2(0), m_count(0) { }
+	void process(double x)
+	{
+		m_sum += x;
+		m_sum2 += x*x;
+		m_count++;
+	}
+	string toString() const
+	{
+		double avg = m_sum/m_count;
+		double std = std::sqrt(m_sum2/m_count - avg*avg);
+		return to_string(avg) + " (" + to_string(std) + ")";
+	}
+	size_t getCount() const { return m_count; }
+private:
+	double m_sum;
+	double m_sum2;
+	size_t m_count;
+};
+
 int main(int argc, char const *argv[])
 {
 	random_device rd;
@@ -659,8 +682,8 @@ int main(int argc, char const *argv[])
 
 		testCount++;
 
-		size_t successCount = 0;
-		size_t totalEvals = 0;
+		AvgStd nfe;
+		AvgStd genAvg;
 
 		cout << test.name << ": ";
 		for (size_t r = 0 ; r < numRuns ; r++)
@@ -676,8 +699,8 @@ int main(int argc, char const *argv[])
 
 			if (converged)
 			{
-				successCount++;
-				totalEvals += evaluations;
+				nfe.process(evaluations);
+				genAvg.process(generations);
 				if (printBest)
 				{
 					cout << "FOUND: [";
@@ -692,9 +715,9 @@ int main(int argc, char const *argv[])
 					cerr << mu.first << " " << mu.second << endl;
 		}
 
-		double avgEvals = (double)totalEvals / (double)successCount;
-		cout << " NFE " << avgEvals;
-		cout << " " << successCount << "/" << numRuns;
+		cout << " gen " << genAvg.toString();
+		cout << " NFE " << nfe.toString();
+		cout << " " << nfe.getCount() << "/" << numRuns;
 		if (archive)
 			cout << " archive";
 		else

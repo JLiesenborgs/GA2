@@ -500,6 +500,29 @@ private:
 	bool m_dump;
 };
 
+class AvgStd
+{
+public:
+	AvgStd() : m_sum(0), m_sum2(0), m_count(0) { }
+	void process(double x)
+	{
+		m_sum += x;
+		m_sum2 += x*x;
+		m_count++;
+	}
+	string toString() const
+	{
+		double avg = m_sum/m_count;
+		double std = std::sqrt(m_sum2/m_count - avg*avg);
+		return to_string(avg) + " (" + to_string(std) + ")";
+	}
+	size_t getCount() const { return m_count; }
+private:
+	double m_sum;
+	double m_sum2;
+	size_t m_count;
+};
+
 struct Test
 {
 	string name;
@@ -650,6 +673,8 @@ int main(int argc, char const *argv[])
 		didRunTest = true;
 		cout << test.name << ": "; 
 
+		AvgStd nfe;
+		AvgStd genAvg;
 		size_t successCount = 0;
 		size_t totalCalc = 0;
 
@@ -686,15 +711,16 @@ int main(int argc, char const *argv[])
 				//cout << "  Found after " << stop.getNumberOfGenerations() << " generations, " << test.calculator->getNumberOfEvaluations()
 				// 	 << " evaluations: " << stop.bestSolution().toString() << endl;
 
-				successCount++;
-				totalCalc += test.calculator->getNumberOfEvaluations();
+				nfe.process(test.calculator->getNumberOfEvaluations());
+				genAvg.process(stop.getNumberOfGenerations());
 			}
 
 			test.calculator->resetEvaluationCount();
 		}
 
-		cout << successCount << "/" << numRuns;
-		cout << ", nfe " << totalCalc/numRuns << ", NP = " << test.popSize << ((archive)?", archive":", noarchive");
+		cout << nfe.getCount() << "/" << numRuns;
+		cout << " , " << genAvg.toString() << " gen";
+		cout << " , nfe " << nfe.toString() << " , NP = " << test.popSize << ((archive)?" , archive":", noarchive");
 		if (successCount != numRuns)
 			cout << " !!";
 		cout << endl;
