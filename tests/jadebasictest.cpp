@@ -444,7 +444,7 @@ jade(mt19937 &rng, Problem &problem, size_t NP, const vector<pair<double,double>
 
 	size_t evaluations = 0;
 	double muF = 0.5, muCR = 0.5;
-	vector<pair<vector<double>,double>> P(NP);
+	vector<pair<vector<double>,double>> P(NP), Q(NP);
 	vector<pair<double,double>> muLog;
 
 	for (auto &ind : P)
@@ -546,18 +546,20 @@ jade(mt19937 &rng, Problem &problem, size_t NP, const vector<pair<double,double>
 			if (P[i].second <= score)
 			{
 				// Nothing to do, just keep individual
+				Q[i] = P[i];
 			}
 			else
 			{
 				if (useArchive)
 					A.push_back(xi);
 
-				P[i].second = score;
-				P[i].first = u;
+				Q[i].second = score;
+				Q[i].first = u;
 				SF.push_back(Fi);
 				SCR.push_back(CRi);
 			}
 		}
+		swap(P, Q);
 
 		// Randomly remove solutions from A to trim size
 		while(A.size() > NP)
