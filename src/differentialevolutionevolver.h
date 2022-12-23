@@ -40,7 +40,7 @@ public:
 	~DifferentialEvolutionEvolver();
 
 	errut::bool_t check(const std::shared_ptr<Population> &population) override;
-	errut::bool_t createNewPopulation(size_t generation, std::vector<std::shared_ptr<Population>> &populations, size_t targetPopulationSize) override;
+	errut::bool_t createNewPopulation(size_t generation, std::vector<std::shared_ptr<Population>> &populations, const std::vector<size_t> &targetPopulationSize) override;
 	const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const override { return m_bestIndividual; }
 private:
 	std::shared_ptr<RandomNumberGenerator> m_rng;

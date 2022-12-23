@@ -566,7 +566,7 @@ public:
 		m_dumpPop = (getenv("DUMPPOP"))?true:false;
 	}
 private:
-	bool_t onBeforeFitnessCalculation(size_t generation, std::shared_ptr<Population> &population) override
+	bool_t onBeforeFitnessCalculation(size_t generation, const std::shared_ptr<Population> &population) override
 	{
 		if (m_alwaysRecalc)
 		{
@@ -576,7 +576,7 @@ private:
 		return true;
 	}
 
-	bool_t onFitnessCalculated(size_t generation, std::shared_ptr<Population> &population) override
+	bool_t onFitnessCalculated(size_t generation, const std::shared_ptr<Population> &population) override
 	{
 		if (m_dumpPop)
 		{

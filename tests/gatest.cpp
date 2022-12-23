@@ -30,7 +30,7 @@ typedef double RealType;
 class MyGA : public EvolutionaryAlgorithm
 {
 protected:
-	bool_t onBeforeFitnessCalculation(size_t generation, std::shared_ptr<Population> &population) override
+	bool_t onBeforeFitnessCalculation(size_t generation, const std::shared_ptr<Population> &population) override
 	{
 		cout << "BEFORE Fitness calculation for generation: " << generation << endl;
 		population->print();
@@ -38,7 +38,7 @@ protected:
 		return true;
 	}
 
-	bool_t onFitnessCalculated(size_t generation, std::shared_ptr<Population> &population) override
+	bool_t onFitnessCalculated(size_t generation, const std::shared_ptr<Population> &population) override
 	{
 		cout << "Fitness calculated for generation: " << generation << endl;
 		population->print();

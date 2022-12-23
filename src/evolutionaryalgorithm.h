@@ -31,8 +31,10 @@ public:
 			   const std::vector<size_t> &minPopulationSizes = std::vector<size_t>(),
 			   const std::vector<size_t> &maxPopulationSizes = std::vector<size_t>());
 protected:
-	virtual errut::bool_t onBeforeFitnessCalculation(size_t generation, std::shared_ptr<Population> &population) { return true; }
-	virtual errut::bool_t onFitnessCalculated(size_t generation, std::shared_ptr<Population> &population) { return true; }
+	virtual errut::bool_t onBeforeFitnessCalculation(size_t generation, const std::shared_ptr<Population> &population) { return true; }
+	virtual errut::bool_t onFitnessCalculated(size_t generation, const std::shared_ptr<Population> &population) { return true; }
+	virtual errut::bool_t onBeforeFitnessCalculation(size_t generation, const std::vector<std::shared_ptr<Population>> &populations) { return true; }
+	virtual errut::bool_t onFitnessCalculated(size_t generation, const std::vector<std::shared_ptr<Population>> &populations) { return true; }
 	virtual errut::bool_t onAlgorithmDone(size_t generation, const std::vector<std::shared_ptr<Individual>> &bestIndividuals) { return true; }
 };
 

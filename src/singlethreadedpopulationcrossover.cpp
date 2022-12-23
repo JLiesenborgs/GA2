@@ -69,7 +69,7 @@ bool_t SingleThreadedPopulationCrossover::check(const vector<shared_ptr<Populati
 
 bool_t SingleThreadedPopulationCrossover::createNewPopulation(size_t generation,
 															  vector<shared_ptr<Population>> &populations,
-															  size_t targetPopulationSize)
+															  const vector<size_t> &targetPopulationSizes)
 {
 	bool_t r;
 	vector<shared_ptr<Genome>> parentGenomes, offspring;
@@ -82,8 +82,14 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(size_t generation,
 	parentIndividuals.resize(m_genomeCrossover->getNumberOfParents());
 	cloneIndividual.resize(1);
 
-	for (auto &population : populations)
+	if (populations.size() != targetPopulationSizes.size())
+		return "Number of populations and number of target sizes doesn't match";
+
+	for (size_t p = 0 ; p < populations.size() ; p++)
 	{
+		auto &population = populations[p];
+		size_t targetPopulationSize = targetPopulationSizes[p];
+
 		// Here, some pruning could take place
 		if (!(r = m_selectionPop->processPopulation(population, targetPopulationSize)))
 			return "Error in selection preprocessing: " + r.getErrorString();
