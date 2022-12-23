@@ -203,18 +203,9 @@ bool_t EvolutionaryAlgorithm::run(IndividualCreation &gfc,
 
 	if (!(r = fitnessCalculatedCallback()))
 		return r;
-
-	while (true)
-	{		
-		if (generation == 0)
-		{
-			if (!(r = evolver.check(populations)))
-				return "Error in population evolver check: " + r.getErrorString();
-		}
-
-		if (!(r = evolver.createNewPopulation(generation, populations, popSizes)))
-			return "Error creating new population: " + r.getErrorString();
-
+	
+	auto popSizeCheck = [&populations, &popSizes, &maxPopulationSizes, &minPopulationSizes]() -> bool_t
+	{
 		for (size_t p = 0 ; p < populations.size() ; p++)
 		{
 			auto &population = populations[p];
@@ -227,6 +218,22 @@ bool_t EvolutionaryAlgorithm::run(IndividualCreation &gfc,
 			if (curPopSize < minPopulationSize)
 				return "Population size (" + to_string(curPopSize) + ") for population (" + to_string(p) + ") is less than minimum (" + to_string(minPopulationSize) + ")";
 		}
+		return true;
+	};
+
+	while (true)
+	{		
+		if (generation == 0)
+		{
+			if (!(r = evolver.check(populations)))
+				return "Error in population evolver check: " + r.getErrorString();
+		}
+
+		if (!(r = evolver.createNewPopulation(generation, populations, popSizes)))
+			return "Error creating new population: " + r.getErrorString();
+
+		if (!(r = popSizeCheck()))
+			return r;
 
 		generation++; // At this point we can call it the new generation
 
@@ -239,7 +246,17 @@ bool_t EvolutionaryAlgorithm::run(IndividualCreation &gfc,
 		if (!(r = fitnessCalculatedCallback()))
 			return r;
 
-		// TODO: migration!!
+		if (generation == 1) // Have already increased it, this is the first time
+		{
+			if (!(r = migrationStrategy.check(populations)))
+				return "Error in migration strategy check: " + r.getErrorString();
+		}
+		
+		if (!(r = migrationStrategy.migrate(generation, populations)))
+			return "Error in migration step: " + r.getErrorString();
+
+		if (!(r = popSizeCheck())) // Perhaps the amount changed, check it again!
+			return r;
 
 		bool shouldStop = false;
 
