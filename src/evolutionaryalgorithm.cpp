@@ -176,8 +176,12 @@ bool_t EvolutionaryAlgorithm::run(IndividualCreation &gfc,
 	size_t generation = 0;
 
 	for (size_t p = 0 ; p < popSizes.size() ; p++)
+	{
+		populations[p] = make_shared<Population>();
+		newPopulations[p] = make_shared<Population>();
 		if (!(r = initializePopulation(popSizes[p], populations[p], gfc, refIndividual, refFitness, generation)))
 			return r;
+	}
 
 	auto beforeFitnessCalculatedCallback = [&generation, &populations, this]() -> bool_t
 	{

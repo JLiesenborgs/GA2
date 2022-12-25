@@ -30,3 +30,6 @@ target_link_libraries(jadetest eatk-static "${EATK_LINK_LIBS}")
 
 add_executable(disttest disttest.cpp)
 target_link_libraries(disttest eatk-static "${EATK_LINK_LIBS}")
+
+add_executable(multipoptest multipoptest.cpp)
+target_link_libraries(multipoptest eatk-static "${EATK_LINK_LIBS}")

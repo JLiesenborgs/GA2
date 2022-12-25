@@ -7,10 +7,10 @@
 namespace eatk
 {
 
-class SingleThreadedPopulationCrossover : public PopulationEvolver
+class SinglePopulationCrossover : public PopulationEvolver
 {
 public:
-	SingleThreadedPopulationCrossover(double cloneFraction, bool keepExistingPopulation,
+	SinglePopulationCrossover(double cloneFraction, bool keepExistingPopulation,
 									  const std::shared_ptr<SelectionPopulation> &selectionPop,
 									  const std::shared_ptr<ParentSelection> &parentSelection,
 									  const std::shared_ptr<GenomeCrossover> &genomeCrossover,
@@ -18,7 +18,7 @@ public:
 									  const std::shared_ptr<Elitism> &elitism,
 									  const std::shared_ptr<PopulationCrossoverIteration> &popIteration,
 									  const std::shared_ptr<RandomNumberGenerator> &rng);
-	~SingleThreadedPopulationCrossover();
+	~SinglePopulationCrossover();
 	
 	errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) override;
 	errut::bool_t createNewPopulation(size_t generation, std::vector<std::shared_ptr<Population>> &populations, const std::vector<size_t> &targetPopulationSize) override;

@@ -23,7 +23,7 @@ set(HEADERS
 	remainingtargetpopulationsizeiteration.h
 	simplesortedpopulation.h
 	singlebestelitism.h
-	singlethreadedpopulationcrossover.h
+	singlepopulationcrossover.h
 	singlethreadedpopulationfitnesscalculation.h
 	stopcriterion.h
 	tournamentparentselection.h
@@ -54,7 +54,7 @@ set(SOURCES
 	rankparentselection.cpp
 	simplesortedpopulation.cpp
 	singlebestelitism.cpp
-	singlethreadedpopulationcrossover.cpp
+	singlepopulationcrossover.cpp
 	singlethreadedpopulationfitnesscalculation.cpp
 	tournamentparentselection.cpp
 	trackbestonlyselectionpopulation.cpp

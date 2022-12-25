@@ -7,7 +7,7 @@
 #include "mpipopulationfitnesscalculation.h"
 #include "simplesortedpopulation.h"
 #include "rankparentselection.h"
-#include "singlethreadedpopulationcrossover.h"
+#include "singlepopulationcrossover.h"
 #include "singlebestelitism.h"
 #include "valuefitness.h"
 #include "vectorgenomeuniformmutation.h"
@@ -55,11 +55,11 @@ protected:
 	}
 };
 
-class MyCrossOver : public SingleThreadedPopulationCrossover
+class MyCrossOver : public SinglePopulationCrossover
 {
 public:
 	MyCrossOver(shared_ptr<RandomNumberGenerator> rng, shared_ptr<GenomeMutation> mutation)
-		: SingleThreadedPopulationCrossover(0.1, false,
+		: SinglePopulationCrossover(0.1, false,
 			// make_shared<SimpleSortedPopulation>(make_shared<VectorFitnessComparison<RealType>>()),
 			//make_shared<SimpleSortedPopulation>(make_shared<ValueFitnessComparison<RealType>>()),
 			make_shared<NDSortedPopulation>(
@@ -121,7 +121,7 @@ public:
 
 private:
 	shared_ptr<RandomNumberGenerator> m_rng;
-	shared_ptr<SingleThreadedPopulationCrossover> m_crossover;
+	shared_ptr<SinglePopulationCrossover> m_crossover;
 	shared_ptr<VectorGenomeUniformMutation<RealType>> m_mutation;
 };
 

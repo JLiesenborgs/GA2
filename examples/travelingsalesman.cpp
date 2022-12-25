@@ -3,7 +3,7 @@
 #include "mersennerandomnumbergenerator.h"
 #include "valuefitness.h"
 #include "vectorgenomefitness.h"
-#include "singlethreadedpopulationcrossover.h"
+#include "singlepopulationcrossover.h"
 #include "rankparentselection.h"
 #include "tournamentparentselection.h"
 #include "simplesortedpopulation.h"
@@ -191,7 +191,7 @@ int main(int argc, char const *argv[])
 	// auto sortedPop = make_shared<SimpleSortedPopulation>(cmp);
 	auto sortedPop = make_shared<TrackBestOnlySelectionPopulation>(cmp);
 
-	auto cross = make_shared<SingleThreadedPopulationCrossover>(0.1, false,
+	auto cross = make_shared<SinglePopulationCrossover>(0.1, false,
 			sortedPop,
 			selection,
 			make_shared<PermutationOrderCrossover>(rng, false),

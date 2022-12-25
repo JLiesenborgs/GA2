@@ -2,7 +2,7 @@
 #include "mersennerandomnumbergenerator.h"
 #include "valuefitness.h"
 #include "vectorgenomefitness.h"
-#include "singlethreadedpopulationcrossover.h"
+#include "singlepopulationcrossover.h"
 #include "rankparentselection.h"
 #include "simplesortedpopulation.h"
 #include "singlebestelitism.h"
@@ -143,7 +143,7 @@ int main(int argc, char const *argv[])
 
 	auto calcSingle = make_shared<SingleThreadedPopulationFitnessCalculation>(make_shared<KnapsackFitnessCalculation>(items, targetWeight));
 	auto mutation = make_shared<VectorGenomeFlipMutation<int>>(rng, 1.0/items.size());
-	auto cross = make_shared<SingleThreadedPopulationCrossover>(0.1, false,
+	auto cross = make_shared<SinglePopulationCrossover>(0.1, false,
 			make_shared<SimpleSortedPopulation>(make_shared<ValueFitnessComparison<double,false>>()),
 			make_shared<RankParentSelection>(2.5, rng),
 			make_shared<UniformVectorGenomeCrossover<int>>(rng, false),

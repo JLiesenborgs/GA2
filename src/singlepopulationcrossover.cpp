@@ -1,4 +1,4 @@
-#include "singlethreadedpopulationcrossover.h"
+#include "singlepopulationcrossover.h"
 #include <cassert>
 #include <iostream>
 
@@ -8,7 +8,7 @@ using namespace std;
 namespace eatk
 {
 
-SingleThreadedPopulationCrossover::SingleThreadedPopulationCrossover(double cloneFraction,
+SinglePopulationCrossover::SinglePopulationCrossover(double cloneFraction,
 									bool keepExistingPopulation,
 									const shared_ptr<SelectionPopulation> &selectionPop,
 									const shared_ptr<ParentSelection> &parentSelection,
@@ -25,15 +25,19 @@ SingleThreadedPopulationCrossover::SingleThreadedPopulationCrossover(double clon
 {
 }
 
-SingleThreadedPopulationCrossover::~SingleThreadedPopulationCrossover()
+SinglePopulationCrossover::~SinglePopulationCrossover()
 {
 }
 
-bool_t SingleThreadedPopulationCrossover::check(const vector<shared_ptr<Population>> &populations)
+bool_t SinglePopulationCrossover::check(const vector<shared_ptr<Population>> &populations)
 {
 	bool_t r;
+	
+	if (populations.size() != 1)
+		return "Exactly one population should be used";
 
-	for (auto pop : populations)
+	auto &pop = populations[0];
+
 	{
 		if (pop->size() == 0)
 			return "A population is empty";
@@ -67,13 +71,16 @@ bool_t SingleThreadedPopulationCrossover::check(const vector<shared_ptr<Populati
 	return true;
 }
 
-bool_t SingleThreadedPopulationCrossover::createNewPopulation(size_t generation,
+bool_t SinglePopulationCrossover::createNewPopulation(size_t generation,
 															  vector<shared_ptr<Population>> &populations,
 															  const vector<size_t> &targetPopulationSizes)
 {
 	bool_t r;
 	vector<shared_ptr<Genome>> parentGenomes, offspring;
 	vector<shared_ptr<Individual>> parentIndividuals, cloneIndividual;
+
+	if (populations.size() != 1)
+		return "Exactly one population should be used";
 	
 	if (m_genomeCrossover->getNumberOfParents() < 2)
 		return "Number of parents should be at least 2";
@@ -85,10 +92,9 @@ bool_t SingleThreadedPopulationCrossover::createNewPopulation(size_t generation,
 	if (populations.size() != targetPopulationSizes.size())
 		return "Number of populations and number of target sizes doesn't match";
 
-	for (size_t p = 0 ; p < populations.size() ; p++)
 	{
-		auto &population = populations[p];
-		size_t targetPopulationSize = targetPopulationSizes[p];
+		auto &population = populations[0];
+		size_t targetPopulationSize = targetPopulationSizes[0];
 
 		// Here, some pruning could take place
 		if (!(r = m_selectionPop->processPopulation(population, targetPopulationSize)))
