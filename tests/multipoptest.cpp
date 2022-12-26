@@ -10,6 +10,7 @@
 #include "singlethreadedpopulationfitnesscalculation.h"
 #include "uniformvectorgenomecrossover.h"
 #include "vectorgenomeflipmutation.h"
+#include "multipopulationevolver.h"
 #include <iostream>
 #include <limits>
 
@@ -166,18 +167,29 @@ int main(int argc, char const *argv[])
 	auto rng = make_shared<MersenneRandomNumberGenerator>(seed);
 
 	auto creation = make_shared<Creation>(rng, items.size());
-
 	auto calcSingle = make_shared<SingleThreadedPopulationFitnessCalculation>(make_shared<KnapsackFitnessCalculation>(items, targetWeight));
-	auto mutation = make_shared<VectorGenomeFlipMutation<int>>(rng, 1.0/items.size());
-	auto cross = make_shared<SinglePopulationCrossover>(0.1, false,
-			make_shared<SimpleSortedPopulation>(make_shared<ValueFitnessComparison<double,false>>()),
-			make_shared<RankParentSelection>(2.5, rng),
-			make_shared<UniformVectorGenomeCrossover<int>>(rng, false),
-			mutation,
-			make_shared<SingleBestElitism>(true, mutation),
-			make_shared<RemainingTargetPopulationSizeIteration>(),
-			rng
-		);
+	auto fitnessComp = make_shared<ValueFitnessComparison<double,false>>();
+
+	vector<size_t> popSizes { 32, 32, 32 };
+	vector<shared_ptr<PopulationEvolver>> evolvers;
+
+	// Just make several versions with same parameters for each population
+	for (size_t i = 0 ; i < popSizes.size() ; i++)
+	{
+		auto mutation = make_shared<VectorGenomeFlipMutation<int>>(rng, 1.0/items.size());
+		auto cross = make_shared<SinglePopulationCrossover>(0.1, false,
+				make_shared<SimpleSortedPopulation>(fitnessComp),
+				make_shared<RankParentSelection>(2.5, rng),
+				make_shared<UniformVectorGenomeCrossover<int>>(rng, false),
+				mutation,
+				make_shared<SingleBestElitism>(true, mutation),
+				make_shared<RemainingTargetPopulationSizeIteration>(),
+				rng
+			);
+		evolvers.push_back(cross);
+	}
+
+	MultiPopulationEvolver multiPopEvolver(evolvers, fitnessComp, 1);
 	
 	MyStop stop(1000);
 	MyGA ga;
@@ -187,7 +199,7 @@ int main(int argc, char const *argv[])
 	//				*cross,
 	//				*calcSingle, stop, 128);
 	
-	auto r = ga.run(*creation, *cross, *calcSingle, stop, migration, { 128, 128 });
+	auto r = ga.run(*creation, multiPopEvolver, *calcSingle, stop, migration, popSizes);
 	if (!r)
 	{
 		cerr << "Error: " << r.getErrorString() << endl;

@@ -42,6 +42,7 @@ set(HEADERS
 	populationevolver.h
 	selection.h
 	elitism.h
+	multipopulationevolver.h
 	"${PROJECT_BINARY_DIR}/src/eatkconfig.h" )
 
 set(SOURCES
@@ -67,6 +68,7 @@ set(SOURCES
 	vectorgenomefitness.cpp
 	differentialevolutionevolver.cpp
 	jadeevolver.cpp
+	multipopulationevolver.cpp
 	)
 
 if (MSVC)

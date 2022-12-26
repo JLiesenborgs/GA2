@@ -225,6 +225,8 @@ bool_t EvolutionaryAlgorithm::run(IndividualCreation &gfc,
 		return true;
 	};
 
+	// TODO: check that number of populations hasn't changed?
+
 	while (true)
 	{		
 		if (generation == 0)
