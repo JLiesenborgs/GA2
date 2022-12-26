@@ -11,6 +11,8 @@
 #include "uniformvectorgenomecrossover.h"
 #include "vectorgenomeflipmutation.h"
 #include "multipopulationevolver.h"
+#include "fasternondominatedsetcreator.h"
+#include "fitnessbasedduplicateremoval.h"
 #include <iostream>
 #include <limits>
 
@@ -189,7 +191,12 @@ int main(int argc, char const *argv[])
 		evolvers.push_back(cross);
 	}
 
-	MultiPopulationEvolver multiPopEvolver(evolvers, fitnessComp, 1);
+	//shared_ptr<BestIndividualMerger> merger = make_shared<SingleObjectiveBestIndividualMerger>(fitnessComp);
+
+	shared_ptr<NonDominatedSetCreator> ndCreator = make_shared<FasterNonDominatedSetCreator>(fitnessComp, 1);
+	shared_ptr<FitnessBasedDuplicateRemoval> dupRemoval = make_shared<FitnessBasedDuplicateRemoval>(fitnessComp, 1);
+	shared_ptr<BestIndividualMerger> merger = make_shared<MultiObjectiveBestIndividualMerger>(ndCreator, dupRemoval);
+	MultiPopulationEvolver multiPopEvolver(evolvers, merger);
 	
 	MyStop stop(1000);
 	MyGA ga;
