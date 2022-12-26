@@ -233,7 +233,7 @@ bool_t EvolutionaryAlgorithm::run(IndividualCreation &gfc,
 				return "Error in population evolver check: " + r.getErrorString();
 		}
 
-		if (!(r = evolver.createNewPopulation(generation, populations, popSizes)))
+		if (!(r = evolver.createNewPopulations(generation, populations, popSizes)))
 			return "Error creating new population: " + r.getErrorString();
 
 		if (!(r = popSizeCheck()))

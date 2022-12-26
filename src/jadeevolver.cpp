@@ -104,21 +104,13 @@ inline double chooseTruncatedDistribution(RandomNumberGenerator &rng, double mu,
 	return x;
 }
 
-bool_t JADEEvolver::createNewPopulation(size_t generation, vector<shared_ptr<Population>> &populations,
-                                        const vector<size_t> &targetPopulationSizes)
+bool_t JADEEvolver::createNewPopulation(size_t generation, shared_ptr<Population> &population,
+										size_t targetPopulationSize)
 {
-	if (populations.size() != 1)
-		return "JADE evolver only works with one population";
-	
-	Population &pop = *(populations[0]);
+	Population &pop = *population;
 
 	if (pop.size() < 4)
 		return "Population size must be at least 4";
-
-	if (targetPopulationSizes.size() != 1)
-		return "Exactly one target population size should be specified";
-
-	size_t targetPopulationSize = targetPopulationSizes[0];
 
 	if (pop.size() == targetPopulationSize)
 	{

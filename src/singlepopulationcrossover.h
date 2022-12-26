@@ -20,8 +20,8 @@ public:
 									  const std::shared_ptr<RandomNumberGenerator> &rng);
 	~SinglePopulationCrossover();
 	
-	errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) override;
-	errut::bool_t createNewPopulation(size_t generation, std::vector<std::shared_ptr<Population>> &populations, const std::vector<size_t> &targetPopulationSize) override;
+	errut::bool_t check(const std::shared_ptr<Population> &populations) override;
+	errut::bool_t createNewPopulation(size_t generation, std::shared_ptr<Population> &population, size_t targetPopulationSize) override;
 
 	const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const override
 	{

@@ -21,7 +21,7 @@ public:
 	~JADEEvolver();
 
 	errut::bool_t check(const std::shared_ptr<Population> &population) override;
-	errut::bool_t createNewPopulation(size_t generation, std::vector<std::shared_ptr<Population>> &populations, const std::vector<size_t> &targetPopulationSizes) override;
+	errut::bool_t createNewPopulation(size_t generation, std::shared_ptr<Population> &population, size_t targetPopulationSize) override;
 	const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const override { return m_bestIndividual; }
 protected:
 	virtual void onMutationCrossoverSettings(double muF, double muCR) const { }

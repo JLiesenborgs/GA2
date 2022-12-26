@@ -29,15 +29,10 @@ SinglePopulationCrossover::~SinglePopulationCrossover()
 {
 }
 
-bool_t SinglePopulationCrossover::check(const vector<shared_ptr<Population>> &populations)
+bool_t SinglePopulationCrossover::check(const shared_ptr<Population> &pop)
 {
 	bool_t r;
 	
-	if (populations.size() != 1)
-		return "Exactly one population should be used";
-
-	auto &pop = populations[0];
-
 	{
 		if (pop->size() == 0)
 			return "A population is empty";
@@ -72,16 +67,13 @@ bool_t SinglePopulationCrossover::check(const vector<shared_ptr<Population>> &po
 }
 
 bool_t SinglePopulationCrossover::createNewPopulation(size_t generation,
-															  vector<shared_ptr<Population>> &populations,
-															  const vector<size_t> &targetPopulationSizes)
+													  shared_ptr<Population> &population,
+													  size_t targetPopulationSize)
 {
 	bool_t r;
 	vector<shared_ptr<Genome>> parentGenomes, offspring;
 	vector<shared_ptr<Individual>> parentIndividuals, cloneIndividual;
 
-	if (populations.size() != 1)
-		return "Exactly one population should be used";
-	
 	if (m_genomeCrossover->getNumberOfParents() < 2)
 		return "Number of parents should be at least 2";
 
@@ -89,13 +81,7 @@ bool_t SinglePopulationCrossover::createNewPopulation(size_t generation,
 	parentIndividuals.resize(m_genomeCrossover->getNumberOfParents());
 	cloneIndividual.resize(1);
 
-	if (populations.size() != targetPopulationSizes.size())
-		return "Number of populations and number of target sizes doesn't match";
-
 	{
-		auto &population = populations[0];
-		size_t targetPopulationSize = targetPopulationSizes[0];
-
 		// Here, some pruning could take place
 		if (!(r = m_selectionPop->processPopulation(population, targetPopulationSize)))
 			return "Error in selection preprocessing: " + r.getErrorString();
