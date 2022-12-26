@@ -3,6 +3,7 @@
 #include "eatkconfig.h"
 #include "crossovermutation.h"
 #include "randomnumbergenerator.h"
+#include "populationevolver.h"
 
 namespace eatk
 {

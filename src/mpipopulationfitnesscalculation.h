@@ -6,6 +6,7 @@
 
 #include "population.h"
 #include "mpieventdistributor.h"
+#include "calculation.h"
 
 // TODO: MPI_Comm seems to be a pointer in OpenMPI
 namespace eatk

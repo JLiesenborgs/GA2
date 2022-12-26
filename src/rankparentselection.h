@@ -1,7 +1,7 @@
 #pragma once
 
 #include "eatkconfig.h"
-#include "crossovermutation.h"
+#include "selection.h"
 #include "randomnumbergenerator.h"
 
 namespace eatk

@@ -3,6 +3,9 @@
 #include "eatkconfig.h"
 #include "crossovermutation.h"
 #include "randomnumbergenerator.h"
+#include "populationevolver.h"
+#include "selection.h"
+#include "elitism.h"
 
 namespace eatk
 {

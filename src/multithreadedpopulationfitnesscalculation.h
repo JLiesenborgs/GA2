@@ -2,6 +2,7 @@
 
 #include "eatkconfig.h"
 #include "population.h"
+#include "calculation.h"
 #include <thread>
 #include <mutex>
 #include <condition_variable>

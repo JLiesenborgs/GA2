@@ -37,6 +37,11 @@ set(HEADERS
 	differentialevolutionevolver.h
 	vectordifferentialevolution.h
 	jadeevolver.h
+	individual.h
+	calculation.h
+	populationevolver.h
+	selection.h
+	elitism.h
 	"${PROJECT_BINARY_DIR}/src/eatkconfig.h" )
 
 set(SOURCES

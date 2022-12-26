@@ -2,6 +2,7 @@
 
 #include "eatkconfig.h"
 #include "population.h"
+#include "calculation.h"
 
 namespace eatk
 {

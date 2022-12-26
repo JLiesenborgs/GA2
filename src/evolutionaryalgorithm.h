@@ -3,7 +3,9 @@
 #include "eatkconfig.h"
 #include "crossovermutation.h"
 #include "stopcriterion.h"
+#include "populationevolver.h"
 #include "migrationstrategy.h"
+#include "calculation.h"
 
 namespace eatk
 {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "eatkconfig.h"
+#include "elitism.h"
 #include "crossovermutation.h"
 
 namespace eatk
