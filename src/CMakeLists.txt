@@ -43,6 +43,7 @@ set(HEADERS
 	selection.h
 	elitism.h
 	multipopulationevolver.h
+	migrationstrategy.h
 	"${PROJECT_BINARY_DIR}/src/eatkconfig.h" )
 
 set(SOURCES
