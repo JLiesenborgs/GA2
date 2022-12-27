@@ -69,6 +69,7 @@ set(SOURCES
 	differentialevolutionevolver.cpp
 	jadeevolver.cpp
 	multipopulationevolver.cpp
+	migrationstrategy.cpp
 	)
 
 if (MSVC)
