@@ -114,30 +114,15 @@ private:
 	double m_weightLimit;
 };
 
-class MyMigrationStrategy : public MigrationStrategy
+class MyExchange : public SequentialRandomIndividualExchange
 {
 public:
-	MyMigrationStrategy(const shared_ptr<RandomNumberGenerator> &rng)
-		: m_rng(rng)
+	MyExchange(const std::shared_ptr<RandomNumberGenerator> &rng, size_t iterations) : SequentialRandomIndividualExchange(rng, iterations) { }
+protected:
+	void onExchange(size_t generation, size_t srcPop, size_t srcIndividualIdx, size_t dstPop, size_t dstIndividualIdx) override
 	{
+		cout << "Generation " << generation << ": migrating " << srcIndividualIdx << " from pop " << srcPop << " to " << dstIndividualIdx << " in pop " << dstPop << endl;
 	}
-	~MyMigrationStrategy()
-	{
-	}
-
-	bool_t check(const vector<shared_ptr<Population>> &populations) override
-	{
-		cerr << "Using migration strategy for " << populations.size() << " populations" << endl;
-		return true;
-	}
-
-	bool_t migrate(size_t generation, vector<shared_ptr<Population>> &populations) override
-	{
-		cerr << "Not migrating anything in generation " << generation << endl;
-		return true;
-	}
-
-	shared_ptr<RandomNumberGenerator> m_rng;
 };
 
 int main(int argc, char const *argv[])
@@ -201,10 +186,10 @@ int main(int argc, char const *argv[])
 	MyStop stop(1000);
 	MyGA ga;
 
-	MyMigrationStrategy migration(rng);
-	//auto r = ga.run(*creation,
-	//				*cross,
-	//				*calcSingle, stop, 128);
+	auto migrationCheck = make_shared<UniformProbabilityMigrationCheck>(rng, 0.2f, 50);
+	auto migrationExchange = make_shared<MyExchange>(rng, 1);
+
+	BasicMigrationStrategy migration(migrationCheck, migrationExchange);
 	
 	auto r = ga.run(*creation, multiPopEvolver, *calcSingle, stop, migration, popSizes);
 	if (!r)

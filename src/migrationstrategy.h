@@ -51,7 +51,23 @@ public:
 	MigrationIndividualExchange() { }
 	virtual ~MigrationIndividualExchange() { }
 
-	virtual errut::bool_t exchange(std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
+	virtual errut::bool_t exchange(size_t generation, std::vector<std::shared_ptr<Population>> &populations) { return "Not implemented in base class"; }
+};
+
+class SequentialRandomIndividualExchange : public MigrationIndividualExchange
+{
+public:
+	SequentialRandomIndividualExchange(const std::shared_ptr<RandomNumberGenerator> &rng, size_t iterations);
+	~SequentialRandomIndividualExchange();
+
+	errut::bool_t exchange(size_t generation, std::vector<std::shared_ptr<Population>> &populations) override;
+protected:
+	virtual void onExchange(size_t generation, size_t srcPop, size_t srcIndividualIdx, size_t dstPop, size_t dstIndividualIdx) { }
+private:
+	errut::bool_t exchangeIteration(size_t generation, std::vector<std::shared_ptr<Population>> &populations);
+
+	std::shared_ptr<RandomNumberGenerator> m_rng;
+	size_t m_iterations;
 };
 
 class BasicMigrationStrategy : public MigrationStrategy
