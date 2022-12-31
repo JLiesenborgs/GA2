@@ -97,6 +97,34 @@ vector<size_t> SequentialRandomIndividualExchange::chooseMigrants(const std::vec
 	return srcIndividuals;
 }
 
+vector<size_t> SequentialRandomIndividualExchange::chooseDestinationPopulations(size_t numPopulations)
+{
+	// Get the population ids to migrate to
+	vector<size_t> destPop(numPopulations);
+
+	if (numPopulations == 2)
+	{
+		destPop[0] = 1;
+		destPop[1] = 0;
+	}
+	else
+	{
+		std::iota(destPop.begin(), destPop.end(), 0);
+
+		// printDestPop();
+
+		// Fisher Yates shuffle for 'derangement'
+		for (size_t p = 0 ; p < numPopulations-1 ; p++)
+		{
+			uint32_t i = (uint32_t)(numPopulations-1-p);
+			uint32_t j = m_rng->getRandomUint32() % i;
+
+			std::swap(destPop[i], destPop[j]);
+		}
+	}
+	return destPop;
+}
+
 bool_t SequentialRandomIndividualExchange::exchangeIteration(size_t generation, vector<shared_ptr<Population>> &populations)
 {
 	if (populations.size() < 2)
@@ -110,8 +138,7 @@ bool_t SequentialRandomIndividualExchange::exchangeIteration(size_t generation, 
 		assert(srcIndividuals[p] < populations[p]->size());
 #endif
 
-	// Get the population ids to migrate to
-	vector<uint32_t> destPop(populations.size());
+	vector<size_t> destPop = chooseDestinationPopulations(populations.size());
 
 	/*
 	auto printDestPop = [&destPop]()
@@ -122,27 +149,6 @@ bool_t SequentialRandomIndividualExchange::exchangeIteration(size_t generation, 
 		cout << endl;
 	};
 	*/
-
-	if (populations.size() == 2)
-	{
-		destPop[0] = 1;
-		destPop[1] = 0;
-	}
-	else
-	{
-		std::iota(destPop.begin(), destPop.end(), 0);
-
-		// printDestPop();
-
-		// Fisher Yates shuffle for 'derangement'
-		for (uint32_t p = 0 ; p < (uint32_t)populations.size()-1 ; p++)
-		{
-			uint32_t i = (uint32_t)populations.size()-1-p;
-			uint32_t j = m_rng->getRandomUint32() % i;
-
-			std::swap(destPop[i], destPop[j]);
-		}
-	}
 
 #ifndef NDEBUG
 	vector<int> srcPopCounts(populations.size(), 0);

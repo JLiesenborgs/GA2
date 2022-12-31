@@ -67,6 +67,11 @@ protected:
 	// since reproduction/mutation was performed since previous sort. The resulting sort cannot be re-used
 	// probably because individuals will have been moved between the populations
 	virtual std::vector<size_t> chooseMigrants(const std::vector<std::shared_ptr<Population>> &populations);
+	// Should return an vector with length the number of populations. The index is the starting population,
+	// the value at that index is the destination.
+	// The default is a 'derangement', a permutation where the non of the indices remain on their starting
+	// location
+	virtual std::vector<size_t> chooseDestinationPopulations(size_t numPopulations);
 	virtual void onExchange(size_t generation, size_t srcPop, size_t srcIndividualIdx, size_t dstPop, size_t dstIndividualIdx) { }
 private:
 	errut::bool_t exchangeIteration(size_t generation, std::vector<std::shared_ptr<Population>> &populations);
