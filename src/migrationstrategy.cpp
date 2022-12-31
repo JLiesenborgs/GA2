@@ -79,30 +79,38 @@ SequentialRandomIndividualExchange::~SequentialRandomIndividualExchange()
 {
 }
 
+vector<size_t> SequentialRandomIndividualExchange::chooseMigrants(const std::vector<std::shared_ptr<Population>> &populations)
+{
+	vector<size_t> srcIndividuals(populations.size());
+
+	// Get the source individuals at random
+	for (size_t p = 0 ; p < populations.size() ; p++)
+	{
+		auto &population = populations[p];
+		uint32_t num = (uint32_t)population->size();
+		assert(population->size() > 0);
+
+		uint32_t idx = m_rng->getRandomUint32()%num;
+		srcIndividuals[p] = (size_t)idx;
+	}
+
+	return srcIndividuals;
+}
+
 bool_t SequentialRandomIndividualExchange::exchangeIteration(size_t generation, vector<shared_ptr<Population>> &populations)
 {
 	if (populations.size() < 2)
 		return "Not enough populations (" + to_string(populations.size()) + "), cannot exchange individuals";
 
-	// Note: not using a member for this, because we don't want to hang
-	// on to the shared_ptr instances too long
-	vector<pair<shared_ptr<Individual>, uint32_t>> srcIndividuals(populations.size());
+	vector<size_t> srcIndividuals = chooseMigrants(populations);
 
-	// Get the source individuals
-	for (size_t p = 0 ; p < populations.size() ; p++)
-	{
-		auto &population = populations[p];
-		uint32_t num = (uint32_t)population->size();
-		if (population->size() == 0)
-			return "Population " + to_string(p) + " size is zero!";
-
-		uint32_t idx = m_rng->getRandomUint32()%num;
-		srcIndividuals[p] = { population->individual(idx), idx };
-	}
+	assert(srcIndividuals.size() == populations.size());
+#ifndef NDEBUG
+	for (size_t p = 0 ; p < srcIndividuals.size() ; p++)
+		assert(srcIndividuals[p] < populations[p]->size());
+#endif
 
 	// Get the population ids to migrate to
-	
-
 	vector<uint32_t> destPop(populations.size());
 
 	/*
@@ -144,20 +152,32 @@ bool_t SequentialRandomIndividualExchange::exchangeIteration(size_t generation, 
 	//printDestPop();
 
 	// Migrate!
+
+	// Note: not using a member for this, because we don't want to hang
+	// on to the shared_ptr instances too long. We store the individuals
+	// for a bit, since we're also replacing some in the population
+	// vectors,
+	vector<shared_ptr<Individual>> srcIndividualBuffer(populations.size());
 	for (size_t p = 0 ; p < populations.size() ; p++)
 	{
-		auto &srcInfo = srcIndividuals[p];
-		uint32_t srcPopIdx = srcInfo.second;
+		uint32_t srcPopIdx = srcIndividuals[p];
+		srcIndividualBuffer[p] = populations[p]->individual(srcPopIdx);
+	}
+
+	for (size_t p = 0 ; p < populations.size() ; p++)
+	{
+		uint32_t srcPopIdx = srcIndividuals[p];
 
 		size_t srcPop = p;
 		size_t dstPop = destPop[p];
 
 		assert(srcPop != dstPop);
+		assert(dstPop < srcIndividuals.size());
 
 		// See who we're replacing, get that position in the array
 		
-		uint32_t dstPopIdx = srcIndividuals[dstPop].second;
-		populations[dstPop]->individual(dstPopIdx) = srcInfo.first;
+		uint32_t dstPopIdx = srcIndividuals[dstPop];
+		populations[dstPop]->individual(dstPopIdx) = srcIndividualBuffer[p];
 
 		onExchange(generation, srcPop, srcPopIdx, dstPop, dstPopIdx);
 

@@ -62,6 +62,11 @@ public:
 
 	errut::bool_t exchange(size_t generation, std::vector<std::shared_ptr<Population>> &populations) override;
 protected:
+	// The default is to choose at random, this could be reimplemented to e.g. sort according to fitness
+	// first and use this ranking to prefer better individuals. Note that a separate sort is probably needed
+	// since reproduction/mutation was performed since previous sort. The resulting sort cannot be re-used
+	// probably because individuals will have been moved between the populations
+	virtual std::vector<size_t> chooseMigrants(const std::vector<std::shared_ptr<Population>> &populations);
 	virtual void onExchange(size_t generation, size_t srcPop, size_t srcIndividualIdx, size_t dstPop, size_t dstIndividualIdx) { }
 private:
 	errut::bool_t exchangeIteration(size_t generation, std::vector<std::shared_ptr<Population>> &populations);
