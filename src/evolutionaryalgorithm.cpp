@@ -210,6 +210,9 @@ bool_t EvolutionaryAlgorithm::run(IndividualCreation &gfc,
 	
 	auto popSizeCheck = [&populations, &popSizes, &maxPopulationSizes, &minPopulationSizes]() -> bool_t
 	{
+		if (populations.size() != maxPopulationSizes.size())
+			return "Number of populations changed! Was " + to_string(maxPopulationSizes.size()) + " and is now " + to_string(populations.size());
+
 		for (size_t p = 0 ; p < populations.size() ; p++)
 		{
 			auto &population = populations[p];
