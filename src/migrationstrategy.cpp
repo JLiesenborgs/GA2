@@ -187,8 +187,10 @@ bool_t SequentialRandomIndividualExchange::exchangeIteration(size_t generation, 
 
 		onExchange(generation, srcPop, srcPopIdx, dstPop, dstPopIdx);
 
+#ifndef NDEBUG
 		srcPopCounts[srcPop]++;
 		dstPopCounts[dstPop]++;
+#endif
 	}
 
 #ifndef NDEBUG
