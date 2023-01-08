@@ -61,6 +61,7 @@ public:
 	errut::bool_t check(const std::vector<std::shared_ptr<Population>> &populations) override;
 	errut::bool_t createNewPopulations(size_t generation, std::vector<std::shared_ptr<Population>> &populations, const std::vector<size_t> &targetPopulationSize) override;
 
+	const std::vector<std::shared_ptr<PopulationEvolver>> &getSinglePopulationEvolvers() const { return m_singlePopEvolvers; }
 	const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const override;
 private:
 	std::vector<std::shared_ptr<PopulationEvolver>> m_singlePopEvolvers;
