@@ -56,14 +56,14 @@ class MyStop : public FixedGenerationsStopCriterion
 {
 public:
 	MyStop(size_t n) : FixedGenerationsStopCriterion(n) { }
-	bool_t analyze(const vector<shared_ptr<Individual>> &currentBest, size_t generationNumber, bool &shouldStop) override
+	bool_t analyzeBest(const vector<shared_ptr<Individual>> &currentBest, size_t generationNumber, bool &shouldStop) override
 	{
 		if (currentBest.size() > 0)
 		{
 			assert(currentBest.size() == 1);
 			cout << generationNumber << "| " << currentBest[0]->toString() << endl;
 		}
-		return FixedGenerationsStopCriterion::analyze(currentBest, generationNumber, shouldStop);
+		return FixedGenerationsStopCriterion::analyzeBest(currentBest, generationNumber, shouldStop);
 	}
 };
 

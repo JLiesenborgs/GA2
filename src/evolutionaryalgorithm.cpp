@@ -118,7 +118,7 @@ bool_t EvolutionaryAlgorithm::run(IndividualCreation &gfc,
 
 		bool shouldStop = false;
 
-		if (!(r = stopCriterion.analyze(evolver.getBestIndividuals(), generation, shouldStop)))
+		if (!(r = stopCriterion.analyze(evolver, generation, shouldStop)))
 			return "Error in termination check: " + r.getErrorString();
 		if (shouldStop)
 			break;
@@ -269,7 +269,7 @@ bool_t EvolutionaryAlgorithm::run(IndividualCreation &gfc,
 
 		bool shouldStop = false;
 
-		if (!(r = stopCriterion.analyze(evolver.getBestIndividuals(), generation, shouldStop)))
+		if (!(r = stopCriterion.analyze(evolver, generation, shouldStop)))
 			return "Error in termination check: " + r.getErrorString();
 		if (shouldStop)
 			break;
