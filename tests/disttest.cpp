@@ -10,10 +10,12 @@ inline double chooseTruncatedDistribution(RandomNumberGenerator &rng, double mu,
 {
 	struct G
 	{
+		typedef uint64_t result_type;
+
 		G(RandomNumberGenerator &_rng) : rng(_rng) { }
-		double operator()() { return (double)rng.getRandomUint32(); }
-		double min() { return 0; }
-		double max() { return 0x100000000; }
+		uint64_t operator()() { return (uint64_t)rng.getRandomUint32(); }
+		constexpr static uint64_t min() { return 0; }
+		constexpr static uint64_t max() { return 0x100000000; }
 
 		RandomNumberGenerator &rng;
 	};
