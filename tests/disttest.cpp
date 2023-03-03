@@ -1,6 +1,7 @@
 #include "mersennerandomnumbergenerator.h"
 #include <random>
 #include <iostream>
+#include <string>
 
 using namespace std;
 using namespace eatk;

@@ -1,3 +1,4 @@
+#define _USE_MATH_DEFINES
 #include <iostream>
 #include <random>
 #include <limits>
@@ -5,6 +6,7 @@
 #include <map>
 #include <memory>
 #include <algorithm>
+#include <string>
 
 using namespace std;
 

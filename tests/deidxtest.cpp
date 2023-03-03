@@ -1,5 +1,6 @@
 #include <cassert>
 #include <iostream>
+#include <string>
 #include "mersennerandomnumbergenerator.h"
 
 using namespace std;

@@ -1,4 +1,6 @@
+#define _USE_MATH_DEFINES
 #include <iostream>
+#include <cmath>
 #include <vector>
 #include <random>
 #include <cassert>
@@ -6,6 +8,7 @@
 #include <algorithm>
 #include <tuple>
 #include <memory>
+#include <string>
 
 using namespace std;
 
