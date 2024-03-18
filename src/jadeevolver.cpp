@@ -12,18 +12,23 @@ namespace eatk
 JADEEvolver::JADEEvolver(const shared_ptr<RandomNumberGenerator> &rng,
 		const shared_ptr<DifferentialEvolutionMutation> &mut,
 		const shared_ptr<DifferentialEvolutionCrossover> &cross,
-		const shared_ptr<FitnessComparison> &fitComp, size_t objectiveNumber,
+		const shared_ptr<FitnessComparison> &fitComp, int objectiveNumber,
 		double p, double c,
 		bool useArchive,
 		double initMuF,
-		double initMuCR)
+		double initMuCR,
+		size_t numObjectives,
+		const shared_ptr<NonDominatedSetCreator> &ndCreator
+		)
 	: m_rng(rng),
 	  m_mut(mut),
 	  m_cross(cross),
 	  m_fitComp(fitComp),
 	  m_objectiveNumber(objectiveNumber),
 	  m_p(p), m_c(c), m_useArchive(useArchive),
-	  m_initMuF(initMuF),m_initMuCR(initMuCR)
+	  m_initMuF(initMuF),m_initMuCR(initMuCR),
+	  m_numObjectives(numObjectives),
+	  m_ndCreator(ndCreator)
 {
 	m_mutationFactors = { 1.0, 0, 0, 0, 0 };
 	m_mutationGenomes = { nullptr, nullptr, nullptr, nullptr, nullptr };
@@ -50,6 +55,16 @@ bool_t JADEEvolver::check(const shared_ptr<Population> &population)
 		return "Invalid value for 'c', should lie between 0 and 1 but is " + to_string(m_c);
 	if (m_p < 0 || m_p > 1)
 		return "Invalid value for 'p', should lie between 0 and 1 but is " + to_string(m_p);
+
+	if (m_numObjectives == 0)
+		return "Number of objectives must be at least one";
+	if (m_objectiveNumber >= 0 && (size_t)m_objectiveNumber >= m_numObjectives)
+		return "Objective number is not compatible with number of objectives";
+	if (m_objectiveNumber < 0)
+	{
+		if (!m_ndCreator.get())
+			return "Multi-objective mode was specified, but no non-dominated set creator was specified";
+	}
 
 	return true;
 }
@@ -111,6 +126,8 @@ bool_t JADEEvolver::createNewPopulation(size_t generation, shared_ptr<Population
 {
 	Population &pop = *population;
 
+	auto isFitterThan = getDominatesFunction(m_fitComp, m_objectiveNumber, m_numObjectives);
+
 	if (pop.size() < 4)
 		return "Population size must be at least 4";
 
@@ -143,7 +160,7 @@ bool_t JADEEvolver::createNewPopulation(size_t generation, shared_ptr<Population
 			Individual &indBase = *(pop.individual(i));
 			Individual &indNew = *(pop.individual(i+targetPopulationSize));
 			
-			if (m_fitComp->isFitterThan(indNew.fitnessRef(), indBase.fitnessRef(), m_objectiveNumber))
+			if (isFitterThan(indNew.fitnessRef(), indBase.fitnessRef()))
 			{
 				if (m_useArchive)
 					m_archive.push_back(indBase.genomeRef().createCopy()); // add to archive before overwriting location
@@ -169,26 +186,52 @@ bool_t JADEEvolver::createNewPopulation(size_t generation, shared_ptr<Population
 
 	onMutationCrossoverSettings(m_muF, m_muCR);
 
-	// Sort the population, we need this to select the p fraction of best
-	auto comp = [this](auto &i1, auto &i2)
+	if (m_numObjectives == 1) // single objective
 	{
-		return m_fitComp->isFitterThan(i1->fitnessRef(), i2->fitnessRef(), m_objectiveNumber);
-	};
-	sort(pop.individuals().begin(), pop.individuals().end(), comp);
+		// Sort the population, we need this to select the p fraction of best
+		auto comp = [this](auto &i1, auto &i2)
+		{
+			return m_fitComp->isFitterThan(i1->fitnessRef(), i2->fitnessRef(), m_objectiveNumber);
+		};
+		sort(pop.individuals().begin(), pop.individuals().end(), comp);
 
-	// for (auto &ind : pop.individuals())
-	// 	cout << ind->toString() << endl;
-
-	// Keep the best
-	const auto &firstAfterSort = pop.individuals()[0];
-	if (m_bestIndividual.size() == 0)
-		m_bestIndividual.push_back(firstAfterSort->createCopy());
-	else
-	{
-		if (comp(firstAfterSort, m_bestIndividual[0]))
-			m_bestIndividual[0] = firstAfterSort->createCopy();
+		// Keep the best
+		const auto &firstAfterSort = pop.individuals()[0];
+		if (m_bestIndividual.size() == 0)
+			m_bestIndividual.push_back(firstAfterSort->createCopy());
+		else
+		{
+			if (comp(firstAfterSort, m_bestIndividual[0]))
+				m_bestIndividual[0] = firstAfterSort->createCopy();
+		}
 	}
-	// cout << m_bestIndividual[0]->toString() << endl;
+	else // multi-objective
+	{
+		// Use an ND sort
+		bool_t r;
+		r = m_ndCreator->calculateAllNDSets(pop.individuals());
+		if (!r)
+			return "Can't create ND sets: " + r.getErrorString();
+
+		size_t oldPopsize = pop.size();
+		size_t numSets = m_ndCreator->getNumberOfSets();
+
+		// Clear the population and insert the individuals again according to the ND sets
+		pop.clear();
+		for (size_t i = 0 ; i < numSets ; i++)
+		{
+			for (auto &ind : m_ndCreator->getSet(i))
+				pop.append(ind);
+		}
+
+		if (oldPopsize != pop.size())
+			return "Internal error: population size differs from expected";
+
+		// Keep the best set
+		m_bestIndividual.clear();
+		for (auto &ind : m_ndCreator->getSet(0))
+			m_bestIndividual.push_back(ind->createCopy());
+	}
 
 	// Do mutation/crossover
 

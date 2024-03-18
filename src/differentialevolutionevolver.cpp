@@ -64,47 +64,7 @@ bool_t DifferentialEvolutionEvolver::createNewPopulation(size_t generation, std:
 {
 	Population &pop = *population;
 
-	std::function<bool(const Fitness &f1, const Fitness &f2)> isFitterThan;
-	if (m_objectiveNumber >= 0) // single objective
-	{
-		isFitterThan = [this](const Fitness &f1, const Fitness &f2)
-		{
-			return m_fitComp->isFitterThan(f1, f2, m_objectiveNumber);
-		};
-	}
-	else
-	{
-		// multi-objective, use dominance
-		isFitterThan = [this](const Fitness &f1, const Fitness &f2)
-		{
-			size_t betterOrEqualCount = 0;
-			size_t betterCount = 0;
-			for (size_t i = 0 ; i < m_numObjectives ; i++)
-			{
-				if (m_fitComp->isFitterThan(f1, f2, i))
-				{
-					betterCount++;
-					betterOrEqualCount++;
-				}
-				else // f1 not strictly better than f2 for i
-				{
-					if (!m_fitComp->isFitterThan(f2, f1, i)) // then they must have equal fitness
-					{
-						betterOrEqualCount++;
-					}
-					else
-					{
-						// We can never get betterOrEqualCount == m_numObjectives
-						return false;
-					}
-				}
-			}
-			// if we got here, then betterOrEqualCount == m_numObjectives
-			if (betterCount > 0)
-				return true;
-			return false;
-		};
-	}
+	auto isFitterThan = getDominatesFunction(m_fitComp, m_objectiveNumber, m_numObjectives);
 
 	if (pop.size() < 4)
 		return "Population size must be at least 4";
