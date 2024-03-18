@@ -4,6 +4,7 @@
 #include "crossovermutation.h"
 #include "randomnumbergenerator.h"
 #include "populationevolver.h"
+#include "nondominatedsetcreator.h"
 
 namespace eatk
 {
@@ -37,24 +38,27 @@ public:
 		double F,
 		const std::shared_ptr<DifferentialEvolutionCrossover> &cross,
 		double CR,
-		const std::shared_ptr<FitnessComparison> &fitComp, size_t objectiveNumber = 0);
+		const std::shared_ptr<FitnessComparison> &fitComp, int objectiveNumber = 0, size_t numObjectives = 1,
+		const std::shared_ptr<NonDominatedSetCreator> &ndCreator = nullptr); // negative means multi-objective
 	~DifferentialEvolutionEvolver();
 
 	errut::bool_t check(const std::shared_ptr<Population> &population) override;
 	errut::bool_t createNewPopulation(size_t generation, std::shared_ptr<Population> &population, size_t targetPopulationSize) override;
-	const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const override { return m_bestIndividual; }
+	const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const override { return m_bestIndividuals; }
 private:
 	std::shared_ptr<RandomNumberGenerator> m_rng;
 	std::shared_ptr<DifferentialEvolutionMutation> m_mut;
 	std::shared_ptr<DifferentialEvolutionCrossover> m_cross;
 	std::shared_ptr<FitnessComparison> m_fitComp;
-	const size_t m_objectiveNumber;
+	const int m_objectiveNumber;
+	const size_t m_numObjectives;
 
 	std::vector<const Genome*> m_mutationGenomes;
 	std::vector<double> m_mutationFactors;
 	double m_CR;
 
-	std::vector<std::shared_ptr<Individual>> m_bestIndividual;
+	std::vector<std::shared_ptr<Individual>> m_bestIndividuals;
+	std::shared_ptr<NonDominatedSetCreator> m_ndCreator;
 };
 
 }

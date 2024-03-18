@@ -1,4 +1,6 @@
 #include "differentialevolutionevolver.h"
+#include "nondominatedsetcreator.h"
+#include <functional>
 
 using namespace errut;
 using namespace std;
@@ -12,13 +14,17 @@ DifferentialEvolutionEvolver::DifferentialEvolutionEvolver(
 	double F,
 	const shared_ptr<DifferentialEvolutionCrossover> &cross,
 	double CR,
-	const shared_ptr<FitnessComparison> &fitComp, size_t objectiveNumber)
+	const shared_ptr<FitnessComparison> &fitComp,
+	int objectiveNumber, size_t numObjectives,
+	const shared_ptr<NonDominatedSetCreator> &ndCreator)
 	: m_rng(rng),
 	  m_mut(mut),
 	  m_cross(cross),
 	  m_CR(CR),
 	  m_fitComp(fitComp),
-	  m_objectiveNumber(objectiveNumber)
+	  m_objectiveNumber(objectiveNumber),
+	  m_numObjectives(numObjectives),
+	  m_ndCreator(ndCreator)
 {
 	m_mutationFactors = { 1.0, F, -F };
 	m_mutationGenomes = { nullptr, nullptr, nullptr };
@@ -26,11 +32,20 @@ DifferentialEvolutionEvolver::DifferentialEvolutionEvolver(
 
 DifferentialEvolutionEvolver::~DifferentialEvolutionEvolver()
 {
-
 }
 
 bool_t DifferentialEvolutionEvolver::check(const std::shared_ptr<Population> &population)
 {
+	if (m_numObjectives == 0)
+		return "Number of objectives must be at least one";
+	if (m_objectiveNumber >= 0 && (size_t)m_objectiveNumber >= m_numObjectives)
+		return "Objective number is not compatible with number of objectives";
+	if (m_objectiveNumber < 0)
+	{
+		if (!m_ndCreator.get())
+			return "Multi-objective mode was specified, but no non-dominated set creator was specified";
+	}
+
 	bool_t r;
 	for (auto &ind : population->individuals())
 	{
@@ -48,6 +63,48 @@ bool_t DifferentialEvolutionEvolver::createNewPopulation(size_t generation, std:
                                                          size_t targetPopulationSize)
 {
 	Population &pop = *population;
+
+	std::function<bool(const Fitness &f1, const Fitness &f2)> isFitterThan;
+	if (m_objectiveNumber >= 0) // single objective
+	{
+		isFitterThan = [this](const Fitness &f1, const Fitness &f2)
+		{
+			return m_fitComp->isFitterThan(f1, f2, m_objectiveNumber);
+		};
+	}
+	else
+	{
+		// multi-objective, use dominance
+		isFitterThan = [this](const Fitness &f1, const Fitness &f2)
+		{
+			size_t betterOrEqualCount = 0;
+			size_t betterCount = 0;
+			for (size_t i = 0 ; i < m_numObjectives ; i++)
+			{
+				if (m_fitComp->isFitterThan(f1, f2, i))
+				{
+					betterCount++;
+					betterOrEqualCount++;
+				}
+				else // f1 not strictly better than f2 for i
+				{
+					if (!m_fitComp->isFitterThan(f2, f1, i)) // then they must have equal fitness
+					{
+						betterOrEqualCount++;
+					}
+					else
+					{
+						// We can never get betterOrEqualCount == m_numObjectives
+						return false;
+					}
+				}
+			}
+			// if we got here, then betterOrEqualCount == m_numObjectives
+			if (betterCount > 0)
+				return true;
+			return false;
+		};
+	}
 
 	if (pop.size() < 4)
 		return "Population size must be at least 4";
@@ -70,7 +127,7 @@ bool_t DifferentialEvolutionEvolver::createNewPopulation(size_t generation, std:
 			Individual &indBase = *(pop.individual(i));
 			Individual &indNew = *(pop.individual(i+targetPopulationSize));
 			
-			if (m_fitComp->isFitterThan(indNew.fitnessRef(), indBase.fitnessRef(), m_objectiveNumber))
+			if (isFitterThan(indNew.fitnessRef(), indBase.fitnessRef()))
 				pop.individual(i) = pop.individual(i+targetPopulationSize);
 		}
 
@@ -81,15 +138,32 @@ bool_t DifferentialEvolutionEvolver::createNewPopulation(size_t generation, std:
 
 	// Check best
 
-	for (auto &ind : pop.individuals())
+	if (m_objectiveNumber >= 0) // single-objective
 	{
-		if (m_bestIndividual.size() == 0)
-			m_bestIndividual.push_back(ind->createCopy());
-		else
+		for (auto &ind : pop.individuals())
 		{
-			if (m_fitComp->isFitterThan(ind->fitnessRef(), m_bestIndividual[0]->fitnessRef(), m_objectiveNumber))
-				m_bestIndividual[0] = ind->createCopy();
-		}	
+			if (m_bestIndividuals.size() == 0)
+				m_bestIndividuals.push_back(ind->createCopy());
+			else
+			{
+				if (m_fitComp->isFitterThan(ind->fitnessRef(), m_bestIndividuals[0]->fitnessRef(), m_objectiveNumber))
+					m_bestIndividuals[0] = ind->createCopy();
+			}	
+		}
+	}
+	else // multi-objective
+	{
+		bool_t r;
+
+		m_bestIndividuals.clear();
+		vector<shared_ptr<Individual>> remaining_notused;
+		
+		if (!(r = m_ndCreator->calculateNonDomitatedSet(pop.individuals(), m_bestIndividuals, remaining_notused)))
+			return "Can't create non-dominated set: " + r.getErrorString();
+
+		// Actually copy the individuals
+		for (auto &x : m_bestIndividuals)
+			x = x->createCopy();
 	}
 
 	// Do mutation/crossover
