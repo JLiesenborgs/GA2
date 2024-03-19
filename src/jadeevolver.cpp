@@ -92,7 +92,25 @@ inline double meanL(const std::vector<double> &values)
 		sum2 += x*x;
 		sum += x;
 	}
+
+	if (sum == 0) // Guard against NaN
+		return 0;
+
 	sum2 /= sum;
+
+#ifndef NDEBUG
+	if (isnan(sum2))
+	{
+		cerr << "DEBUG: meanL [ ";
+		for (auto x : values)
+			cerr << " " << x;
+		cerr << " ]\n";
+		cerr << "  sum = " << sum << endl;
+		cerr << "  sum2 = " << sum2 << endl;
+		assert(!isnan(sum2));
+	}
+#endif // NDEBUG
+
 	return sum2;
 }
 
@@ -124,6 +142,28 @@ inline double chooseTruncatedDistribution(RandomNumberGenerator &rng, double mu,
 bool_t JADEEvolver::createNewPopulation(size_t generation, shared_ptr<Population> &population,
 										size_t targetPopulationSize)
 {
+#ifndef NDEBUG
+	auto printVector = [this](const vector<double> &vals, const string &name)
+	{
+		cerr << "DEBUG: " << name << " =";
+		for (auto x : vals)
+			cerr << " " << x;
+		cerr << endl;
+	};
+
+	auto printVectors = [this, &printVector]()
+	{
+		printVector(m_mutationFactors, "m_mutationFactors");
+		printVector(m_CRi, "m_CRi");
+		printVector(m_Fi, "m_Fi");
+		printVector(m_SCR, "m_SCR");
+		printVector(m_SF, "m_SF");
+	};
+
+	//cerr << "DEBUG: start vectors" << endl;
+	//printVectors();
+#endif // NDEBUG
+
 	Population &pop = *population;
 
 	auto isFitterThan = getDominatesFunction(m_fitComp, m_objectiveNumber, m_numObjectives);
@@ -293,6 +333,8 @@ bool_t JADEEvolver::createNewPopulation(size_t generation, shared_ptr<Population
 			// cout << "Choosing " << archIdx << " from archive" << endl;
 		}
 
+		//printVector(m_mutationFactors, "m_mutationFactors");
+
 		shared_ptr<Genome> newGenome = m_mut->mutate(m_mutationGenomes, m_mutationFactors);
 		if (!newGenome.get())
 			return "Unable to create new genome from three reference genomes";
@@ -308,6 +350,9 @@ bool_t JADEEvolver::createNewPopulation(size_t generation, shared_ptr<Population
 
 		pop.append(refIndividual.createNew(newGenome, newFitness, generation)); // TODO: is generation+1 better here?
 	}
+
+	//cerr << "DEBUG: end vectors" << endl;
+	//printVectors();
 
 	return true;
 }
