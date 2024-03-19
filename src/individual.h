@@ -52,7 +52,15 @@ public:
 		assert(m_genome.get());
 		return *m_genome;
 	}
+
+	const Genome &genomeRef() const
+	{ 
+		assert(m_genome.get());
+		return *m_genome;
+	}
+
 	Genome *genomePtr() { return m_genome.get(); }
+	const Genome *genomePtr() const { return m_genome.get(); }
 
 	std::shared_ptr<Fitness> &fitness() { return m_fitness; }
 	Fitness &fitnessRef()
@@ -61,7 +69,14 @@ public:
 		return *m_fitness;
 	}
 
+	const Fitness &fitnessRef() const
+	{
+		assert(m_fitness.get());
+		return *m_fitness;
+	}
+
 	Fitness *fitnessPtr() { return m_fitness.get(); }
+	const Fitness *fitnessPtr() const { return m_fitness.get(); }
 private:
 	std::shared_ptr<Genome> m_genome;
 	std::shared_ptr<Fitness> m_fitness;
