@@ -377,8 +377,9 @@ public:
 		m_dump = (getenv("DUMPPROGRESS"))?true:false;
 	}
 
-	bool_t analyze(const std::vector<std::shared_ptr<Individual>> &currentBest, size_t generationNumber, bool &shouldStop)
+	bool_t analyze(const PopulationEvolver &evolver, size_t generationNumber, bool &shouldStop) override
 	{
+		auto &currentBest = evolver.getBestIndividuals();
 		if (currentBest.size() != 1)
 			return "Expecting current best size 1";
 		
