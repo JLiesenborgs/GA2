@@ -175,6 +175,8 @@ int main(int argc, char const *argv[])
 
 		cities = getRandomCities((unsigned int)stoul(argv[3]), numCities);
 	}
+	else
+		usage();
 
 	random_device rd;
 	unsigned int seed = rd();
