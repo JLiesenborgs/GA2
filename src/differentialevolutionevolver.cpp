@@ -16,7 +16,9 @@ DifferentialEvolutionEvolver::DifferentialEvolutionEvolver(
 	double CR,
 	const shared_ptr<FitnessComparison> &fitComp,
 	int objectiveNumber, size_t numObjectives,
-	const shared_ptr<NonDominatedSetCreator> &ndCreator)
+	const shared_ptr<NonDominatedSetCreator> &ndCreator,
+	bool needStrictlyBetter
+	)
 	: m_rng(rng),
 	  m_mut(mut),
 	  m_cross(cross),
@@ -24,7 +26,8 @@ DifferentialEvolutionEvolver::DifferentialEvolutionEvolver(
 	  m_fitComp(fitComp),
 	  m_objectiveNumber(objectiveNumber),
 	  m_numObjectives(numObjectives),
-	  m_ndCreator(ndCreator)
+	  m_ndCreator(ndCreator),
+	  m_needStrictlyBetter(needStrictlyBetter)
 {
 	m_mutationFactors = { 1.0, F, -F };
 	m_mutationGenomes = { nullptr, nullptr, nullptr };
@@ -64,7 +67,7 @@ bool_t DifferentialEvolutionEvolver::createNewPopulation(size_t generation, std:
 {
 	Population &pop = *population;
 
-	auto isFitterThan = getDominatesFunction(m_fitComp, m_objectiveNumber, m_numObjectives);
+	auto shouldAccept = getShouldAcceptFunction(m_fitComp, m_objectiveNumber, m_numObjectives, m_needStrictlyBetter);
 
 	if (pop.size() < 4)
 		return "Population size must be at least 4";
@@ -82,12 +85,14 @@ bool_t DifferentialEvolutionEvolver::createNewPopulation(size_t generation, std:
 		// compare each individual in the first half to the corresponding
 		// one in the second half and keep the best one
 
+		// Accept the new proposal if it's actually better (so dominates in multi-objective version)
+		// In single objective version this is '<'
 		for (size_t i = 0 ; i < targetPopulationSize ; i++)
 		{
 			Individual &indBase = *(pop.individual(i));
 			Individual &indNew = *(pop.individual(i+targetPopulationSize));
 			
-			if (isFitterThan(indNew.fitnessRef(), indBase.fitnessRef()))
+			if (shouldAccept(indNew.fitnessRef(), indBase.fitnessRef()))
 				pop.individual(i) = pop.individual(i+targetPopulationSize);
 		}
 

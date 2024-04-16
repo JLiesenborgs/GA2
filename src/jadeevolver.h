@@ -18,7 +18,8 @@ public:
 		double initMuF = 0.5,
 		double initMuCR = 0.5,
 		size_t numObjectives = 1,
-		const std::shared_ptr<NonDominatedSetCreator> &ndCreator = nullptr
+		const std::shared_ptr<NonDominatedSetCreator> &ndCreator = nullptr,
+		bool needStrictlyBetter = true
 		);
 	~JADEEvolver();
 
@@ -40,6 +41,7 @@ private:
 	const double m_initMuF, m_initMuCR;
 	const bool m_useArchive;
 	double m_muF, m_muCR;
+	bool m_needStrictlyBetter;
 	std::vector<std::shared_ptr<Genome>> m_archive;
 
 	std::vector<const Genome*> m_mutationGenomes;

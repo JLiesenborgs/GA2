@@ -18,7 +18,8 @@ JADEEvolver::JADEEvolver(const shared_ptr<RandomNumberGenerator> &rng,
 		double initMuF,
 		double initMuCR,
 		size_t numObjectives,
-		const shared_ptr<NonDominatedSetCreator> &ndCreator
+		const shared_ptr<NonDominatedSetCreator> &ndCreator,
+		bool needStrictlyBetter
 		)
 	: m_rng(rng),
 	  m_mut(mut),
@@ -28,7 +29,8 @@ JADEEvolver::JADEEvolver(const shared_ptr<RandomNumberGenerator> &rng,
 	  m_p(p), m_c(c), m_useArchive(useArchive),
 	  m_initMuF(initMuF),m_initMuCR(initMuCR),
 	  m_numObjectives(numObjectives),
-	  m_ndCreator(ndCreator)
+	  m_ndCreator(ndCreator),
+	  m_needStrictlyBetter(needStrictlyBetter)
 {
 	m_mutationFactors = { 1.0, 0, 0, 0, 0 };
 	m_mutationGenomes = { nullptr, nullptr, nullptr, nullptr, nullptr };
@@ -166,7 +168,7 @@ bool_t JADEEvolver::createNewPopulation(size_t generation, shared_ptr<Population
 
 	Population &pop = *population;
 
-	auto isFitterThan = getDominatesFunction(m_fitComp, m_objectiveNumber, m_numObjectives);
+	auto shouldAccept = getShouldAcceptFunction(m_fitComp, m_objectiveNumber, m_numObjectives, m_needStrictlyBetter);
 
 	if (pop.size() < 4)
 		return "Population size must be at least 4";
@@ -200,7 +202,7 @@ bool_t JADEEvolver::createNewPopulation(size_t generation, shared_ptr<Population
 			Individual &indBase = *(pop.individual(i));
 			Individual &indNew = *(pop.individual(i+targetPopulationSize));
 			
-			if (isFitterThan(indNew.fitnessRef(), indBase.fitnessRef()))
+			if (shouldAccept(indNew.fitnessRef(), indBase.fitnessRef()))
 			{
 				if (m_useArchive)
 					m_archive.push_back(indBase.genomeRef().createCopy()); // add to archive before overwriting location

@@ -39,8 +39,10 @@ public:
 		double F,
 		const std::shared_ptr<DifferentialEvolutionCrossover> &cross,
 		double CR,
-		const std::shared_ptr<FitnessComparison> &fitComp, int objectiveNumber = 0, size_t numObjectives = 1,
-		const std::shared_ptr<NonDominatedSetCreator> &ndCreator = nullptr); // negative means multi-objective
+		const std::shared_ptr<FitnessComparison> &fitComp, int objectiveNumber = 0,	// negative means multi-objective
+		size_t numObjectives = 1,
+		const std::shared_ptr<NonDominatedSetCreator> &ndCreator = nullptr,
+		bool needStrictlyBetter = true);
 	~DifferentialEvolutionEvolver();
 
 	errut::bool_t check(const std::shared_ptr<Population> &population) override;
@@ -57,6 +59,7 @@ private:
 	std::vector<const Genome*> m_mutationGenomes;
 	std::vector<double> m_mutationFactors;
 	double m_CR;
+	bool m_needStrictlyBetter;
 
 	std::vector<std::shared_ptr<Individual>> m_bestIndividuals;
 	std::shared_ptr<NonDominatedSetCreator> m_ndCreator;
@@ -107,6 +110,20 @@ inline std::function<bool(const Fitness &f1, const Fitness &f2)> getDominatesFun
 		};
 	}
 	return isFitterThan;
+}
+
+inline std::function<bool(const Fitness &f1, const Fitness &f2)> getShouldAcceptFunction(const std::shared_ptr<FitnessComparison> &fitComp,
+		                                                                                 int objectiveNumber, size_t numObjectives,
+																						 bool needStrictlyBetter)
+{
+	auto isFitterThan = getDominatesFunction(fitComp, objectiveNumber, numObjectives);
+	std::function<bool(const Fitness &f1, const Fitness &f2)> shouldAcceptFunction;
+
+	if (needStrictlyBetter)
+		shouldAcceptFunction = isFitterThan; // [isFitterThan](const Fitness &f1, const Fitness &f2) { return isFitterThan(f1, f2); };
+	else
+		shouldAcceptFunction = [isFitterThan](const Fitness &f1, const Fitness &f2) { return !isFitterThan(f2, f1); };
+	return shouldAcceptFunction;
 }
 
 }
