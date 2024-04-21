@@ -46,7 +46,6 @@ bool_t EvolutionaryAlgorithm::run(IndividualCreation &gfc,
 	m_population = make_shared<Population>();
 	m_populations = { m_population };
 
-	auto newPopulation = make_shared<Population>();
 	auto refFitness = gfc.createEmptyFitness();
 	auto refIndividual = gfc.createReferenceIndividual();
 
@@ -101,6 +100,8 @@ bool_t EvolutionaryAlgorithm::run(IndividualCreation &gfc,
 		}
 		if (!(r = evolver.createNewPopulation(m_generation, m_population, popSize)))
 			return "Error creating new population: " + r.getErrorString();
+
+		m_populations[0] = m_population; // Make sure getPopulations still works
 
 		const size_t curPopSize = m_population->size();
 		if (curPopSize > maxPopulationSize)
