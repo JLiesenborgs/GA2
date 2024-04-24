@@ -22,6 +22,9 @@ public:
 	FixedGenerationsStopCriterion(size_t n) : m_maxGen(n) { }
 	~FixedGenerationsStopCriterion() { }
 
+    void setNumberOfGenerations(size_t n) { m_maxGen = n; }
+    size_t getNumberOfGenerations() const { return m_maxGen; }
+
 	errut::bool_t analyze(const PopulationEvolver &evolver, size_t generationNumber, bool &shouldStop) override
 	{
 		if (generationNumber >= m_maxGen)
