@@ -66,32 +66,11 @@ bool_t BasicNonDominatedSetCreator::calculateNonDomitatedSet(const vector<shared
 	remaining.clear();
 
 	const size_t N = m_numObjectives;
-	FitnessComparison &cmp = *m_cmp;
 
-	auto isDominated = [&cmp, N](auto &i, auto &j)
+	auto dominatesFunction = FitnessComparison::getDominatesFunction(m_cmp, 0, N);
+	auto isDominated = [&dominatesFunction](auto &i, auto &j)
 	{
-		size_t betterCount = 0;
-		size_t betterEqualCount = 0;
-
-		for (size_t k = 0 ; k < N ; k++)
-		{
-			const Fitness &fi = i->fitnessRef();
-			const Fitness &fj = j->fitnessRef();
-			if (cmp.isFitterThan(fj, fi, k))
-			{
-				betterCount++;
-				betterEqualCount++;
-			}
-			else
-			{
-				if (!cmp.isFitterThan(fi, fj, k))
-					betterEqualCount++;
-			}
-		}
-
-		if (betterEqualCount == N && betterCount > 0)
-			return true;
-		return false;
+		return dominatesFunction(j->fitnessRef(), i->fitnessRef());
 	};
 
 	for (auto &i : individuals)
