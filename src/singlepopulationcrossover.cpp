@@ -156,12 +156,11 @@ bool_t SinglePopulationCrossover::createNewPopulation(size_t generation,
 
 		if (m_keepExistingPopulation)
 		{
-			for (auto &i : population->individuals())
-				newPopulation->append(i);
-			population->clear();
+			for (auto &i : newPopulation->individuals())
+				population->append(i);
 		}
-
-		std::swap(newPopulation, population);
+		else
+			std::swap(newPopulation, population);
 	}
 
 	return true;

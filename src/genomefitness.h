@@ -10,6 +10,7 @@
 #include <memory>
 #include <vector>
 #include <functional>
+#include <limits>
 
 namespace eatk
 {
@@ -47,6 +48,12 @@ class Fitness : public GenomeFitnessBase<Fitness>
 public:
 	Fitness() : m_calculated(false) { }
 	~Fitness() { }
+
+	// TODO: is float better?
+	// This is needed in case the working of an algorithm requires the
+	// fitness value to be numerical (NSGA2 needs this for example)
+	virtual bool hasRealValues() const { return false; }
+	virtual double getRealValue(size_t objectiveNumber) const { return std::numeric_limits<double>::quiet_NaN(); }
 
 	bool isCalculated() const { return m_calculated; }
 	void setCalculated(bool v = true) { m_calculated = v; }

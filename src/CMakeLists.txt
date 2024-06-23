@@ -44,6 +44,7 @@ set(HEADERS
 	elitism.h
 	multipopulationevolver.h
 	migrationstrategy.h
+	nsga2evolver.h
 	"${PROJECT_BINARY_DIR}/src/eatkconfig.h" )
 
 set(SOURCES
@@ -71,6 +72,7 @@ set(SOURCES
 	jadeevolver.cpp
 	multipopulationevolver.cpp
 	migrationstrategy.cpp
+	nsga2evolver.cpp
 	)
 
 if (MSVC)

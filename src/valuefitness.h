@@ -20,6 +20,9 @@ public:
 	T getValue() const { return m_value; }
 	void setValue(T x) { m_value = x; }
 
+	bool hasRealValues() const override { return true; }
+	double getRealValue(size_t objectiveNumber) const override { return (double)getValue(); }
+
 	std::shared_ptr<Fitness> createCopy(bool copyContents = true) const override
 	{
 		auto f = std::make_shared<ValueFitness<T>>(m_value);

@@ -36,6 +36,13 @@ public:
 		return ValueVector<Fitness, T>::toString();
 	}
 
+	bool hasRealValues() const override { return true; }
+	double getRealValue(size_t objectiveNumber) const override
+	{
+		assert(objectiveNumber < (ValueVector<Fitness, T>::getValues().size()));
+		return (double)ValueVector<Fitness, T>::getValues()[objectiveNumber];
+	}
+
 	std::shared_ptr<Fitness> createCopy(bool copyContents = true) const override
 	{
 		auto g = ValueVector<Fitness, T>::template createCopy<VectorFitness<T>>(copyContents);

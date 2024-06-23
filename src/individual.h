@@ -26,10 +26,20 @@ public:
 		return std::make_shared<Individual>(genome, fitness, introducedInGeneration);
 	}
 
+	size_t getIntroducedInGeneration() const
+	{
+		return m_introducedInGeneration;
+	}
+
 	void setLastMutationGeneration(size_t g)
 	{
 		assert(g >= m_introducedInGeneration);
 		m_lastMutationGeneration = g;
+	}
+
+	size_t getLastMutationGeneration() const
+	{
+		return m_lastMutationGeneration;
 	}
 
 	std::string toString() const
@@ -47,6 +57,8 @@ public:
 	}
 
 	std::shared_ptr<Genome> &genome() { return m_genome; }
+	const std::shared_ptr<Genome> &genome() const { return m_genome; }
+
 	Genome &genomeRef() 
 	{ 
 		assert(m_genome.get());
@@ -63,6 +75,8 @@ public:
 	const Genome *genomePtr() const { return m_genome.get(); }
 
 	std::shared_ptr<Fitness> &fitness() { return m_fitness; }
+	const std::shared_ptr<Fitness> &fitness() const { return m_fitness; }
+
 	Fitness &fitnessRef()
 	{
 		assert(m_fitness.get());

@@ -33,3 +33,7 @@ target_link_libraries(disttest eatk-static "${EATK_LINK_LIBS}")
 
 add_executable(multipoptest multipoptest.cpp)
 target_link_libraries(multipoptest eatk-static "${EATK_LINK_LIBS}")
+
+add_executable(nsga2test nsga2test.cpp)
+target_link_libraries(nsga2test eatk-static "${EATK_LINK_LIBS}")
+
