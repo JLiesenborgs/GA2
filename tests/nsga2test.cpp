@@ -158,6 +158,21 @@ public:
 	shared_ptr<RandomNumberGenerator> m_rng;
 };
 
+class Stop : public FixedGenerationsStopCriterion
+{
+public:
+	Stop(size_t numGen) : FixedGenerationsStopCriterion(numGen) { }
+	
+	errut::bool_t analyze(const PopulationEvolver &evolver, size_t generationNumber, bool &shouldStop) override
+	{
+		cerr << "# Generation " << generationNumber << " best:" << endl;
+		for (auto &i : evolver.getBestIndividuals())
+			cerr << i->toString() << endl;
+		cerr << endl;
+		return FixedGenerationsStopCriterion::analyze(evolver, generationNumber, shouldStop);
+	}
+};
+
 int main(void)
 {
 	random_device rndDev;
@@ -178,7 +193,7 @@ int main(void)
 		problem->getObjectives()
 		);
 	SingleThreadedPopulationFitnessCalculation calc(problem);
-	FixedGenerationsStopCriterion stop(problem->getNumberOfGenerations());
+	Stop stop(problem->getNumberOfGenerations());
 	size_t popSize = problem->getPopulationSize();
 	
 	bool_t r;
@@ -186,10 +201,11 @@ int main(void)
 	if (!(r = ea.run(creation, evolver, calc, stop, popSize, popSize, popSize*2)))
 		throw runtime_error("Error running EA: " + r.getErrorString());
 
+	/*
 	auto best = evolver.getBestIndividuals();
 	cout << "# Best: " << endl;
 	for (auto i : best)
 		cout << i->toString() << endl;
-
+	*/
 	return 0;
 }
