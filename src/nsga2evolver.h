@@ -55,6 +55,17 @@ private:
 			return std::make_shared<IndWrapper>(m_fitnessDistances.size(), genome, fitness, introducedInGeneration, std::numeric_limits<size_t>::max());
 		}
 
+		std::string toString() const override
+		{
+			std::string s;
+
+			s += "pos: " + std::to_string(m_originalPosition) + " |";
+			for (auto d : m_fitnessDistances)
+				s += " " + std::to_string(d);
+			s += "| " + Individual::toString();
+			return s;
+		}
+
 		const size_t m_originalPosition;
 		std::vector<double> m_fitnessDistances;
 	};
@@ -80,6 +91,11 @@ private:
 			return newFit;
 		}
 
+		std::string toString() const override
+		{
+			return "{ ndset: " + std::to_string(m_ndSetIndex) + ", dist: " + std::to_string(m_totalFitnessDistance) + ", orig: " + m_origFitness->toString() + " }";
+		}
+
 		bool hasRealValues() const override { return m_origFitness->hasRealValues(); }
 		double getRealValue(size_t objectiveNumber) const override { return m_origFitness->getRealValue(objectiveNumber); }
 
@@ -88,7 +104,32 @@ private:
 		size_t m_ndSetIndex;
 	};
 
-	class FitWrapperComparison : public FitnessComparison
+	class FitWrapperOrigComparison : public FitnessComparison
+	{
+	public:
+		FitWrapperOrigComparison(const std::shared_ptr<FitnessComparison> &origCmp) : m_origCmp(origCmp) { }
+
+		errut::bool_t check(const Fitness &f) const
+		{
+			if (!dynamic_cast<const FitWrapper*>(&f))
+				return "Expecting FitWrapper object";
+			const FitWrapper &fw = static_cast<const FitWrapper&>(f);
+			return m_origCmp->check(*(fw.m_origFitness));
+		}
+
+		bool isFitterThan(const Fitness &first0, const Fitness &second0, size_t objectiveNumber) const
+		{
+			assert(dynamic_cast<const FitWrapper*>(&first0) && dynamic_cast<const FitWrapper*>(&second0));
+			const FitWrapper &first = static_cast<const FitWrapper&>(first0);
+			const FitWrapper &second = static_cast<const FitWrapper&>(second0);
+
+			return m_origCmp->isFitterThan(*(first.m_origFitness), *(second.m_origFitness), objectiveNumber);
+		}
+	private:
+		std::shared_ptr<FitnessComparison> m_origCmp;
+	};
+
+	class FitWrapperNewComparison : public FitnessComparison
 	{
 	public:
 		errut::bool_t check(const Fitness &f) const
@@ -122,6 +163,7 @@ private:
 
 	std::vector<std::shared_ptr<Individual>> m_popWrapper;
 	std::vector<std::shared_ptr<Individual>> m_best;
+	std::shared_ptr<FitWrapperOrigComparison> m_fitOrigComp;
 };
 
 }

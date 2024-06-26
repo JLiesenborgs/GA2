@@ -42,7 +42,7 @@ public:
 		return m_lastMutationGeneration;
 	}
 
-	std::string toString() const
+	virtual std::string toString() const
 	{
 		return m_genome->toString() + ": " + m_fitness->toString() + "(" +
 			   std::to_string(m_introducedInGeneration)+ "/" +

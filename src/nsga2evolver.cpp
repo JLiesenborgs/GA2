@@ -31,9 +31,10 @@ NSGA2Evolver::NSGA2Evolver(
 	const std::shared_ptr<GenomeMutation> &genomeMutation,
 	const std::shared_ptr<FitnessComparison> &fitComp, size_t numObjectives
 	)
-	: m_fitComp(fitComp), m_numObjectives(numObjectives)
+	: m_numObjectives(numObjectives)
 {
-	auto fitWrapComp = make_shared<FitWrapperComparison>();
+	m_fitOrigComp = make_shared<FitWrapperOrigComparison>(fitComp);
+	auto fitWrapComp = make_shared<FitWrapperNewComparison>();
 	double cloneFrac = 0; // TODO: allow cloning?
 	m_crossover = make_unique<SinglePopulationCrossover>(cloneFrac, true, 
 		make_shared<DummySelPop>(),
@@ -101,7 +102,7 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 	// Next generation, same as before
 
 	// TODO: pass ndset creator as argument to constructor
-	auto ndsCreator = make_shared<FasterNonDominatedSetCreator>(m_fitComp, m_numObjectives);
+	auto ndsCreator = make_shared<FasterNonDominatedSetCreator>(m_fitOrigComp, m_numObjectives);
 	bool_t r;
 
 	// Create wrapper population, so that we can keep track of extra information
@@ -224,6 +225,15 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 
 		if (!(r = createNDSetsAndCalculateCrowdingDistances()))
 			return r;
+
+		/*
+		cerr << "Initial population" << endl;
+		for (auto &i : m_popWrapper)
+		{
+			cerr << i->toString() << endl;
+		}
+		throw runtime_error("TODO");
+		*/
 
 		saveBestIndividuals(ndsCreator->getSet(0));
 
@@ -357,8 +367,10 @@ void NSGA2Evolver:: calculateCrowdingDistances(const std::vector<std::shared_ptr
 		assert(dynamic_cast<FitWrapper*>(pIndWrapper->fitnessPtr()));
 		FitWrapper &fitness = static_cast<FitWrapper&>(pIndWrapper->fitnessRef());
 
+		// Note: this has to be 0.0 and not just 0, otherwise the doubles will be cast to
+		//       int values
 		fitness.m_totalFitnessDistance = accumulate(pIndWrapper->m_fitnessDistances.begin(),
-		                                            pIndWrapper->m_fitnessDistances.end(), 0);
+		                                            pIndWrapper->m_fitnessDistances.end(), 0.0);
 	}
 }
 
