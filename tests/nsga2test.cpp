@@ -101,6 +101,205 @@ protected:
 	}
 };
 
+class FON : public BaseCalculation
+{
+public:
+	FON() : BaseCalculation(3, 2, 64, 2000) { }
+protected:
+	vector<double> calculate(const vector<double> &x) override
+	{
+		double f1 = 0, f2 = 0;
+		for (size_t i = 0 ; i < 3 ; i++)
+		{
+			f1 += pow((x[i] - 1.0/sqrt(3.0)), 2);
+			f2 += pow((x[i] + 1.0/sqrt(3.0)), 2);
+		}
+
+		f1 = 1.0-exp(-f1);
+		f2 = 1.0-exp(-f2);
+		return { f1, f2 };
+	}
+
+	void bounds(size_t dim, double &xMin, double &xMax) override
+	{
+		xMin = -4.0;
+		xMax = 4.0;
+	}
+};
+
+class POL : public BaseCalculation
+{
+public:
+	POL() : BaseCalculation(2, 2, 64, 2000) { }
+protected:
+	vector<double> calculate(const vector<double> &x) override
+	{
+		double A1 = 0.5*sin(1.0) - 2.0*cos(1.0) + sin(2.0) - 1.5*cos(2.0);
+		double A2 = 1.5*sin(1.0) - cos(1.0) + 2.0*sin(2.0) - 0.5*cos(2.0);
+		double B1 = 0.5*sin(x[0]) - 2.0*cos(x[0]) + sin(x[1]) - 1.5*cos(x[1]);
+		double B2 = 1.5*sin(x[0]) - cos(x[0]) + 2.0*sin(x[1]) - 0.5*cos(x[1]);
+		double f1 = 1.0 + pow(A1-B1,2) + pow(A2-B2,2);
+		double f2 = pow(x[0]+3.0, 2) + pow(x[1]+1.0, 2);
+		return { f1, f2 };
+	}
+
+	void bounds(size_t dim, double &xMin, double &xMax) override
+	{
+		xMin = -M_PI;
+		xMax = M_PI;
+	}
+};
+
+class KUR : public BaseCalculation
+{
+public:
+	KUR() : BaseCalculation(3, 2, 64, 2000) { }
+protected:
+	vector<double> calculate(const vector<double> &x) override
+	{
+		double f1 = 0, f2 = 0;
+		for (size_t i = 0 ; i < 2 ; i++)
+			f1 += -10.0*exp(-0.2*sqrt(x[i]*x[i] + x[i+1]*x[i+1]));
+		for (size_t i = 0 ; i < 3 ; i++)
+			f2 += std::pow(std::abs(x[i]), 0.8) + 5.0*sin(x[i]*x[i]*x[i]);
+		return { f1, f2 };
+	}
+
+	void bounds(size_t dim, double &xMin, double &xMax) override
+	{
+		xMin = -5.0;
+		xMax = 5.0;
+	}
+};
+
+class ZDT1 : public BaseCalculation
+{
+public:
+	ZDT1() : BaseCalculation(30, 2, 128, 2000) { }
+protected:
+	vector<double> calculate(const vector<double> &x) override
+	{
+		double f1 = x[0];
+		double g = 0;
+		for (size_t i = 1 ; i < x.size() ; i++)
+			g += x[i];
+
+		g = 1.0 + 9.0*g/(double)(x.size() - 1);
+		double f2 = g*(1.0-sqrt(x[0]/g));
+		return { f1, f2 };
+	}
+
+	void bounds(size_t dim, double &xMin, double &xMax) override
+	{
+		xMin = 0.0;
+		xMax = 1.0;
+	}
+};
+
+class ZDT2 : public BaseCalculation
+{
+public:
+	ZDT2() : BaseCalculation(30, 2, 128, 2000) { }
+protected:
+	vector<double> calculate(const vector<double> &x) override
+	{
+		double f1 = x[0];
+		double g = 0;
+		for (size_t i = 1 ; i < x.size() ; i++)
+			g += x[i];
+
+		g = 1.0 + 9.0*g/(double)(x.size() - 1);
+		double f2 = g*(1.0-pow(x[0]/g, 2));
+		return { f1, f2 };
+	}
+
+	void bounds(size_t dim, double &xMin, double &xMax) override
+	{
+		xMin = 0.0;
+		xMax = 1.0;
+	}
+};
+
+class ZDT3 : public BaseCalculation
+{
+public:
+	ZDT3() : BaseCalculation(30, 2, 128, 2000) { }
+protected:
+	vector<double> calculate(const vector<double> &x) override
+	{
+		double f1 = x[0];
+		double g = 0;
+		for (size_t i = 1 ; i < x.size() ; i++)
+			g += x[i];
+
+		g = 1.0 + 9.0*g/(double)(x.size() - 1);
+		double f2 = g*(1.0 - sqrt(x[0]/g) - (x[0]/g)*sin(10.0*M_PI*x[0]));
+		return { f1, f2 };
+	}
+
+	void bounds(size_t dim, double &xMin, double &xMax) override
+	{
+		xMin = 0.0;
+		xMax = 1.0;
+	}
+};
+
+class ZDT4 : public BaseCalculation
+{
+public:
+	ZDT4() : BaseCalculation(10, 2, 128, 2000) { }
+protected:
+	vector<double> calculate(const vector<double> &x) override
+	{
+		double f1 = x[0];
+		double g = 0.0;
+		for (size_t i = 1 ; i < x.size() ; i++)
+			g += pow(x[i], 2) - 10.0*cos(4.0*M_PI*x[i]);
+
+		g = 1.0 + 10.0*((double)x.size()-1.0) + g;
+		double f2 = g*(1.0-sqrt(x[0]/g));
+		return { f1, f2 };
+	}
+
+	void bounds(size_t dim, double &xMin, double &xMax) override
+	{
+		if (dim == 0)
+		{
+			xMin = 0.0;
+			xMax = 1.0;
+		}
+		else
+		{
+			xMin = -5.0;
+			xMax = 5.0;
+		}
+	}
+};
+
+class ZDT6 : public BaseCalculation
+{
+public:
+	ZDT6() : BaseCalculation(10, 2, 128, 2000) { }
+protected:
+	vector<double> calculate(const vector<double> &x) override
+	{
+		double f1 = 1.0 - exp(-4.0*x[0])*pow(sin(6.0*M_PI*x[0]), 6);
+		double g = 0.0;
+		for (size_t i = 1 ; i < x.size() ; i++)
+			g += x[i];
+
+		g = 1.0 + 9.0*pow(g/((double)x.size() - 1.0), 0.25);
+		double f2 = g*(1.0-pow(f1/g, 2));
+		return { f1, f2 };
+	}
+
+	void bounds(size_t dim, double &xMin, double &xMax) override
+	{
+		xMin = 0.0;
+		xMax = 1.0;
+	}
+};
+
 // TODO: copied this for now, put in common file
 class MyEA : public EvolutionaryAlgorithm
 {
@@ -203,7 +402,15 @@ int main(void)
 		seed = (unsigned int)stoul(getenv("SEED"));
 	shared_ptr<RandomNumberGenerator> rng = make_shared<MersenneRandomNumberGenerator>(seed);
 
-	auto problem = make_shared<SCH>();
+	//auto problem = make_shared<SCH>();
+	//auto problem = make_shared<FON>();
+	//auto problem = make_shared<POL>();
+	//auto problem = make_shared<KUR>();
+	//auto problem = make_shared<ZDT1>();
+	//auto problem = make_shared<ZDT2>();
+	//auto problem = make_shared<ZDT3>();
+	//auto problem = make_shared<ZDT4>();
+	auto problem = make_shared<ZDT6>();
 	MyEA ea;
 
 	double mutFrac = 0.5/(double)problem->getDimension();
