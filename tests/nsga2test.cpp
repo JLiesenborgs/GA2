@@ -38,12 +38,11 @@ public:
 			throw runtime_error("Bounds not filled in");
 	}
 
-	errut::bool_t calculate(const Genome &genome0, Fitness &fitness0) override
+	std::vector<double> getVariableVectorFromGenome(const Genome &genome0)
 	{
 		assert(dynamic_cast<const DoubleVectorGenome *>(&genome0));
-		assert(dynamic_cast<DoubleVectorFitness *>(&fitness0));
 		const DoubleVectorGenome &genome = static_cast<const DoubleVectorGenome &>(genome0);
-		DoubleVectorFitness &fitness = static_cast<DoubleVectorFitness &>(fitness0);
+
 		if (genome.getValues().size() != m_N)
 			throw runtime_error("Expecting genome of size " + to_string(m_N) + " but got " + to_string(genome.getValues().size()));
 
@@ -57,7 +56,16 @@ public:
 			v[idx] = frac*(xMax-xMin) + xMin;
 		}
 
-		auto fv = calculate(genome.getValues());
+		return v;
+	}
+
+	errut::bool_t calculate(const Genome &genome0, Fitness &fitness0) override
+	{
+		assert(dynamic_cast<DoubleVectorFitness *>(&fitness0));
+		DoubleVectorFitness &fitness = static_cast<DoubleVectorFitness &>(fitness0);
+		
+		auto v = getVariableVectorFromGenome(genome0);
+		auto fv = calculate(v);
 		fitness.setValues(fv);
 
 		if (fitness.getValues().size() != m_M)
@@ -76,7 +84,7 @@ private:
 class SCH : public BaseCalculation
 {
 public:
-	SCH() : BaseCalculation(1, 2, 64, 1000) { }
+	SCH() : BaseCalculation(1, 2, 64, 2000) { }
 protected:
 	vector<double> calculate(const vector<double> &x) override
 	{
@@ -158,19 +166,33 @@ public:
 	shared_ptr<RandomNumberGenerator> m_rng;
 };
 
+std::string getIndividualString(const shared_ptr<Individual> &ind, const shared_ptr<BaseCalculation> &problem)
+{
+	string s = "genome: ";
+
+	for (auto v : problem->getVariableVectorFromGenome(ind->genomeRef()))
+		s += " " + to_string(v);
+	s += " | fitness: " + ind->fitness()->toString();
+	return s;
+}
+
 class Stop : public FixedGenerationsStopCriterion
 {
 public:
-	Stop(size_t numGen) : FixedGenerationsStopCriterion(numGen) { }
+	Stop(size_t numGen, const shared_ptr<BaseCalculation> &problem)
+		: FixedGenerationsStopCriterion(numGen), m_problem(problem) { }
 	
 	errut::bool_t analyze(const PopulationEvolver &evolver, size_t generationNumber, bool &shouldStop) override
 	{
 		cerr << "# Generation " << generationNumber << " best:" << endl;
 		for (auto &i : evolver.getBestIndividuals())
-			cerr << i->toString() << endl;
+			cerr << getIndividualString(i, m_problem) << endl;
 		cerr << endl;
 		return FixedGenerationsStopCriterion::analyze(evolver, generationNumber, shouldStop);
 	}
+
+	shared_ptr<BaseCalculation> m_problem;
+
 };
 
 int main(void)
@@ -193,7 +215,7 @@ int main(void)
 		problem->getObjectives()
 		);
 	SingleThreadedPopulationFitnessCalculation calc(problem);
-	Stop stop(problem->getNumberOfGenerations());
+	Stop stop(problem->getNumberOfGenerations(), problem);
 	size_t popSize = problem->getPopulationSize();
 	
 	bool_t r;
@@ -201,11 +223,11 @@ int main(void)
 	if (!(r = ea.run(creation, evolver, calc, stop, popSize, popSize, popSize*2)))
 		throw runtime_error("Error running EA: " + r.getErrorString());
 
-	/*
+/*
 	auto best = evolver.getBestIndividuals();
 	cout << "# Best: " << endl;
 	for (auto i : best)
-		cout << i->toString() << endl;
-	*/
+		cout << getIndividualString(i, problem) << endl;
+*/
 	return 0;
 }
