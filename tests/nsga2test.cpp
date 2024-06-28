@@ -422,8 +422,13 @@ class TestCrossOver : public GenomeCrossover
 {
 public:
 	TestCrossOver(std::shared_ptr<RandomNumberGenerator> &rng,
+				  bool extraParent = false,
 	              double F = 0.5,
-				  double CR = 0.5) : GenomeCrossover(4), m_rng(rng), m_F(F), m_CR(CR) { }
+				  double CR = 0.5)
+		: GenomeCrossover((extraParent)?4:3), m_rng(rng), m_F(F), m_CR(CR), m_extraParent(extraParent)
+	{
+	}
+	
 	errut::bool_t check(const std::vector<std::shared_ptr<Genome>> &parents) override
 	{
 		for (auto &p : parents)
@@ -437,7 +442,7 @@ public:
 	errut::bool_t generateOffspring(const std::vector<std::shared_ptr<Genome>> &parents,
 									std::vector<std::shared_ptr<Genome>> &generatedOffspring) override
 	{
-		assert(parents.size() == 4);
+		assert((m_extraParent && parents.size() == 4) || (!m_extraParent && parents.size() == 3));
 		generatedOffspring.clear();
 
 		vector<double> *vg[3];
@@ -451,7 +456,20 @@ public:
 		auto result = parents[0]->createCopy();
 		DoubleVectorGenome &o = static_cast<DoubleVectorGenome&>(*result);
 		vector<double> &vo = o.getValues();
-		vector<double> &c = static_cast<DoubleVectorGenome&>(*parents[3]).getValues();
+
+		size_t refParent = 3;
+		if (!m_extraParent)
+		{
+			// Using 0 as reference parent doesn't seem to work all that well
+			// Then again, that's also the one we're trying to adjust based on
+			// the difference of the other two
+			if (m_rng->getRandomDouble() < 0.5)
+				refParent = 1;
+			else
+				refParent = 2;
+		}
+
+		vector<double> &c = static_cast<DoubleVectorGenome&>(*parents[refParent]).getValues();
 		size_t rndIdx = (size_t)m_rng->getRandomUint32() % vo.size();
 
 		for (size_t i = 0 ; i < vo.size() ; i++)
@@ -468,6 +486,7 @@ public:
 private:
 	std::shared_ptr<RandomNumberGenerator> m_rng;
 	double m_F, m_CR;
+	bool m_extraParent;
 };
 
 class NoMutation : public GenomeMutation
