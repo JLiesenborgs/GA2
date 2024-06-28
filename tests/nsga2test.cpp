@@ -470,13 +470,16 @@ public:
 				refParent = 2;
 		}
 
+		double CR = (isnan(m_CR))?m_rng->getRandomDouble():m_CR;
+		double F = (isnan(m_F))?m_rng->getRandomDouble():m_F;
+
 		vector<double> &c = static_cast<DoubleVectorGenome&>(*parents[refParent]).getValues();
 		size_t rndIdx = (size_t)m_rng->getRandomUint32() % vo.size();
 
 		for (size_t i = 0 ; i < vo.size() ; i++)
 		{
-			if (m_rng->getRandomDouble() < m_CR || i == rndIdx)
-				vo[i] = (*(vg[0]))[i] + m_F * ((*(vg[2]))[i] - (*(vg[1]))[i]);
+			if (m_rng->getRandomDouble() < CR || i == rndIdx)
+				vo[i] = (*(vg[0]))[i] + F * ((*(vg[2]))[i] - (*(vg[1]))[i]);
 			else
 				vo[i] = c[i];
 		}
@@ -540,11 +543,20 @@ int mainCxx(const vector<string> &args)
 	bool extraParent = false;
 	if (getenv("EXTRAPARENT"))
 		extraParent = true;
+	
+	double F = numeric_limits<double>::quiet_NaN();
+	double CR = numeric_limits<double>::quiet_NaN();
+	if (getenv("F"))
+		F = stod(getenv("F"));
+	if (getenv("CR"))
+		CR = stod(getenv("CR"));
+
+	cerr << "F = " << F << " CR = " << CR << endl;
 
 	IndCreation creation(*problem, rng);
 	NSGA2Evolver evolver(rng,
 		//make_shared<UniformVectorGenomeCrossover<double>>(rng, false),
-		make_shared<TestCrossOver>(rng, extraParent),
+		make_shared<TestCrossOver>(rng, extraParent, F, CR),
 		//make_shared<VectorGenomeUniformMutation<double>>(mutFrac, -1.0, 1.0, rng),
 		make_shared<NoMutation>(),
 		make_shared<VectorFitnessComparison<double>>(),
