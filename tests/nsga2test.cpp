@@ -12,6 +12,7 @@
 #include <cmath>
 #include <random>
 #include <iostream>
+#include <map>
 
 using namespace eatk;
 using namespace std;
@@ -496,7 +497,7 @@ public:
 	errut::bool_t mutate(Genome &genome, bool &isChanged) override { isChanged = false; return true; }
 };
 
-int main(void)
+int mainCxx(const vector<string> &args)
 {
 	random_device rndDev;
 	unsigned int seed = rndDev();
@@ -504,22 +505,46 @@ int main(void)
 		seed = (unsigned int)stoul(getenv("SEED"));
 	shared_ptr<RandomNumberGenerator> rng = make_shared<MersenneRandomNumberGenerator>(seed);
 
-	//auto problem = make_shared<SCH>();
-	//auto problem = make_shared<FON>();
-	//auto problem = make_shared<POL>();
-	//auto problem = make_shared<KUR>();
-	//auto problem = make_shared<ZDT1>();
-	//auto problem = make_shared<ZDT2>();
-	//auto problem = make_shared<ZDT3>();
-	auto problem = make_shared<ZDT4>();
-	//auto problem = make_shared<ZDT6>();
+	map<string, shared_ptr<BaseCalculation>> problems = {
+		{ "SCH", make_shared<SCH>() },
+		{ "FON", make_shared<FON>() },
+		{ "POL", make_shared<POL>() },
+		{ "KUR", make_shared<KUR>() },
+		{ "ZDT1", make_shared<ZDT1>() },
+		{ "ZDT2", make_shared<ZDT2>() },
+		{ "ZDT3", make_shared<ZDT3>() },
+		{ "ZDT4", make_shared<ZDT4>() },
+		{ "ZDT6", make_shared<ZDT6>() }
+	};
+
+	auto usage = [&problems]() {
+		cerr << "Specify exactly one problem" << endl;
+		cerr << "Valid names are:";
+		for (auto kv : problems)
+			cerr << " " << kv.first;
+		cerr << endl;
+		return -1;
+	};
+
+	if (args.size() != 2)
+		return usage();
+
+	auto it = problems.find(args[1]);
+	if (it == problems.end())
+		return usage();
+
+	auto problem = it->second;
 	MyEA ea;
 
-	double mutFrac = 0.5/(double)problem->getDimension();
+	//double mutFrac = 0.5/(double)problem->getDimension();
+	bool extraParent = false;
+	if (getenv("EXTRAPARENT"))
+		extraParent = true;
+
 	IndCreation creation(*problem, rng);
 	NSGA2Evolver evolver(rng,
 		//make_shared<UniformVectorGenomeCrossover<double>>(rng, false),
-		make_shared<TestCrossOver>(rng),
+		make_shared<TestCrossOver>(rng, extraParent),
 		//make_shared<VectorGenomeUniformMutation<double>>(mutFrac, -1.0, 1.0, rng),
 		make_shared<NoMutation>(),
 		make_shared<VectorFitnessComparison<double>>(),
@@ -541,4 +566,12 @@ int main(void)
 		cout << getIndividualString(i, problem) << endl;
 */
 	return 0;
+}
+
+int main(int argc, char *argv[])
+{
+	vector<string> args;
+	for (int i = 0 ; i < argc ; i++)
+		args.push_back(argv[i]);
+	return mainCxx(args);
 }
