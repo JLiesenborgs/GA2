@@ -65,8 +65,32 @@ public:
 		DoubleVectorFitness &fitness = static_cast<DoubleVectorFitness &>(fitness0);
 		
 		auto v = getVariableVectorFromGenome(genome0);
-		auto fv = calculate(v);
-		fitness.setValues(fv);
+		double penalty = 0;
+
+		for (size_t i = 0 ; i < v.size() ; i++)
+		{
+			double xMin, xMax;
+			double diff = 0;
+			getBounds(i, xMin, xMax);
+			if (v[i] < xMin)
+				diff = xMin-v[i];
+			else if (v[i] > xMax)
+				diff = v[i] - xMax;
+
+			if (diff)
+				penalty += 1e6 + diff;
+		}
+
+		if (penalty == 0)
+		{
+			auto fv = calculate(v);
+			fitness.setValues(fv);
+		}
+		else
+		{
+			vector<double> fv(m_M, penalty);
+			fitness.setValues(fv);
+		}
 
 		if (fitness.getValues().size() != m_M)
 			throw runtime_error("Expecting " + to_string(m_M) + " objective values but got " + to_string(fitness.getValues().size()));
@@ -394,6 +418,65 @@ public:
 
 };
 
+class TestCrossOver : public GenomeCrossover
+{
+public:
+	TestCrossOver(std::shared_ptr<RandomNumberGenerator> &rng,
+	              double F = 0.5,
+				  double CR = 0.5) : GenomeCrossover(4), m_rng(rng), m_F(F), m_CR(CR) { }
+	errut::bool_t check(const std::vector<std::shared_ptr<Genome>> &parents) override
+	{
+		for (auto &p : parents)
+		{
+			if (!dynamic_cast<DoubleVectorGenome*>(p.get()))
+				return "Parent is of wrong type";
+		}
+		return true;
+	}
+
+	errut::bool_t generateOffspring(const std::vector<std::shared_ptr<Genome>> &parents,
+									std::vector<std::shared_ptr<Genome>> &generatedOffspring) override
+	{
+		assert(parents.size() == 4);
+		generatedOffspring.clear();
+
+		vector<double> *vg[3];
+		for (size_t i = 0 ; i < 3 ; i++)
+		{
+			assert(dynamic_cast<DoubleVectorGenome*>(parents[i].get()));
+			DoubleVectorGenome *pG = static_cast<DoubleVectorGenome*>(parents[i].get());
+			vg[i] = &pG->getValues();
+		}
+
+		auto result = parents[0]->createCopy();
+		DoubleVectorGenome &o = static_cast<DoubleVectorGenome&>(*result);
+		vector<double> &vo = o.getValues();
+		vector<double> &c = static_cast<DoubleVectorGenome&>(*parents[3]).getValues();
+		size_t rndIdx = (size_t)m_rng->getRandomUint32() % vo.size();
+
+		for (size_t i = 0 ; i < vo.size() ; i++)
+		{
+			if (m_rng->getRandomDouble() < m_CR || i == rndIdx)
+				vo[i] = (*(vg[0]))[i] + m_F * ((*(vg[2]))[i] - (*(vg[1]))[i]);
+			else
+				vo[i] = c[i];
+		}
+
+		generatedOffspring.push_back(result);
+		return true;
+	}
+private:
+	std::shared_ptr<RandomNumberGenerator> m_rng;
+	double m_F, m_CR;
+};
+
+class NoMutation : public GenomeMutation
+{
+public:
+	errut::bool_t check(const Genome &genome) override { return true; }
+	errut::bool_t mutate(Genome &genome, bool &isChanged) override { isChanged = false; return true; }
+};
+
 int main(void)
 {
 	random_device rndDev;
@@ -409,15 +492,17 @@ int main(void)
 	//auto problem = make_shared<ZDT1>();
 	//auto problem = make_shared<ZDT2>();
 	//auto problem = make_shared<ZDT3>();
-	//auto problem = make_shared<ZDT4>();
-	auto problem = make_shared<ZDT6>();
+	auto problem = make_shared<ZDT4>();
+	//auto problem = make_shared<ZDT6>();
 	MyEA ea;
 
 	double mutFrac = 0.5/(double)problem->getDimension();
 	IndCreation creation(*problem, rng);
 	NSGA2Evolver evolver(rng,
-		make_shared<UniformVectorGenomeCrossover<double>>(rng, false),
-		make_shared<VectorGenomeUniformMutation<double>>(mutFrac, -1.0, 1.0, rng),
+		//make_shared<UniformVectorGenomeCrossover<double>>(rng, false),
+		make_shared<TestCrossOver>(rng),
+		//make_shared<VectorGenomeUniformMutation<double>>(mutFrac, -1.0, 1.0, rng),
+		make_shared<NoMutation>(),
 		make_shared<VectorFitnessComparison<double>>(),
 		problem->getObjectives()
 		);
