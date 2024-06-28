@@ -224,7 +224,7 @@ protected:
 class ZDT2 : public BaseCalculation
 {
 public:
-	ZDT2() : BaseCalculation(30, 2, 128, 2000) { }
+	ZDT2() : BaseCalculation(30, 2, 256, 2000) { }
 protected:
 	vector<double> calculate(const vector<double> &x) override
 	{
