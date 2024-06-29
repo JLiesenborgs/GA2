@@ -6,6 +6,7 @@
 #include "randomnumbergenerator.h"
 #include "selection.h"
 #include "singlepopulationcrossover.h"
+#include "nondominatedsetcreator.h"
 #include <memory>
 #include <array>
 #include <cmath>
@@ -28,6 +29,8 @@ public:
 	errut::bool_t createNewPopulation(size_t generation, std::shared_ptr<Population> &population, size_t targetPopulationSize) override;
 	
 	const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const override { return m_best; }
+protected:
+	virtual std::shared_ptr<NonDominatedSetCreator> allocatedNDSetCreator(const std::shared_ptr<FitnessComparison> &fitCmp, size_t numObjectives);
 private:
 	void buildWrapperPopulation(const Population &population);
 	void calculateCrowdingDistances(const std::vector<std::shared_ptr<Individual>> &ndset) const;
@@ -37,10 +40,10 @@ private:
 	std::shared_ptr<Population> m_tmpPop;
 	const size_t m_numObjectives;
 
-	class IndWrapper : public Individual
+	class NSGA2IndividualWrapper : public Individual
 	{
 	public:
-		IndWrapper(size_t numObjectives,
+		NSGA2IndividualWrapper(size_t numObjectives,
 		       const std::shared_ptr<Genome> &genome, const std::shared_ptr<Fitness> &fitness,
 			   size_t introducedInGeneration, size_t originalPosition)
 			: Individual(genome, fitness, introducedInGeneration),
@@ -52,7 +55,7 @@ private:
 		std::shared_ptr<Individual> createNew(const std::shared_ptr<Genome> &genome, const std::shared_ptr<Fitness> &fitness,
 			   size_t introducedInGeneration = std::numeric_limits<size_t>::max()) const override
 		{
-			return std::make_shared<IndWrapper>(m_fitnessDistances.size(), genome, fitness, introducedInGeneration, std::numeric_limits<size_t>::max());
+			return std::make_shared<NSGA2IndividualWrapper>(m_fitnessDistances.size(), genome, fitness, introducedInGeneration, std::numeric_limits<size_t>::max());
 		}
 
 		std::string toString() const override
@@ -70,10 +73,10 @@ private:
 		std::vector<double> m_fitnessDistances;
 	};
 
-	class FitWrapper : public Fitness
+	class NSGA2FitnessWrapper : public Fitness
 	{
 	public:
-		FitWrapper(const std::shared_ptr<Fitness> &origFitness) : m_origFitness(origFitness)
+		NSGA2FitnessWrapper(const std::shared_ptr<Fitness> &origFitness) : m_origFitness(origFitness)
 		{
 			m_totalFitnessDistance = std::numeric_limits<double>::quiet_NaN();
 			m_ndSetIndex = std::numeric_limits<size_t>::max();
@@ -82,7 +85,7 @@ private:
 		std::shared_ptr<Fitness> createCopy(bool copyContents = true) const override
 		{
 			std::shared_ptr<Fitness> realFitness = m_origFitness->createCopy(copyContents);
-			std::shared_ptr<FitWrapper> newFit = std::make_shared<FitWrapper>(realFitness);
+			std::shared_ptr<NSGA2FitnessWrapper> newFit = std::make_shared<NSGA2FitnessWrapper>(realFitness);
 			if (copyContents)
 			{
 				newFit->m_totalFitnessDistance = m_totalFitnessDistance;
@@ -104,24 +107,24 @@ private:
 		size_t m_ndSetIndex;
 	};
 
-	class FitWrapperOrigComparison : public FitnessComparison
+	class NSGA2FitnessWrapperOriginalComparison : public FitnessComparison
 	{
 	public:
-		FitWrapperOrigComparison(const std::shared_ptr<FitnessComparison> &origCmp) : m_origCmp(origCmp) { }
+		NSGA2FitnessWrapperOriginalComparison(const std::shared_ptr<FitnessComparison> &origCmp) : m_origCmp(origCmp) { }
 
 		errut::bool_t check(const Fitness &f) const
 		{
-			if (!dynamic_cast<const FitWrapper*>(&f))
-				return "Expecting FitWrapper object";
-			const FitWrapper &fw = static_cast<const FitWrapper&>(f);
+			if (!dynamic_cast<const NSGA2FitnessWrapper*>(&f))
+				return "Expecting NSGA2FitnessWrapper object";
+			const NSGA2FitnessWrapper &fw = static_cast<const NSGA2FitnessWrapper&>(f);
 			return m_origCmp->check(*(fw.m_origFitness));
 		}
 
 		bool isFitterThan(const Fitness &first0, const Fitness &second0, size_t objectiveNumber) const
 		{
-			assert(dynamic_cast<const FitWrapper*>(&first0) && dynamic_cast<const FitWrapper*>(&second0));
-			const FitWrapper &first = static_cast<const FitWrapper&>(first0);
-			const FitWrapper &second = static_cast<const FitWrapper&>(second0);
+			assert(dynamic_cast<const NSGA2FitnessWrapper*>(&first0) && dynamic_cast<const NSGA2FitnessWrapper*>(&second0));
+			const NSGA2FitnessWrapper &first = static_cast<const NSGA2FitnessWrapper&>(first0);
+			const NSGA2FitnessWrapper &second = static_cast<const NSGA2FitnessWrapper&>(second0);
 
 			return m_origCmp->isFitterThan(*(first.m_origFitness), *(second.m_origFitness), objectiveNumber);
 		}
@@ -129,21 +132,21 @@ private:
 		std::shared_ptr<FitnessComparison> m_origCmp;
 	};
 
-	class FitWrapperNewComparison : public FitnessComparison
+	class NSGA2FitWrapperNDSetCrowdingComparison : public FitnessComparison
 	{
 	public:
 		errut::bool_t check(const Fitness &f) const
 		{
-			if (!dynamic_cast<const FitWrapper*>(&f))
-				return "Expecting FitWrapper object";
+			if (!dynamic_cast<const NSGA2FitnessWrapper*>(&f))
+				return "Expecting NSGA2FitnessWrapper object";
 			return true;
 		}
 
 		bool isFitterThan(const Fitness &first0, const Fitness &second0, size_t objectiveNumber) const
 		{
-			assert(dynamic_cast<const FitWrapper*>(&first0) && dynamic_cast<const FitWrapper*>(&second0));
-			const FitWrapper &first = static_cast<const FitWrapper&>(first0);
-			const FitWrapper &second = static_cast<const FitWrapper&>(second0);
+			assert(dynamic_cast<const NSGA2FitnessWrapper*>(&first0) && dynamic_cast<const NSGA2FitnessWrapper*>(&second0));
+			const NSGA2FitnessWrapper &first = static_cast<const NSGA2FitnessWrapper&>(first0);
+			const NSGA2FitnessWrapper &second = static_cast<const NSGA2FitnessWrapper&>(second0);
 
 			assert(first.m_ndSetIndex != std::numeric_limits<size_t>::max());
 			assert(second.m_ndSetIndex != std::numeric_limits<size_t>::max());
@@ -163,7 +166,8 @@ private:
 
 	std::vector<std::shared_ptr<Individual>> m_popWrapper;
 	std::vector<std::shared_ptr<Individual>> m_best;
-	std::shared_ptr<FitWrapperOrigComparison> m_fitOrigComp;
+	std::shared_ptr<NSGA2FitnessWrapperOriginalComparison> m_fitOrigComp;
+	std::shared_ptr<NonDominatedSetCreator> m_ndSetCreator;
 };
 
 }

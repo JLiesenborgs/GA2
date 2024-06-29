@@ -2,11 +2,10 @@
 #include "selection.h"
 #include "tournamentparentselection.h"
 #include "remainingtargetpopulationsizeiteration.h"
+#include "fasternondominatedsetcreator.h"
 #include <numeric>
 #include <algorithm>
 #include <iostream>
-
-#include "fasternondominatedsetcreator.h"
 
 using namespace std;
 using namespace errut;
@@ -33,8 +32,8 @@ NSGA2Evolver::NSGA2Evolver(
 	)
 	: m_numObjectives(numObjectives)
 {
-	m_fitOrigComp = make_shared<FitWrapperOrigComparison>(fitComp);
-	auto fitWrapComp = make_shared<FitWrapperNewComparison>();
+	m_fitOrigComp = make_shared<NSGA2FitnessWrapperOriginalComparison>(fitComp);
+	auto fitWrapComp = make_shared<NSGA2FitWrapperNDSetCrowdingComparison>();
 	double cloneFrac = 0; // TODO: allow cloning?
 	m_crossover = make_unique<SinglePopulationCrossover>(cloneFrac, true, 
 		make_shared<DummySelPop>(),
@@ -43,11 +42,16 @@ NSGA2Evolver::NSGA2Evolver(
 		make_shared<RemainingTargetPopulationSizeIteration>(), rng);
 
 	m_tmpPop = make_shared<Population>();
+	m_ndSetCreator = allocatedNDSetCreator(m_fitOrigComp, m_numObjectives);
 }
 
 NSGA2Evolver::~NSGA2Evolver()
 {
+}
 
+shared_ptr<NonDominatedSetCreator> NSGA2Evolver::allocatedNDSetCreator(const std::shared_ptr<FitnessComparison> &fitCmp, size_t numObjectives)
+{
+	return make_shared<FasterNonDominatedSetCreator>(fitCmp, numObjectives);
 }
 
 bool_t NSGA2Evolver::check(const std::shared_ptr<Population> &population)
@@ -57,6 +61,9 @@ bool_t NSGA2Evolver::check(const std::shared_ptr<Population> &population)
 
 	if (population->size() < 2)
 		return "Population size too small";
+
+	if (!m_ndSetCreator)
+		return "Need a non-dominated set creator!";
 
 	for (auto &ind : population->individuals())
 	{
@@ -74,8 +81,6 @@ bool_t NSGA2Evolver::check(const std::shared_ptr<Population> &population)
 	if (!(r = m_crossover->check(m_tmpPop)))
 		return "Error checking final crossover: " + r.getErrorString();
 
-	// TODO! Need to check anything else?
-
 	return true;
 }
 
@@ -85,8 +90,8 @@ void NSGA2Evolver::buildWrapperPopulation(const Population &population)
 	for (size_t i = 0 ; i < population.size() ; i++)
 	{
 		auto &ind = population.individual(i);
-		m_popWrapper.push_back(make_shared<IndWrapper>(m_numObjectives, ind->genome(),
-		                                               make_shared<FitWrapper>(ind->fitness()),
+		m_popWrapper.push_back(make_shared<NSGA2IndividualWrapper>(m_numObjectives, ind->genome(),
+		                                               make_shared<NSGA2FitnessWrapper>(ind->fitness()),
 													   ind->getIntroducedInGeneration(), i));
 	}
 }
@@ -101,9 +106,7 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 	// values yet)
 	// Next generation, same as before
 
-	// TODO: pass ndset creator as argument to constructor
-	auto ndsCreator = make_shared<FasterNonDominatedSetCreator>(m_fitOrigComp, m_numObjectives);
-	bool_t r;
+	assert(m_ndSetCreator.get());
 
 	// Create wrapper population, so that we can keep track of extra information
 	buildWrapperPopulation(*population);
@@ -115,14 +118,14 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 
 	auto getIndividualFromWrapper = [&population,&refInd](const shared_ptr<Individual> &i1)
 	{
-		assert(dynamic_cast<const IndWrapper*>(i1.get()));
-		const IndWrapper *pI1 = static_cast<const IndWrapper*>(i1.get());
+		assert(dynamic_cast<const NSGA2IndividualWrapper*>(i1.get()));
+		const NSGA2IndividualWrapper *pI1 = static_cast<const NSGA2IndividualWrapper*>(i1.get());
 
 		assert(pI1->m_originalPosition < population->size());
 		return population->individual(pI1->m_originalPosition);
 	};
 	
-	auto saveBestIndividuals = [this, &ndsCreator, &population, getIndividualFromWrapper](const vector<shared_ptr<Individual>> &ndSet)
+	auto saveBestIndividuals = [this, &population, getIndividualFromWrapper](const vector<shared_ptr<Individual>> &ndSet)
 	{
 		const Individual &refInd = *(population->individual(0));
 		m_best.clear();
@@ -163,9 +166,9 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 		{
 			const shared_ptr<Individual> &wrapperInd = m_popWrapper[i];
 			const shared_ptr<Fitness> &wrapperFit = wrapperInd->fitness();
-			assert(dynamic_cast<FitWrapper*>(wrapperFit.get()));
+			assert(dynamic_cast<NSGA2FitnessWrapper*>(wrapperFit.get()));
 
-			const FitWrapper *pWrapperFit = static_cast<const FitWrapper*>(wrapperFit.get());
+			const NSGA2FitnessWrapper *pWrapperFit = static_cast<const NSGA2FitnessWrapper*>(wrapperFit.get());
 
 			auto newInd = refInd->createNew(wrapperInd->genome(), pWrapperFit->m_origFitness, wrapperInd->getIntroducedInGeneration());
 			newInd->setLastMutationGeneration(wrapperInd->getLastMutationGeneration());
@@ -181,43 +184,44 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 	};
 
 	// TODO: stop if targetPopulationSize has been reached/exceeded
-	auto createNDSetsAndCalculateCrowdingDistances = [this,&ndsCreator]() -> bool_t
+	auto createNDSetsAndCalculateCrowdingDistances = [this]() -> bool_t
 	{
 		bool_t r;
 		// Using wrapper to store original index positions
-		if (!(r = ndsCreator->calculateAllNDSets(m_popWrapper)))
+		if (!(r = m_ndSetCreator->calculateAllNDSets(m_popWrapper)))
 			return "Can't create non-dominated sets: " + r.getErrorString();
 		
 		// Store the ndset index for each individual
-		size_t numSets = ndsCreator->getNumberOfSets();
+		size_t numSets = m_ndSetCreator->getNumberOfSets();
 		for (size_t s = 0 ; s < numSets ; s++)
 		{
-			for (auto &ind : ndsCreator->getSet(s))
+			for (auto &ind : m_ndSetCreator->getSet(s))
 			{
-				assert(dynamic_cast<IndWrapper*>(ind.get()));
-				IndWrapper *pIndWrapper = static_cast<IndWrapper*>(ind.get());
+				assert(dynamic_cast<NSGA2IndividualWrapper*>(ind.get()));
+				NSGA2IndividualWrapper *pIndWrapper = static_cast<NSGA2IndividualWrapper*>(ind.get());
 
-				assert(dynamic_cast<FitWrapper*>(pIndWrapper->fitnessPtr()));
-				FitWrapper &fitness = static_cast<FitWrapper&>(pIndWrapper->fitnessRef());
+				assert(dynamic_cast<NSGA2FitnessWrapper*>(pIndWrapper->fitnessPtr()));
+				NSGA2FitnessWrapper &fitness = static_cast<NSGA2FitnessWrapper&>(pIndWrapper->fitnessRef());
 				fitness.m_ndSetIndex = s;
 			}
 
 			// Also calculate crowding distances per set
-			calculateCrowdingDistances(ndsCreator->getSet(s));
+			calculateCrowdingDistances(m_ndSetCreator->getSet(s));
 		}	
 		return true;
 	};
 
 	auto getCrowdingValue = [](const shared_ptr<Individual> &i1) {
-		assert(dynamic_cast<const IndWrapper*>(i1.get()));
-		const IndWrapper *pI1 = static_cast<const IndWrapper*>(i1.get());
+		assert(dynamic_cast<const NSGA2IndividualWrapper*>(i1.get()));
+		const NSGA2IndividualWrapper *pI1 = static_cast<const NSGA2IndividualWrapper*>(i1.get());
 		const Fitness &f1 = pI1->fitnessRef();
-		assert(dynamic_cast<const FitWrapper*>(&f1));
-		const FitWrapper &fw = static_cast<const FitWrapper&>(f1);
+		assert(dynamic_cast<const NSGA2FitnessWrapper*>(&f1));
+		const NSGA2FitnessWrapper &fw = static_cast<const NSGA2FitnessWrapper&>(f1);
 
 		return fw.m_totalFitnessDistance;
 	};
 
+	bool_t r;
 	if (population->size() == targetPopulationSize)
 	{
 		if (generation != 0)
@@ -235,7 +239,7 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 		throw runtime_error("TODO");
 		*/
 
-		saveBestIndividuals(ndsCreator->getSet(0));
+		saveBestIndividuals(m_ndSetCreator->getSet(0));
 
 		if (!(r = createNewPopulationFromNDRankAndCrowding()))
 			return r;
@@ -256,9 +260,9 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 		// Check ND sets, copy until popsize filled, for last ND set
 		// sort on crowing distance and keep fill the remaining pop size with
 		// less crowded ones
-		for (size_t setIdx = 0 ; setIdx < ndsCreator->getNumberOfSets() ; setIdx++)
+		for (size_t setIdx = 0 ; setIdx < m_ndSetCreator->getNumberOfSets() ; setIdx++)
 		{
-			auto &ndSetRef = ndsCreator->getSet(setIdx);
+			auto &ndSetRef = m_ndSetCreator->getSet(setIdx);
 			if (wrappersToKeep.size() + ndSetRef.size() <= targetPopulationSize)
 			{
 				// Can keep entire set
@@ -310,8 +314,8 @@ void NSGA2Evolver:: calculateCrowdingDistances(const std::vector<std::shared_ptr
 	auto processObjective = [&ndset](size_t objectiveNumber)
 	{
 		auto getFitnessValue = [objectiveNumber](const shared_ptr<Individual> &i1) {
-			assert(dynamic_cast<const IndWrapper*>(i1.get()));
-			const IndWrapper *pI1 = static_cast<const IndWrapper*>(i1.get());
+			assert(dynamic_cast<const NSGA2IndividualWrapper*>(i1.get()));
+			const NSGA2IndividualWrapper *pI1 = static_cast<const NSGA2IndividualWrapper*>(i1.get());
 			const Fitness &f1 = pI1->fitnessRef();
 
 			assert(f1.hasRealValues());
@@ -319,8 +323,8 @@ void NSGA2Evolver:: calculateCrowdingDistances(const std::vector<std::shared_ptr
 		};
 
 		auto setDistanceValue = [objectiveNumber](shared_ptr<Individual> &i1, double value) {
-			assert(dynamic_cast<IndWrapper*>(i1.get()));
-			IndWrapper *pI1 = static_cast<IndWrapper*>(i1.get());
+			assert(dynamic_cast<NSGA2IndividualWrapper*>(i1.get()));
+			NSGA2IndividualWrapper *pI1 = static_cast<NSGA2IndividualWrapper*>(i1.get());
 
 			assert(objectiveNumber < pI1->m_fitnessDistances.size());
 			pI1->m_fitnessDistances[objectiveNumber] = value;
@@ -359,13 +363,13 @@ void NSGA2Evolver:: calculateCrowdingDistances(const std::vector<std::shared_ptr
 
 	for (auto &ind : ndset)
 	{
-		assert(dynamic_cast<IndWrapper*>(ind.get()));
-		IndWrapper *pIndWrapper = static_cast<IndWrapper*>(ind.get());
+		assert(dynamic_cast<NSGA2IndividualWrapper*>(ind.get()));
+		NSGA2IndividualWrapper *pIndWrapper = static_cast<NSGA2IndividualWrapper*>(ind.get());
 
 		assert(pIndWrapper->m_fitnessDistances.size() == m_numObjectives);
 		
-		assert(dynamic_cast<FitWrapper*>(pIndWrapper->fitnessPtr()));
-		FitWrapper &fitness = static_cast<FitWrapper&>(pIndWrapper->fitnessRef());
+		assert(dynamic_cast<NSGA2FitnessWrapper*>(pIndWrapper->fitnessPtr()));
+		NSGA2FitnessWrapper &fitness = static_cast<NSGA2FitnessWrapper&>(pIndWrapper->fitnessRef());
 
 		// Note: this has to be 0.0 and not just 0, otherwise the doubles will be cast to
 		//       int values
