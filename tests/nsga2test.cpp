@@ -77,12 +77,12 @@ public:
 		if (penalty == 0)
 		{
 			auto fv = calculate(v);
-			fitness.setValues(fv);
+			fitness.getValues() = fv;
 		}
 		else
 		{
 			vector<double> fv(m_M, penalty);
-			fitness.setValues(fv);
+			fitness.getValues() = fv;
 		}
 
 		if (fitness.getValues().size() != m_M)
@@ -370,7 +370,7 @@ public:
 		{
 			double xMin, xMax;
 			m_problem->getBounds(i, xMin, xMax);
-			g->setValue(m_rng->getRandomDouble(xMin, xMax), i);
+			g->getValues()[i] = m_rng->getRandomDouble(xMin, xMax);
 		}
 		return g;
 	}

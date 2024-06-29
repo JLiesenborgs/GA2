@@ -28,17 +28,6 @@ public:
 	std::vector<Type> &getValues() { return m_values; }
 	const std::vector<Type> &getValues() const { return m_values; }
 
-	void setValues(const std::vector<Type> &v)
-	{
-		m_values = v;
-	}
-
-	void setValue(Type x, size_t idx)
-	{
-		assert(idx < m_values.size());
-		m_values[idx] = x;
-	}
-
 	std::string toString() const override
 	{
 		std::stringstream ss;
