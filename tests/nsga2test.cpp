@@ -497,13 +497,6 @@ private:
 	bool m_extraParent;
 };
 
-class NoGenomeMutation : public GenomeMutation
-{
-public:
-	errut::bool_t check(const Genome &genome) override { return true; }
-	errut::bool_t mutate(Genome &genome, bool &isChanged) override { isChanged = false; return true; }
-};
-
 int mainCxx(const vector<string> &args)
 {
 	random_device rndDev;
@@ -562,7 +555,7 @@ int mainCxx(const vector<string> &args)
 		//make_shared<UniformVectorGenomeCrossover<double>>(rng, false),
 		make_shared<TestCrossOver<double>>(rng, extraParent, F, CR),
 		//make_shared<VectorGenomeUniformMutation<double>>(mutFrac, -1.0, 1.0, rng),
-		make_shared<NoGenomeMutation>(),
+		nullptr,
 		make_shared<VectorFitnessComparison<double>>(),
 		problem->getObjectives()
 		);

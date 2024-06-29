@@ -40,6 +40,9 @@ bool_t SinglePopulationCrossover::check(const shared_ptr<Population> &pop)
 		if (!(r = m_selectionPop->check(*pop)))
 			return "Error checking selection preprocessing: " + r.getErrorString();
 	
+		if (!m_genomeCrossover)
+			return "No genome crossover operation was specified";
+
 		size_t numCross = m_genomeCrossover->getNumberOfParents();
 		vector<shared_ptr<Genome>> crossGenomes(numCross);
 		for (auto &g : crossGenomes)
@@ -48,8 +51,11 @@ bool_t SinglePopulationCrossover::check(const shared_ptr<Population> &pop)
 		if (!(r = m_genomeCrossover->check(crossGenomes)))
 			return "Error checking crossover: " + r.getErrorString();
 
-		if (!(r = m_genomeMutation->check(*pop->individual(0)->genome()->createCopy())))
-			return "Error checking mutation: " + r.getErrorString();		
+		if (m_genomeMutation.get())
+		{
+			if (!(r = m_genomeMutation->check(*pop->individual(0)->genome()->createCopy())))
+				return "Error checking mutation: " + r.getErrorString();
+		}
 	}
 
 	if (m_elitism.get())
