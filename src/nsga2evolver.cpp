@@ -17,12 +17,113 @@ class DummySelPop : public SelectionPopulation
 {
 public:
 	// Avoid bailing on any kind of check
-	errut::bool_t check(const Population &population) { return true; }
-	errut::bool_t processPopulation(const std::shared_ptr<Population> &population, size_t targetPopulationSize)
+	bool_t check(const Population &population) { return true; }
+	bool_t processPopulation(const shared_ptr<Population> &population, size_t targetPopulationSize)
 	{
 		return true;
 	}
 };
+
+NSGA2IndividualWrapper::NSGA2IndividualWrapper(size_t numObjectives,
+		const shared_ptr<Genome> &genome, const shared_ptr<Fitness> &fitness,
+		size_t introducedInGeneration, size_t originalPosition)
+	: Individual(genome, fitness, introducedInGeneration),
+		m_originalPosition(originalPosition)
+{
+	m_fitnessDistances.resize(numObjectives);
+}
+
+shared_ptr<Individual> NSGA2IndividualWrapper::createNew(const shared_ptr<Genome> &genome,
+	const shared_ptr<Fitness> &fitness,
+	size_t introducedInGeneration) const
+{
+	return make_shared<NSGA2IndividualWrapper>(m_fitnessDistances.size(), genome, fitness, introducedInGeneration, numeric_limits<size_t>::max());
+}
+
+string NSGA2IndividualWrapper::toString() const
+{
+	string s;
+
+	s += "pos: " + to_string(m_originalPosition) + " |";
+	for (auto d : m_fitnessDistances)
+		s += " " + to_string(d);
+	s += "| " + Individual::toString();
+	return s;
+}
+
+NSGA2FitnessWrapper::NSGA2FitnessWrapper(const shared_ptr<Fitness> &origFitness)
+	: m_origFitness(origFitness)
+{
+	m_totalFitnessDistance = numeric_limits<double>::quiet_NaN();
+	m_ndSetIndex = numeric_limits<size_t>::max();
+}
+
+shared_ptr<Fitness> NSGA2FitnessWrapper::createCopy(bool copyContents) const
+{
+	shared_ptr<Fitness> realFitness = m_origFitness->createCopy(copyContents);
+	shared_ptr<NSGA2FitnessWrapper> newFit = make_shared<NSGA2FitnessWrapper>(realFitness);
+	if (copyContents)
+	{
+		newFit->m_totalFitnessDistance = m_totalFitnessDistance;
+		newFit->m_ndSetIndex = m_ndSetIndex;
+	}
+	return newFit;
+}
+
+string NSGA2FitnessWrapper::toString() const
+{
+	return "{ ndset: " + to_string(m_ndSetIndex) + ", dist: " + to_string(m_totalFitnessDistance) + ", orig: " + m_origFitness->toString() + " }";
+}
+
+NSGA2FitnessWrapperOriginalComparison::NSGA2FitnessWrapperOriginalComparison(const shared_ptr<FitnessComparison> &origCmp)
+	: m_origCmp(origCmp) 
+{
+}
+
+bool_t NSGA2FitnessWrapperOriginalComparison::check(const Fitness &f) const
+{
+	if (!dynamic_cast<const NSGA2FitnessWrapper*>(&f))
+		return "Expecting NSGA2FitnessWrapper object";
+	const NSGA2FitnessWrapper &fw = static_cast<const NSGA2FitnessWrapper&>(f);
+	return m_origCmp->check(*(fw.m_origFitness));
+}
+
+bool NSGA2FitnessWrapperOriginalComparison::isFitterThan(const Fitness &first0, const Fitness &second0, size_t objectiveNumber) const
+{
+	assert(dynamic_cast<const NSGA2FitnessWrapper*>(&first0) && dynamic_cast<const NSGA2FitnessWrapper*>(&second0));
+	const NSGA2FitnessWrapper &first = static_cast<const NSGA2FitnessWrapper&>(first0);
+	const NSGA2FitnessWrapper &second = static_cast<const NSGA2FitnessWrapper&>(second0);
+
+	return m_origCmp->isFitterThan(*(first.m_origFitness), *(second.m_origFitness), objectiveNumber);
+}
+
+bool_t NSGA2FitWrapperNDSetCrowdingComparison::check(const Fitness &f) const
+{
+	if (!dynamic_cast<const NSGA2FitnessWrapper*>(&f))
+		return "Expecting NSGA2FitnessWrapper object";
+	return true;
+}
+
+bool NSGA2FitWrapperNDSetCrowdingComparison::isFitterThan(const Fitness &first0, const Fitness &second0, size_t objectiveNumber) const
+{
+	assert(dynamic_cast<const NSGA2FitnessWrapper*>(&first0) && dynamic_cast<const NSGA2FitnessWrapper*>(&second0));
+	const NSGA2FitnessWrapper &first = static_cast<const NSGA2FitnessWrapper&>(first0);
+	const NSGA2FitnessWrapper &second = static_cast<const NSGA2FitnessWrapper&>(second0);
+
+	assert(first.m_ndSetIndex != numeric_limits<size_t>::max());
+	assert(second.m_ndSetIndex != numeric_limits<size_t>::max());
+	if (first.m_ndSetIndex < second.m_ndSetIndex)
+		return true;
+	if (second.m_ndSetIndex < first.m_ndSetIndex)
+		return false;
+
+	// Same ND set, check crowding distance
+	assert(!isnan(first.m_totalFitnessDistance));
+	assert(!isnan(second.m_totalFitnessDistance));
+
+	// Use the less crowded one
+	return first.m_totalFitnessDistance > second.m_totalFitnessDistance;
+}
 
 NSGA2Evolver::NSGA2Evolver(
 	const std::shared_ptr<RandomNumberGenerator> &rng,
