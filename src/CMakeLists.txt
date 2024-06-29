@@ -45,6 +45,7 @@ set(HEADERS
 	multipopulationevolver.h
 	migrationstrategy.h
 	nsga2evolver.h
+	vectorgenomedelikecrossover.h
 	"${PROJECT_BINARY_DIR}/src/eatkconfig.h" )
 
 set(SOURCES

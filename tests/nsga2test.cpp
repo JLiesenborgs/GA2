@@ -7,12 +7,14 @@
 #include "singlethreadedpopulationfitnesscalculation.h"
 #include "stopcriterion.h"
 #include "mersennerandomnumbergenerator.h"
+#include "vectorgenomedelikecrossover.h"
 #include <stdexcept>
 #include <limits>
 #include <cmath>
 #include <random>
 #include <iostream>
 #include <map>
+
 
 using namespace eatk;
 using namespace std;
@@ -416,85 +418,6 @@ public:
 	}
 
 	shared_ptr<BaseCalculation> m_problem;
-
-};
-
-template <class T>
-class TestCrossOver : public GenomeCrossover
-{
-public:
-	TestCrossOver(std::shared_ptr<RandomNumberGenerator> &rng,
-				  bool extraParent = false,
-	              float F = 0.5f,
-				  float CR = 0.5f)
-		: GenomeCrossover((extraParent)?4:3),
-		  m_rng(rng),
-		  m_F(F),
-		  m_CR(CR),
-		  m_extraParent(extraParent)
-	{
-	}
-	
-	errut::bool_t check(const std::vector<std::shared_ptr<Genome>> &parents) override
-	{
-		for (auto &p : parents)
-		{
-			if (!dynamic_cast<VectorGenome<T>*>(p.get()))
-				return "Parent is of wrong type";
-		}
-		return true;
-	}
-
-	errut::bool_t generateOffspring(const std::vector<std::shared_ptr<Genome>> &parents,
-									std::vector<std::shared_ptr<Genome>> &generatedOffspring) override
-	{
-		assert((m_extraParent && parents.size() == 4) || (!m_extraParent && parents.size() == 3));
-		generatedOffspring.clear();
-
-		vector<T> *vg[3];
-		for (size_t i = 0 ; i < 3 ; i++)
-		{
-			assert(dynamic_cast<VectorGenome<T>*>(parents[i].get()));
-			VectorGenome<T> *pG = static_cast<VectorGenome<T>*>(parents[i].get());
-			vg[i] = &pG->getValues();
-		}
-
-		auto result = parents[0]->createCopy();
-		vector<T> &vo = (static_cast<VectorGenome<T>&>(*result)).getValues();
-
-		size_t refParent = 3;
-		if (!m_extraParent)
-		{
-			// Using 0 as reference parent doesn't seem to work all that well
-			// Then again, that's also the one we're trying to adjust based on
-			// the difference of the other two
-			if (m_rng->getRandomFloat() < 0.5f)
-				refParent = 1;
-			else
-				refParent = 2;
-		}
-
-		float CR = (isnan(m_CR))?m_rng->getRandomFloat():m_CR;
-		float F = (isnan(m_F))?m_rng->getRandomFloat():m_F;
-
-		vector<T> &c = static_cast<VectorGenome<T>&>(*parents[refParent]).getValues();
-		size_t rndIdx = (size_t)m_rng->getRandomUint32() % vo.size();
-
-		for (size_t i = 0 ; i < vo.size() ; i++)
-		{
-			if (m_rng->getRandomFloat() < CR || i == rndIdx)
-				vo[i] = (*(vg[0]))[i] + F * ((*(vg[2]))[i] - (*(vg[1]))[i]);
-			else
-				vo[i] = c[i];
-		}
-
-		generatedOffspring.push_back(result);
-		return true;
-	}
-private:
-	std::shared_ptr<RandomNumberGenerator> m_rng;
-	float m_F, m_CR;
-	bool m_extraParent;
 };
 
 int mainCxx(const vector<string> &args)
@@ -553,7 +476,7 @@ int mainCxx(const vector<string> &args)
 	IndCreation creation(*problem, rng);
 	NSGA2Evolver evolver(rng,
 		//make_shared<UniformVectorGenomeCrossover<double>>(rng, false),
-		make_shared<TestCrossOver<double>>(rng, extraParent, F, CR),
+		make_shared<VectorGenomeDELikeCrossOver<double>>(rng, extraParent, F, CR),
 		//make_shared<VectorGenomeUniformMutation<double>>(mutFrac, -1.0, 1.0, rng),
 		nullptr,
 		make_shared<VectorFitnessComparison<double>>(),
