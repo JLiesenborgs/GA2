@@ -49,17 +49,7 @@ public:
 		if (genome.getValues().size() != m_N)
 			throw runtime_error("Expecting genome of size " + to_string(m_N) + " but got " + to_string(genome.getValues().size()));
 
-		// Genome: values from -1 to 1, translate to other range
-		vector<double> v = genome.getValues();
-		for (size_t idx = 0 ; idx < m_N ; idx++)
-		{
-			double xMin, xMax;
-			getBounds(idx, xMin, xMax);
-			double frac = (v[idx] + 1.0)/2.0;
-			v[idx] = frac*(xMax-xMin) + xMin;
-		}
-
-		return v;
+		return genome.getValues();
 	}
 
 	errut::bool_t calculate(const Genome &genome0, Fitness &fitness0) override
@@ -366,18 +356,22 @@ private:
 class IndCreation : public IndividualCreation
 {
 public:
-	IndCreation(BaseCalculation &calc, const shared_ptr<RandomNumberGenerator> &rng)
-		: m_rng(rng)
+	IndCreation(const std::shared_ptr<BaseCalculation> &calc, const shared_ptr<RandomNumberGenerator> &rng)
+		: m_problem(calc), m_rng(rng)
 	{
-		m_N = calc.getDimension();
-		m_M = calc.getObjectives();
+		m_N = calc->getDimension();
+		m_M = calc->getObjectives();
 	}
 
 	shared_ptr<Genome> createInitializedGenome() override
 	{
 		auto g = make_shared<DoubleVectorGenome>(m_N);
 		for (size_t i = 0 ; i < m_N ; i++)
-			g->setValue(m_rng->getRandomDouble(-1.0,1.0), i);
+		{
+			double xMin, xMax;
+			m_problem->getBounds(i, xMin, xMax);
+			g->setValue(m_rng->getRandomDouble(xMin, xMax), i);
+		}
 		return g;
 	}
 	
@@ -389,6 +383,7 @@ public:
 	}
 
 	size_t m_N, m_M;
+	shared_ptr<BaseCalculation> m_problem;
 	shared_ptr<RandomNumberGenerator> m_rng;
 };
 
@@ -459,7 +454,6 @@ int mainCxx(const vector<string> &args)
 	auto problem = it->second;
 	MyEA ea;
 
-	//double mutFrac = 0.5/(double)problem->getDimension();
 	bool extraParent = false;
 	if (getenv("EXTRAPARENT"))
 		extraParent = true;
@@ -473,15 +467,11 @@ int mainCxx(const vector<string> &args)
 
 	cerr << "F = " << F << " CR = " << CR << endl;
 
-	IndCreation creation(*problem, rng);
+	IndCreation creation(problem, rng);
 	NSGA2Evolver evolver(rng,
-		//make_shared<UniformVectorGenomeCrossover<double>>(rng, false),
-		make_shared<VectorGenomeDELikeCrossOver<double>>(rng, extraParent, F, CR),
-		//make_shared<VectorGenomeUniformMutation<double>>(mutFrac, -1.0, 1.0, rng),
-		nullptr,
-		make_shared<VectorFitnessComparison<double>>(),
-		problem->getObjectives()
-		);
+		make_shared<VectorGenomeDELikeCrossOver<double>>(rng, extraParent, F, CR), nullptr,
+		make_shared<VectorFitnessComparison<double>>(), problem->getObjectives());
+
 	SingleThreadedPopulationFitnessCalculation calc(problem);
 	Stop stop(problem->getNumberOfGenerations(), problem);
 	size_t popSize = problem->getPopulationSize();
