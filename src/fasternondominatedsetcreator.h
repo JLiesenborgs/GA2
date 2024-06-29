@@ -13,7 +13,8 @@ public:
 	FasterNonDominatedSetCreator(const std::shared_ptr<FitnessComparison> &fitCmp, size_t numObjectives);
 	~FasterNonDominatedSetCreator();
 
-	errut::bool_t calculateAllNDSets(const std::vector<std::shared_ptr<Individual>> &individuals) override;
+	errut::bool_t calculateAllNDSets(const std::vector<std::shared_ptr<Individual>> &individuals,
+                                     size_t requestStopSize = std::numeric_limits<size_t>::max()) override;
 	errut::bool_t calculateNonDomitatedSet(const std::vector<std::shared_ptr<Individual>> &individuals,
 		std::vector<std::shared_ptr<Individual>> &ndSet,
 		std::vector<std::shared_ptr<Individual>> &remaining) override;

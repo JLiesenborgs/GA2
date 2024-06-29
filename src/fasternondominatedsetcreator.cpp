@@ -34,7 +34,8 @@ void FasterNonDominatedSetCreator::buildCounts(const std::vector<std::shared_ptr
     }
 }
 
-bool_t FasterNonDominatedSetCreator::calculateAllNDSets(const std::vector<std::shared_ptr<Individual>> &individuals)
+bool_t FasterNonDominatedSetCreator::calculateAllNDSets(const std::vector<std::shared_ptr<Individual>> &individuals,
+                                                        size_t requestStopSize)
 {
     if (individuals.size() < 1)
         return "No individuals present";
@@ -53,6 +54,8 @@ bool_t FasterNonDominatedSetCreator::calculateAllNDSets(const std::vector<std::s
         m_dominatesList[i].push_back(j);
     });
     
+    size_t totalSize = 0;
+
     m_sets.clear();
     bool done = false;
     while (!done)
@@ -86,6 +89,13 @@ bool_t FasterNonDominatedSetCreator::calculateAllNDSets(const std::vector<std::s
                     m_dominatedCount[idx]--;
                     assert(m_dominatedCount[idx] >= 0);
                 }
+            }
+
+            totalSize += currentNDSet.size();
+            if (totalSize >= requestStopSize)
+            {
+                // cerr << "Req size " << requestStopSize << " reached by totalSize " << totalSize << " for ND set " << m_sets.size() << endl;
+                done = true;
             }
 
             m_sets.push_back({});

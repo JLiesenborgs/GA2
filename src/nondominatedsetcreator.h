@@ -2,6 +2,7 @@
 
 #include "eatkconfig.h"
 #include "population.h"
+#include <limits>
 
 namespace eatk
 {
@@ -12,7 +13,13 @@ public:
 	NonDominatedSetCreator() { }
 	virtual ~NonDominatedSetCreator() { }
 
-	virtual errut::bool_t calculateAllNDSets(const std::vector<std::shared_ptr<Individual>> &individuals) { return "Not implemented"; }
+	// Idea behind requestStopSize is to stop looking for other
+	// non-dominated sets once this threshold has been reached or
+	// exceeded. The non-dominated set itself should be complete,
+	// and it is only a request, no obligation to take this into
+	// account - all nd sets may still be calculated
+	virtual errut::bool_t calculateAllNDSets(const std::vector<std::shared_ptr<Individual>> &individuals,
+	                                         size_t requestStopSize = std::numeric_limits<size_t>::max()) { return "Not implemented"; }
 	virtual errut::bool_t calculateNonDomitatedSet(const std::vector<std::shared_ptr<Individual>> &individuals,
 		std::vector<std::shared_ptr<Individual>> &ndSet,
 		std::vector<std::shared_ptr<Individual>> &remaining) { return "Not implemented"; }

@@ -26,7 +26,8 @@ bool_t BasicNonDominatedSetCreator::mergeNDSets(vector<shared_ptr<Individual>> &
 	return calculateNonDomitatedSet(all, inOut, m_tmpND);
 }
 
-bool_t BasicNonDominatedSetCreator::calculateAllNDSets(const vector<shared_ptr<Individual>> &individuals)
+bool_t BasicNonDominatedSetCreator::calculateAllNDSets(const vector<shared_ptr<Individual>> &individuals,
+                                                       size_t requestStopSize)
 {
 	m_sets.clear();
 
@@ -36,16 +37,25 @@ bool_t BasicNonDominatedSetCreator::calculateAllNDSets(const vector<shared_ptr<I
 	size_t rIdx = 0;
 	bool_t r;
 
+	size_t totalSize = 0;
+
 	while (true)
 	{
 		if (pIn->size() == 0)
 			break;
+		if (totalSize >= requestStopSize)
+		{
+//			cerr << "Requested size " << requestStopSize << " reached by totalSize " << totalSize << " for ND set " << m_sets.size()-1 << endl;
+			break;
+		}
 
 		pND->clear();
 		pRem->clear();
 
 		if (!(r = calculateNonDomitatedSet(*pIn, *pND, *pRem)))
 			return "Error calulating one of the sets: " + r.getErrorString();
+
+		totalSize += pND->size();
 
 		size_t newIdx = m_sets.size();
 		m_sets.resize(newIdx+1);

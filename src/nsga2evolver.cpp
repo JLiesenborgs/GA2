@@ -3,6 +3,7 @@
 #include "tournamentparentselection.h"
 #include "remainingtargetpopulationsizeiteration.h"
 #include "fasternondominatedsetcreator.h"
+#include "basicnondominatedsetcreator.h"
 #include <numeric>
 #include <algorithm>
 #include <iostream>
@@ -153,6 +154,7 @@ NSGA2Evolver::~NSGA2Evolver()
 shared_ptr<NonDominatedSetCreator> NSGA2Evolver::allocatedNDSetCreator(const std::shared_ptr<FitnessComparison> &fitCmp, size_t numObjectives)
 {
 	return make_shared<FasterNonDominatedSetCreator>(fitCmp, numObjectives);
+	//return make_shared<BasicNonDominatedSetCreator>(fitCmp, numObjectives);
 }
 
 bool_t NSGA2Evolver::check(const std::shared_ptr<Population> &population)
@@ -284,12 +286,11 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 		}
 	};
 
-	// TODO: stop if targetPopulationSize has been reached/exceeded
-	auto createNDSetsAndCalculateCrowdingDistances = [this]() -> bool_t
+	auto createNDSetsAndCalculateCrowdingDistances = [this, targetPopulationSize]() -> bool_t
 	{
 		bool_t r;
 		// Using wrapper to store original index positions
-		if (!(r = m_ndSetCreator->calculateAllNDSets(m_popWrapper)))
+		if (!(r = m_ndSetCreator->calculateAllNDSets(m_popWrapper, targetPopulationSize)))
 			return "Can't create non-dominated sets: " + r.getErrorString();
 		
 		// Store the ndset index for each individual
