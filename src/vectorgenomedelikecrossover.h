@@ -11,11 +11,11 @@
 namespace eatk
 {
 
-template <class T>
-class VectorGenomeDELikeCrossOver : public GenomeCrossover
+template <class T, class GS> // T is for data type (float/double), GS is to get/set vector value
+class DELikeCrossOverTemplate : public GenomeCrossover
 {
 public:
-	VectorGenomeDELikeCrossOver(std::shared_ptr<RandomNumberGenerator> &rng,
+	DELikeCrossOverTemplate(std::shared_ptr<RandomNumberGenerator> &rng,
 	                            bool extraParent = true,
 	                            float F = std::numeric_limits<float>::quiet_NaN(), // NaN signals uniform number between 0 and 1 each time
 	                            float CR = std::numeric_limits<float>::quiet_NaN() // same
@@ -44,17 +44,6 @@ public:
 		assert((m_extraParent && parents.size() == 4) || (!m_extraParent && parents.size() == 3));
 		generatedOffspring.clear();
 
-		std::vector<T> *vg[3];
-		for (size_t i = 0 ; i < 3 ; i++)
-		{
-			assert(dynamic_cast<VectorGenome<T>*>(parents[i].get()));
-			VectorGenome<T> *pG = static_cast<VectorGenome<T>*>(parents[i].get());
-			vg[i] = &pG->getValues();
-		}
-
-		auto result = parents[0]->createCopy();
-		std::vector<T> &vo = (static_cast<VectorGenome<T>&>(*result)).getValues();
-
 		size_t refParent = 3;
 		if (!m_extraParent)
 		{
@@ -67,18 +56,22 @@ public:
 				refParent = 2;
 		}
 
+		auto result = parents[0]->createCopy();
 		float CR = (isnan(m_CR))?m_rng->getRandomFloat():m_CR;
 		float F = (isnan(m_F))?m_rng->getRandomFloat():m_F;
 
-		std::vector<T> &c = static_cast<VectorGenome<T>&>(*parents[refParent]).getValues();
-		size_t rndIdx = (size_t)m_rng->getRandomUint32() % vo.size();
+		size_t dimensions = GS::getSize(*result);
+		size_t rndIdx = (size_t)m_rng->getRandomUint32() % dimensions;
 
-		for (size_t i = 0 ; i < vo.size() ; i++)
+		for (size_t i = 0 ; i < dimensions ; i++)
 		{
+			T val = 0;
 			if (m_rng->getRandomFloat() < CR || i == rndIdx)
-				vo[i] = (*(vg[0]))[i] + F * ((*(vg[2]))[i] - (*(vg[1]))[i]);
+				val = GS::getValue(*parents[0], i) + F * (GS::getValue(*parents[2], i) - GS::getValue(*parents[1], i));
 			else
-				vo[i] = c[i];
+				val = GS::getValue(*parents[refParent],i);
+
+			GS::setValue(*result, i, val);
 		}
 
 		generatedOffspring.push_back(result);
@@ -89,5 +82,8 @@ private:
 	float m_F, m_CR;
 	bool m_extraParent;
 };
+
+template <class T>
+using VectorGenomeDELikeCrossOver = DELikeCrossOverTemplate<T, VectorGenome<T>>;
 
 }

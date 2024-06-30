@@ -20,6 +20,22 @@ public:
 	{
 		return ValueVector<Genome, T>::template createCopy<VectorGenome<T>>(copyContents);
 	}
+
+// For DE-like crossover/mutation in GA
+	static void setValue(Genome &f, size_t pos, T value)
+	{
+		static_cast<VectorGenome<T>&>(f).m_values[pos] = value;
+	}
+
+	static T getValue(const Genome &f, size_t pos)
+	{
+		return static_cast<const VectorGenome<T>&>(f).m_values[pos];
+	}
+
+	static size_t getSize(const Genome &f)
+	{
+		return static_cast<const VectorGenome<T>&>(f).m_values.size();
+	}
 };
 
 template<class T>
