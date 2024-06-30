@@ -15,7 +15,6 @@
 #include <iostream>
 #include <map>
 
-
 using namespace eatk;
 using namespace std;
 using namespace errut;
@@ -58,32 +57,8 @@ public:
 		DoubleVectorFitness &fitness = static_cast<DoubleVectorFitness &>(fitness0);
 		
 		auto v = getVariableVectorFromGenome(genome0);
-		double penalty = 0;
-
-		for (size_t i = 0 ; i < v.size() ; i++)
-		{
-			double xMin, xMax;
-			double diff = 0;
-			getBounds(i, xMin, xMax);
-			if (v[i] < xMin)
-				diff = xMin-v[i];
-			else if (v[i] > xMax)
-				diff = v[i] - xMax;
-
-			if (diff)
-				penalty += 1e6 + diff;
-		}
-
-		if (penalty == 0)
-		{
-			auto fv = calculate(v);
-			fitness.getValues() = fv;
-		}
-		else
-		{
-			vector<double> fv(m_M, penalty);
-			fitness.getValues() = fv;
-		}
+		auto fv = calculate(v);
+		fitness.getValues() = fv;
 
 		if (fitness.getValues().size() != m_M)
 			throw runtime_error("Expecting " + to_string(m_M) + " objective values but got " + to_string(fitness.getValues().size()));
@@ -452,6 +427,15 @@ int mainCxx(const vector<string> &args)
 		return usage();
 
 	auto problem = it->second;
+	vector<double> lowerBounds, upperBounds;
+	for (size_t i = 0 ; i < problem->getDimension() ; i++)
+	{
+		double xMin, xMax;
+		problem->getBounds(i, xMin, xMax);
+		lowerBounds.push_back(xMin);
+		upperBounds.push_back(xMax);
+	}
+
 	MyEA ea;
 
 	bool extraParent = false;
@@ -469,7 +453,8 @@ int mainCxx(const vector<string> &args)
 
 	IndCreation creation(problem, rng);
 	NSGA2Evolver evolver(rng,
-		make_shared<VectorGenomeDELikeCrossOver<double>>(rng, extraParent, F, CR), nullptr,
+		make_shared<VectorGenomeDELikeCrossOver<double>>(rng, extraParent, F, CR, lowerBounds, upperBounds),
+		nullptr,
 		make_shared<VectorFitnessComparison<double>>(), problem->getObjectives());
 
 	SingleThreadedPopulationFitnessCalculation calc(problem);
