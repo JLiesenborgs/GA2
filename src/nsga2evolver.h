@@ -25,6 +25,8 @@ public:
 
 	std::string toString() const override;
 
+	static double getCrowdingValue(const std::shared_ptr<Individual> &ind);
+
 	size_t m_originalPosition;
 	std::vector<double> m_fitnessDistances;
 };
@@ -43,6 +45,17 @@ public:
 	double m_totalFitnessDistance;
 	size_t m_ndSetIndex;
 };
+
+inline double NSGA2IndividualWrapper::getCrowdingValue(const std::shared_ptr<Individual> &ind)
+{
+	assert(dynamic_cast<const NSGA2IndividualWrapper*>(ind.get()));
+	const Fitness &f = static_cast<const NSGA2IndividualWrapper*>(ind.get())->fitnessRef();
+
+	assert(dynamic_cast<const NSGA2FitnessWrapper*>(&f));
+	const NSGA2FitnessWrapper &fw = static_cast<const NSGA2FitnessWrapper&>(f);
+
+	return fw.m_totalFitnessDistance;
+}
 
 class NSGA2FitnessWrapperOriginalComparison : public FitnessComparison
 {
@@ -84,14 +97,14 @@ public:
 
 	static void buildWrapperPopulation(const Population &pop, Population &wrapperPop);
 	static void unwrapPopulation(const Individual &refInd, const Population &wrapperPop, Population &pop);
+	// Should be a vector wrapper individuals
+	static void calculateCrowdingDistances(const std::vector<std::shared_ptr<Individual>> &ndset, size_t numObjectives);
 protected:
 	virtual std::shared_ptr<NonDominatedSetCreator> allocatedNDSetCreator(const std::shared_ptr<FitnessComparison> &fitCmp, size_t numObjectives);
 private:
-	void calculateCrowdingDistances(const std::vector<std::shared_ptr<Individual>> &ndset) const;
-
 	std::shared_ptr<FitnessComparison> m_fitComp;
 	std::unique_ptr<SinglePopulationCrossover> m_crossover;
-	std::shared_ptr<Population> m_tmpPop;
+	std::shared_ptr<Population> m_wrapperPop;
 	const size_t m_numObjectives;
 
 	std::vector<std::shared_ptr<Individual>> m_best;

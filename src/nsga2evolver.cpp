@@ -141,7 +141,7 @@ NSGA2Evolver::NSGA2Evolver(
 		genomeCrossover, genomeMutation, nullptr,
 		make_shared<RemainingTargetPopulationSizeIteration>(), rng);
 
-	m_tmpPop = make_shared<Population>();
+	m_wrapperPop = make_shared<Population>();
 	m_ndSetCreator = allocatedNDSetCreator(m_fitOrigComp, m_numObjectives);
 }
 
@@ -173,10 +173,10 @@ bool_t NSGA2Evolver::check(const std::shared_ptr<Population> &population)
 			return "Fitness must consist of real values";
 	}
 
-	buildWrapperPopulation(*population, *m_tmpPop);
+	buildWrapperPopulation(*population, *m_wrapperPop);
 
 	bool_t r;
-	if (!(r = m_crossover->check(m_tmpPop)))
+	if (!(r = m_crossover->check(m_wrapperPop)))
 		return "Error checking final crossover: " + r.getErrorString();
 
 	return true;
@@ -200,7 +200,7 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 	if (m_alwaysRebuildWrapper)
 	{
 		// Create wrapper population, so that we can keep track of extra information
-		buildWrapperPopulation(*population, *m_tmpPop);
+		buildWrapperPopulation(*population, *m_wrapperPop);
 	}
 	else // Reuse the wrapper from previous iteration
 	{
@@ -208,11 +208,11 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 		// Verify that we still have the compatible wrapper population
 		if (generation != 0)
 		{
-			assert(population->size() == m_tmpPop->size());
+			assert(population->size() == m_wrapperPop->size());
 			for (size_t i = 0 ; i < population->size() ; i++)
 			{
 				auto &origGenome = population->individual(i)->genome();
-				auto &wrapGenome = m_tmpPop->individual(i)->genome();
+				auto &wrapGenome = m_wrapperPop->individual(i)->genome();
 				assert(origGenome.get() == wrapGenome.get());
 			}
 		}
@@ -221,10 +221,14 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 		// to do this on the first iteration, we'll reuse the wrappers from the previous generations
 
 		if (generation == 0) // We should already have the wrapper otherwise
-			buildWrapperPopulation(*population, *m_tmpPop);
+			buildWrapperPopulation(*population, *m_wrapperPop);
+		else
+		{
+			// Set the correct original positions
+			for (size_t i = 0 ; i < m_wrapperPop->size() ; i++)
+				static_cast<NSGA2IndividualWrapper &>(*m_wrapperPop->individual(i)).m_originalPosition = i;
+		}
 	}
-
-	auto &m_popWrapper = m_tmpPop->individuals();
 
 	const Individual &refInd = *(population->individual(0));
 
@@ -248,34 +252,20 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 		// TODO: remove duplicates necessary?
 	};
 
-	auto createNewPopulationFromNDRankAndCrowding = [this, targetPopulationSize, generation]() -> bool_t
+	auto unwrapPopulationWithDebugChecks = [this, targetPopulationSize, &population]()
 	{
-		assert(m_tmpPop->size() == targetPopulationSize);
-		bool_t r;
+		assert(m_wrapperPop->size() == targetPopulationSize*2);
+		unwrapPopulation(*population->individual(0), *m_wrapperPop, *population);
 
-		if (!(r = m_crossover->createNewPopulation(generation, m_tmpPop, targetPopulationSize)))
-			return "Can't calculate genome crossover: " + r.getErrorString();
-
-		return true;
-	};
-
-	auto unwrapPopulation2 = [this, targetPopulationSize, &population]()
-	{
-		assert(m_tmpPop->size() == targetPopulationSize*2);
-		unwrapPopulation(*population->individual(0), *m_tmpPop, *population);
-
-		for (size_t i = 0 ; i < m_tmpPop->size() ; i++)
+		for (size_t i = 0 ; i < m_wrapperPop->size() ; i++)
 		{
 #ifndef NDEBUG
 			// First half should already have calculated fitnesses, last half shouldn't
 			if (i < targetPopulationSize)
-				assert(static_cast<NSGA2FitnessWrapper&>(m_tmpPop->individual(i)->fitnessRef()).m_origFitness->isCalculated());
+				assert(static_cast<NSGA2FitnessWrapper&>(m_wrapperPop->individual(i)->fitnessRef()).m_origFitness->isCalculated());
 			else
-				assert(!static_cast<NSGA2FitnessWrapper&>(m_tmpPop->individual(i)->fitnessRef()).m_origFitness->isCalculated());
+				assert(!static_cast<NSGA2FitnessWrapper&>(m_wrapperPop->individual(i)->fitnessRef()).m_origFitness->isCalculated());
 #endif
-			// To be able to reuse this on the next iteration of the EA, we need to update
-			// the original positions
-			static_cast<NSGA2IndividualWrapper &>(*m_tmpPop->individual(i)).m_originalPosition = i;
 		}
 	};
 
@@ -283,7 +273,7 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 	{
 		bool_t r;
 		// Using wrapper to store original index positions
-		if (!(r = m_ndSetCreator->calculateAllNDSets(m_tmpPop->individuals(), targetPopulationSize)))
+		if (!(r = m_ndSetCreator->calculateAllNDSets(m_wrapperPop->individuals(), targetPopulationSize)))
 			return "Can't create non-dominated sets: " + r.getErrorString();
 		
 		// Store the ndset index for each individual
@@ -301,19 +291,9 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 			}
 
 			// Also calculate crowding distances per set
-			calculateCrowdingDistances(m_ndSetCreator->getSet(s));
+			calculateCrowdingDistances(m_ndSetCreator->getSet(s), m_numObjectives);
 		}	
 		return true;
-	};
-
-	auto getCrowdingValue = [](const shared_ptr<Individual> &i1) {
-		assert(dynamic_cast<const NSGA2IndividualWrapper*>(i1.get()));
-		const NSGA2IndividualWrapper *pI1 = static_cast<const NSGA2IndividualWrapper*>(i1.get());
-		const Fitness &f1 = pI1->fitnessRef();
-		assert(dynamic_cast<const NSGA2FitnessWrapper*>(&f1));
-		const NSGA2FitnessWrapper &fw = static_cast<const NSGA2FitnessWrapper&>(f1);
-
-		return fw.m_totalFitnessDistance;
 	};
 
 	bool_t r;
@@ -325,21 +305,7 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 		if (!(r = createNDSetsAndCalculateCrowdingDistances()))
 			return r;
 
-		/*
-		cerr << "Initial population" << endl;
-		for (auto &i : m_popWrapper)
-		{
-			cerr << i->toString() << endl;
-		}
-		throw runtime_error("TODO");
-		*/
-
 		saveBestIndividuals(m_ndSetCreator->getSet(0));
-
-		if (!(r = createNewPopulationFromNDRankAndCrowding()))
-			return r;
-
-		unwrapPopulation2();
 	}
 	else if (population->size() == targetPopulationSize*2)
 	{
@@ -372,9 +338,9 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 				vector<shared_ptr<Individual>> ndSetCopy = ndSetRef;
 
 				// sort ndset on crowding distance, keep less crowded ones
-				sort(ndSetCopy.begin(), ndSetCopy.end(), [&getCrowdingValue](const shared_ptr<Individual> &i1, const shared_ptr<Individual> &i2)
+				sort(ndSetCopy.begin(), ndSetCopy.end(), [](const shared_ptr<Individual> &i1, const shared_ptr<Individual> &i2)
 				{
-					return getCrowdingValue(i1) > getCrowdingValue(i2);
+					return NSGA2IndividualWrapper::getCrowdingValue(i1) > NSGA2IndividualWrapper::getCrowdingValue(i2);
 				});
 
 				ndSetCopy.resize(targetPopulationSize-wrappersToKeep.size());
@@ -389,34 +355,26 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 			}
 		}
 
-		swap(wrappersToKeep, m_popWrapper);
-
-		if (!(r = createNewPopulationFromNDRankAndCrowding()))
-			return r;
-
-		unwrapPopulation2();
+		swap(wrappersToKeep, m_wrapperPop->individuals());
 	}
 	else
 		return "Unexpected population size " + to_string(population->size()) + " for target size " + to_string(targetPopulationSize);
 
+	assert(m_wrapperPop->size() == targetPopulationSize);
+	if (!(r = m_crossover->createNewPopulation(generation, m_wrapperPop, targetPopulationSize)))
+		return "Can't calculate genome crossover: " + r.getErrorString();
+
+	unwrapPopulationWithDebugChecks();
+
 	return true;
 }
 
-void NSGA2Evolver::calculateCrowdingDistances(const std::vector<std::shared_ptr<Individual>> &ndset0) const
+void NSGA2Evolver::calculateCrowdingDistances(const std::vector<std::shared_ptr<Individual>> &ndset0, size_t numObjectives)
 {
-	auto ndset = ndset0;
+	auto ndset = ndset0; // copy the vector
 	
 	auto processObjective = [&ndset](size_t objectiveNumber)
 	{
-		auto getFitnessValue = [objectiveNumber](const shared_ptr<Individual> &i1) {
-			assert(dynamic_cast<const NSGA2IndividualWrapper*>(i1.get()));
-			const NSGA2IndividualWrapper *pI1 = static_cast<const NSGA2IndividualWrapper*>(i1.get());
-			const Fitness &f1 = pI1->fitnessRef();
-
-			assert(f1.hasRealValues());
-			return f1.getRealValue(objectiveNumber);
-		};
-
 		auto setDistanceValue = [objectiveNumber](shared_ptr<Individual> &i1, double value) {
 			assert(dynamic_cast<NSGA2IndividualWrapper*>(i1.get()));
 			NSGA2IndividualWrapper *pI1 = static_cast<NSGA2IndividualWrapper*>(i1.get());
@@ -425,14 +383,18 @@ void NSGA2Evolver::calculateCrowdingDistances(const std::vector<std::shared_ptr<
 			pI1->m_fitnessDistances[objectiveNumber] = value;
 		};
 
+		auto getRealValue = [objectiveNumber](auto &i) { return i->fitness()->getRealValue(objectiveNumber); };
+
 		// Sort on fitness values for this objective
-		sort(ndset.begin(), ndset.end(), [&getFitnessValue, objectiveNumber](const shared_ptr<Individual> &i1, const shared_ptr<Individual> &i2) {
-			return getFitnessValue(i1) > getFitnessValue(i2);
+		sort(ndset.begin(), ndset.end(), [&getRealValue, objectiveNumber](const shared_ptr<Individual> &i1, const shared_ptr<Individual> &i2) {
+			assert(dynamic_cast<const NSGA2IndividualWrapper*>(i1.get()) && dynamic_cast<const NSGA2IndividualWrapper*>(i2.get()));
+			assert(i1->fitness()->hasRealValues() && i2->fitness()->hasRealValues());
+			return getRealValue(i1) > getRealValue(i2);
 		});
 
 		assert(ndset.size() > 0);
-		double maxFitness = getFitnessValue(ndset.front());
-		double minFitness = getFitnessValue(ndset.back());
+		double maxFitness = getRealValue(ndset.front());
+		double minFitness = getRealValue(ndset.back());
 		double fDiff = maxFitness - minFitness;
 		if (fDiff == 0)
 			fDiff = 1.0; // avoid div by zero
@@ -444,8 +406,8 @@ void NSGA2Evolver::calculateCrowdingDistances(const std::vector<std::shared_ptr<
 		// Fill in the rest
 		for (size_t i = 1 ; i < ndset.size()-1 ; i++)
 		{
-			double fNext = getFitnessValue(ndset[i+1]);
-			double fPrev = getFitnessValue(ndset[i-1]);
+			double fNext = getRealValue(ndset[i+1]);
+			double fPrev = getRealValue(ndset[i-1]);
 
 			double dist = (fPrev - fNext)/fDiff;
 			assert(dist >= 0);
@@ -458,10 +420,10 @@ void NSGA2Evolver::calculateCrowdingDistances(const std::vector<std::shared_ptr<
 	{
 		assert(dynamic_cast<NSGA2IndividualWrapper*>(ind.get()));
 		NSGA2IndividualWrapper &i = static_cast<NSGA2IndividualWrapper&>(*ind);
-		i.m_fitnessDistances.resize(m_numObjectives);
+		i.m_fitnessDistances.resize(numObjectives);
 	}
 
-	for (size_t idx = 0 ; idx < m_numObjectives ; idx++)
+	for (size_t idx = 0 ; idx < numObjectives ; idx++)
 		processObjective(idx);
 
 	for (auto &ind : ndset)
@@ -469,7 +431,7 @@ void NSGA2Evolver::calculateCrowdingDistances(const std::vector<std::shared_ptr<
 		assert(dynamic_cast<NSGA2IndividualWrapper*>(ind.get()));
 		NSGA2IndividualWrapper *pIndWrapper = static_cast<NSGA2IndividualWrapper*>(ind.get());
 
-		assert(pIndWrapper->m_fitnessDistances.size() == m_numObjectives);
+		assert(pIndWrapper->m_fitnessDistances.size() == numObjectives);
 		
 		assert(dynamic_cast<NSGA2FitnessWrapper*>(pIndWrapper->fitnessPtr()));
 		NSGA2FitnessWrapper &fitness = static_cast<NSGA2FitnessWrapper&>(pIndWrapper->fitnessRef());
