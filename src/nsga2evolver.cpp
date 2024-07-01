@@ -25,20 +25,17 @@ public:
 	}
 };
 
-NSGA2IndividualWrapper::NSGA2IndividualWrapper(size_t numObjectives,
-		const shared_ptr<Genome> &genome, const shared_ptr<Fitness> &fitness,
+NSGA2IndividualWrapper::NSGA2IndividualWrapper(const shared_ptr<Genome> &genome, const shared_ptr<Fitness> &fitness,
 		size_t introducedInGeneration, size_t originalPosition)
-	: Individual(genome, fitness, introducedInGeneration),
-		m_originalPosition(originalPosition)
+	: Individual(genome, fitness, introducedInGeneration), m_originalPosition(originalPosition)
 {
-	m_fitnessDistances.resize(numObjectives);
 }
 
 shared_ptr<Individual> NSGA2IndividualWrapper::createNew(const shared_ptr<Genome> &genome,
 	const shared_ptr<Fitness> &fitness,
 	size_t introducedInGeneration) const
 {
-	return make_shared<NSGA2IndividualWrapper>(m_fitnessDistances.size(), genome, fitness, introducedInGeneration, numeric_limits<size_t>::max());
+	return make_shared<NSGA2IndividualWrapper>(genome, fitness, introducedInGeneration, numeric_limits<size_t>::max());
 }
 
 string NSGA2IndividualWrapper::toString() const
@@ -176,28 +173,13 @@ bool_t NSGA2Evolver::check(const std::shared_ptr<Population> &population)
 			return "Fitness must consist of real values";
 	}
 
-	buildWrapperPopulation(*population);
-	m_tmpPop->clear();
-	for (auto &i : m_popWrapper)
-		m_tmpPop->append(i);
+	buildWrapperPopulation(*population, *m_tmpPop);
 
 	bool_t r;
 	if (!(r = m_crossover->check(m_tmpPop)))
 		return "Error checking final crossover: " + r.getErrorString();
 
 	return true;
-}
-
-void NSGA2Evolver::buildWrapperPopulation(const Population &population)
-{
-	m_popWrapper.clear();
-	for (size_t i = 0 ; i < population.size() ; i++)
-	{
-		auto &ind = population.individual(i);
-		m_popWrapper.push_back(make_shared<NSGA2IndividualWrapper>(m_numObjectives, ind->genome(),
-		                                               make_shared<NSGA2FitnessWrapper>(ind->fitness()),
-													   ind->getIntroducedInGeneration(), i));
-	}
 }
 
 bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Population> &population, size_t targetPopulationSize)
@@ -218,7 +200,7 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 	if (m_alwaysRebuildWrapper)
 	{
 		// Create wrapper population, so that we can keep track of extra information
-		buildWrapperPopulation(*population);
+		buildWrapperPopulation(*population, *m_tmpPop);
 	}
 	else // Reuse the wrapper from previous iteration
 	{
@@ -226,11 +208,11 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 		// Verify that we still have the compatible wrapper population
 		if (generation != 0)
 		{
-			assert(population->size() == m_popWrapper.size());
-			for (size_t i = 0 ; i < m_popWrapper.size() ; i++)
+			assert(population->size() == m_tmpPop->size());
+			for (size_t i = 0 ; i < population->size() ; i++)
 			{
 				auto &origGenome = population->individual(i)->genome();
-				auto &wrapGenome = m_popWrapper[i]->genome();
+				auto &wrapGenome = m_tmpPop->individual(i)->genome();
 				assert(origGenome.get() == wrapGenome.get());
 			}
 		}
@@ -239,8 +221,10 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 		// to do this on the first iteration, we'll reuse the wrappers from the previous generations
 
 		if (generation == 0) // We should already have the wrapper otherwise
-			buildWrapperPopulation(*population);
+			buildWrapperPopulation(*population, *m_tmpPop);
 	}
+
+	auto &m_popWrapper = m_tmpPop->individuals();
 
 	const Individual &refInd = *(population->individual(0));
 
@@ -266,33 +250,26 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 
 	auto createNewPopulationFromNDRankAndCrowding = [this, targetPopulationSize, generation]() -> bool_t
 	{
-		assert(m_popWrapper.size() == targetPopulationSize);
-
-		m_tmpPop->clear();
-		for (auto &i : m_popWrapper)
-			m_tmpPop->append(i);
-
+		assert(m_tmpPop->size() == targetPopulationSize);
 		bool_t r;
 
 		if (!(r = m_crossover->createNewPopulation(generation, m_tmpPop, targetPopulationSize)))
 			return "Can't calculate genome crossover: " + r.getErrorString();
-
-		m_popWrapper = m_tmpPop->individuals();
 
 		return true;
 	};
 
 	auto unwrapPopulation = [this, targetPopulationSize, &population]()
 	{
-		assert(m_popWrapper.size() == targetPopulationSize*2);
+		assert(m_tmpPop->size() == targetPopulationSize*2);
 
 		// Go from the wrappers back to the 'regular' population
 		shared_ptr<Individual> refInd = population->individual(0); // Get one individual as reference
 		population->clear();
 
-		for (size_t i = 0 ; i < m_popWrapper.size() ; i++)
+		for (size_t i = 0 ; i < m_tmpPop->size() ; i++)
 		{
-			const shared_ptr<Individual> &wrapperInd = m_popWrapper[i];
+			shared_ptr<Individual> &wrapperInd = m_tmpPop->individual(i);
 			const shared_ptr<Fitness> &wrapperFit = wrapperInd->fitness();
 			assert(dynamic_cast<NSGA2FitnessWrapper*>(wrapperFit.get()));
 
@@ -311,7 +288,7 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 
 			// To be able to reuse this on the next iteration of the EA, we need to update
 			// the original positions
-			static_cast<NSGA2IndividualWrapper &>(*m_popWrapper[i]).m_originalPosition = i;
+			static_cast<NSGA2IndividualWrapper &>(*wrapperInd).m_originalPosition = i;
 		}
 
 		// cout << "Wrappers: = \n";
@@ -323,7 +300,7 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 	{
 		bool_t r;
 		// Using wrapper to store original index positions
-		if (!(r = m_ndSetCreator->calculateAllNDSets(m_popWrapper, targetPopulationSize)))
+		if (!(r = m_ndSetCreator->calculateAllNDSets(m_tmpPop->individuals(), targetPopulationSize)))
 			return "Can't create non-dominated sets: " + r.getErrorString();
 		
 		// Store the ndset index for each individual
@@ -442,7 +419,7 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 	return true;
 }
 
-void NSGA2Evolver:: calculateCrowdingDistances(const std::vector<std::shared_ptr<Individual>> &ndset0) const
+void NSGA2Evolver::calculateCrowdingDistances(const std::vector<std::shared_ptr<Individual>> &ndset0) const
 {
 	auto ndset = ndset0;
 	
@@ -492,6 +469,14 @@ void NSGA2Evolver:: calculateCrowdingDistances(const std::vector<std::shared_ptr
 			setDistanceValue(ndset[i], dist);
 		}
 	};
+
+	// Make room to store distances
+	for (auto &ind : ndset)
+	{
+		assert(dynamic_cast<NSGA2IndividualWrapper*>(ind.get()));
+		NSGA2IndividualWrapper &i = static_cast<NSGA2IndividualWrapper&>(*ind);
+		i.m_fitnessDistances.resize(m_numObjectives);
+	}
 
 	for (size_t idx = 0 ; idx < m_numObjectives ; idx++)
 		processObjective(idx);

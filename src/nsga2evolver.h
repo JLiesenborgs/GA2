@@ -17,8 +17,7 @@ namespace eatk
 class NSGA2IndividualWrapper : public Individual
 {
 public:
-	NSGA2IndividualWrapper(size_t numObjectives,
-			const std::shared_ptr<Genome> &genome, const std::shared_ptr<Fitness> &fitness,
+	NSGA2IndividualWrapper(const std::shared_ptr<Genome> &genome, const std::shared_ptr<Fitness> &fitness,
 			size_t introducedInGeneration, size_t originalPosition);
 
 	std::shared_ptr<Individual> createNew(const std::shared_ptr<Genome> &genome, const std::shared_ptr<Fitness> &fitness,
@@ -82,10 +81,11 @@ public:
 	errut::bool_t createNewPopulation(size_t generation, std::shared_ptr<Population> &population, size_t targetPopulationSize) override;
 	
 	const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const override { return m_best; }
+
+	static void buildWrapperPopulation(const Population &pop, Population &wrapperPop);
 protected:
 	virtual std::shared_ptr<NonDominatedSetCreator> allocatedNDSetCreator(const std::shared_ptr<FitnessComparison> &fitCmp, size_t numObjectives);
 private:
-	void buildWrapperPopulation(const Population &population);
 	void calculateCrowdingDistances(const std::vector<std::shared_ptr<Individual>> &ndset) const;
 
 	std::shared_ptr<FitnessComparison> m_fitComp;
@@ -93,12 +93,23 @@ private:
 	std::shared_ptr<Population> m_tmpPop;
 	const size_t m_numObjectives;
 
-	std::vector<std::shared_ptr<Individual>> m_popWrapper;
 	std::vector<std::shared_ptr<Individual>> m_best;
 	std::shared_ptr<NSGA2FitnessWrapperOriginalComparison> m_fitOrigComp;
 	std::shared_ptr<NonDominatedSetCreator> m_ndSetCreator;
 
 	bool m_alwaysRebuildWrapper;
 };
+
+inline void NSGA2Evolver::buildWrapperPopulation(const Population &pop, Population &wrapperPop)
+{
+	wrapperPop.clear();
+	for (size_t i = 0 ; i < pop.size() ; i++)
+	{
+		auto &ind = pop.individual(i);
+		wrapperPop.append(std::make_shared<NSGA2IndividualWrapper>(ind->genome(),
+		                  std::make_shared<NSGA2FitnessWrapper>(ind->fitness()),
+		                  ind->getIntroducedInGeneration(), i));
+	}
+}
 
 }
