@@ -83,6 +83,7 @@ public:
 	const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const override { return m_best; }
 
 	static void buildWrapperPopulation(const Population &pop, Population &wrapperPop);
+	static void unwrapPopulation(const Individual &refInd, const Population &wrapperPop, Population &pop);
 protected:
 	virtual std::shared_ptr<NonDominatedSetCreator> allocatedNDSetCreator(const std::shared_ptr<FitnessComparison> &fitCmp, size_t numObjectives);
 private:
@@ -109,6 +110,24 @@ inline void NSGA2Evolver::buildWrapperPopulation(const Population &pop, Populati
 		wrapperPop.append(std::make_shared<NSGA2IndividualWrapper>(ind->genome(),
 		                  std::make_shared<NSGA2FitnessWrapper>(ind->fitness()),
 		                  ind->getIntroducedInGeneration(), i));
+	}
+}
+
+inline void NSGA2Evolver::unwrapPopulation(const Individual &refInd, const Population &wrapperPop, Population &population)
+{
+	population.clear();
+
+	for (size_t i = 0 ; i < wrapperPop.size() ; i++)
+	{
+		const std::shared_ptr<Individual> &wrapperInd = wrapperPop.individual(i);
+		const std::shared_ptr<Fitness> &wrapperFit = wrapperInd->fitness();
+		assert(dynamic_cast<NSGA2FitnessWrapper*>(wrapperFit.get()));
+
+		const NSGA2FitnessWrapper *pWrapperFit = static_cast<const NSGA2FitnessWrapper*>(wrapperFit.get());
+
+		auto newInd = refInd.createNew(wrapperInd->genome(), pWrapperFit->m_origFitness, wrapperInd->getIntroducedInGeneration());
+		newInd->setLastMutationGeneration(wrapperInd->getLastMutationGeneration());
+		population.append(newInd);
 	}
 }
 

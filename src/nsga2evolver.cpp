@@ -259,41 +259,24 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 		return true;
 	};
 
-	auto unwrapPopulation = [this, targetPopulationSize, &population]()
+	auto unwrapPopulation2 = [this, targetPopulationSize, &population]()
 	{
 		assert(m_tmpPop->size() == targetPopulationSize*2);
-
-		// Go from the wrappers back to the 'regular' population
-		shared_ptr<Individual> refInd = population->individual(0); // Get one individual as reference
-		population->clear();
+		unwrapPopulation(*population->individual(0), *m_tmpPop, *population);
 
 		for (size_t i = 0 ; i < m_tmpPop->size() ; i++)
 		{
-			shared_ptr<Individual> &wrapperInd = m_tmpPop->individual(i);
-			const shared_ptr<Fitness> &wrapperFit = wrapperInd->fitness();
-			assert(dynamic_cast<NSGA2FitnessWrapper*>(wrapperFit.get()));
-
-			const NSGA2FitnessWrapper *pWrapperFit = static_cast<const NSGA2FitnessWrapper*>(wrapperFit.get());
-
-			auto newInd = refInd->createNew(wrapperInd->genome(), pWrapperFit->m_origFitness, wrapperInd->getIntroducedInGeneration());
-			newInd->setLastMutationGeneration(wrapperInd->getLastMutationGeneration());
 #ifndef NDEBUG
 			// First half should already have calculated fitnesses, last half shouldn't
 			if (i < targetPopulationSize)
-				assert(pWrapperFit->m_origFitness->isCalculated());
+				assert(static_cast<NSGA2FitnessWrapper&>(m_tmpPop->individual(i)->fitnessRef()).m_origFitness->isCalculated());
 			else
-				assert(!pWrapperFit->m_origFitness->isCalculated());
+				assert(!static_cast<NSGA2FitnessWrapper&>(m_tmpPop->individual(i)->fitnessRef()).m_origFitness->isCalculated());
 #endif
-			population->append(newInd);
-
 			// To be able to reuse this on the next iteration of the EA, we need to update
 			// the original positions
-			static_cast<NSGA2IndividualWrapper &>(*wrapperInd).m_originalPosition = i;
+			static_cast<NSGA2IndividualWrapper &>(*m_tmpPop->individual(i)).m_originalPosition = i;
 		}
-
-		// cout << "Wrappers: = \n";
-		// for (auto &i : m_popWrapper)
-		// 	cout << i->toString() << "\n";
 	};
 
 	auto createNDSetsAndCalculateCrowdingDistances = [this, targetPopulationSize]() -> bool_t
@@ -356,7 +339,7 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 		if (!(r = createNewPopulationFromNDRankAndCrowding()))
 			return r;
 
-		unwrapPopulation();
+		unwrapPopulation2();
 	}
 	else if (population->size() == targetPopulationSize*2)
 	{
@@ -411,7 +394,7 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 		if (!(r = createNewPopulationFromNDRankAndCrowding()))
 			return r;
 
-		unwrapPopulation();
+		unwrapPopulation2();
 	}
 	else
 		return "Unexpected population size " + to_string(population->size()) + " for target size " + to_string(targetPopulationSize);
