@@ -26,7 +26,7 @@ public:
 
 	std::string toString() const override;
 
-	const size_t m_originalPosition;
+	size_t m_originalPosition;
 	std::vector<double> m_fitnessDistances;
 };
 
@@ -69,7 +69,12 @@ public:
 		const std::shared_ptr<RandomNumberGenerator> &rng,
 		const std::shared_ptr<GenomeCrossover> &genomeCrossover,
 		const std::shared_ptr<GenomeMutation> &genomeMutation,
-		const std::shared_ptr<FitnessComparison> &fitComp, size_t numObjectives
+		const std::shared_ptr<FitnessComparison> &fitComp, size_t numObjectives,
+		// In the default usage of the algorithm, we'll still have the wrapper
+		// individuals from the previous generation and can use these. If the
+		// population is being changed in between, the wrappers will need to
+		// be rebuilt
+		bool alwaysRebuildWrapperPopulation = false
 		);
 	~NSGA2Evolver();
 
@@ -92,6 +97,8 @@ private:
 	std::vector<std::shared_ptr<Individual>> m_best;
 	std::shared_ptr<NSGA2FitnessWrapperOriginalComparison> m_fitOrigComp;
 	std::shared_ptr<NonDominatedSetCreator> m_ndSetCreator;
+
+	bool m_alwaysRebuildWrapper;
 };
 
 }

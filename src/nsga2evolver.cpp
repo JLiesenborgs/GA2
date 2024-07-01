@@ -130,9 +130,10 @@ NSGA2Evolver::NSGA2Evolver(
 	const std::shared_ptr<RandomNumberGenerator> &rng,
 	const std::shared_ptr<GenomeCrossover> &genomeCrossover,
 	const std::shared_ptr<GenomeMutation> &genomeMutation,
-	const std::shared_ptr<FitnessComparison> &fitComp, size_t numObjectives
+	const std::shared_ptr<FitnessComparison> &fitComp, size_t numObjectives,
+	bool alwaysRebuildWrapper
 	)
-	: m_numObjectives(numObjectives)
+	: m_numObjectives(numObjectives), m_alwaysRebuildWrapper(alwaysRebuildWrapper)
 {
 	m_fitOrigComp = make_shared<NSGA2FitnessWrapperOriginalComparison>(fitComp);
 	auto fitWrapComp = make_shared<NSGA2FitWrapperNDSetCrowdingComparison>();
@@ -211,11 +212,35 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 
 	assert(m_ndSetCreator.get());
 
-	// Create wrapper population, so that we can keep track of extra information
-	buildWrapperPopulation(*population);
-
 //	cout << "POPULATION[" << generation << "] = \n";
 //	population->print();
+
+	if (m_alwaysRebuildWrapper)
+	{
+		// Create wrapper population, so that we can keep track of extra information
+		buildWrapperPopulation(*population);
+	}
+	else // Reuse the wrapper from previous iteration
+	{
+#ifndef NDEBUG
+		// Verify that we still have the compatible wrapper population
+		if (generation != 0)
+		{
+			assert(population->size() == m_popWrapper.size());
+			for (size_t i = 0 ; i < m_popWrapper.size() ; i++)
+			{
+				auto &origGenome = population->individual(i)->genome();
+				auto &wrapGenome = m_popWrapper[i]->genome();
+				assert(origGenome.get() == wrapGenome.get());
+			}
+		}
+#endif 
+		// Create wrapper population, so that we can keep track of extra information ; we only need
+		// to do this on the first iteration, we'll reuse the wrappers from the previous generations
+
+		if (generation == 0) // We should already have the wrapper otherwise
+			buildWrapperPopulation(*population);
+	}
 
 	const Individual &refInd = *(population->individual(0));
 
@@ -283,7 +308,15 @@ bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Popu
 				assert(!pWrapperFit->m_origFitness->isCalculated());
 #endif
 			population->append(newInd);
+
+			// To be able to reuse this on the next iteration of the EA, we need to update
+			// the original positions
+			static_cast<NSGA2IndividualWrapper &>(*m_popWrapper[i]).m_originalPosition = i;
 		}
+
+		// cout << "Wrappers: = \n";
+		// for (auto &i : m_popWrapper)
+		// 	cout << i->toString() << "\n";
 	};
 
 	auto createNDSetsAndCalculateCrowdingDistances = [this, targetPopulationSize]() -> bool_t
