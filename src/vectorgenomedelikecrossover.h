@@ -11,7 +11,7 @@
 namespace eatk
 {
 
-template <class T, class GS> // T is for data type (float/double), GS is to get/set vector value
+template <class T, class GS> // T is for data type (float/double), GS is to get/set vector value (should be the genome class used)
 class DELikeCrossOverTemplate : public GenomeCrossover
 {
 public:
@@ -38,7 +38,7 @@ public:
 
 		for (auto &p : parents)
 		{
-			if (!dynamic_cast<VectorGenome<T>*>(p.get()))
+			if (!dynamic_cast<GS *>(p.get()))
 				return "Parent is of wrong type";
 		}
 
