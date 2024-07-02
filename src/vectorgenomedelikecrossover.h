@@ -15,7 +15,7 @@ template <class T, class GS> // T is for data type (float/double), GS is to get/
 class DELikeCrossOverTemplate : public GenomeCrossover
 {
 public:
-	DELikeCrossOverTemplate(std::shared_ptr<RandomNumberGenerator> &rng,
+	DELikeCrossOverTemplate(const std::shared_ptr<RandomNumberGenerator> &rng,
 	                            bool extraParent = true,
 	                            float F = std::numeric_limits<float>::quiet_NaN(), // NaN signals uniform number between 0 and 1 each time
 	                            float CR = std::numeric_limits<float>::quiet_NaN(), // same
