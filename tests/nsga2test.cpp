@@ -15,7 +15,6 @@
 #include <iostream>
 #include <map>
 
-
 using namespace eatk;
 using namespace std;
 using namespace errut;
@@ -96,6 +95,53 @@ protected:
 	virtual void bounds(size_t dim, double &xMin, double &xMax) = 0;
 private:
 	size_t m_N, m_M, m_popSize, m_numGen;
+};
+
+class Rosenbrock : public BaseCalculation
+{
+public:
+	Rosenbrock() : BaseCalculation(2, 1, 64, 2000) { }
+protected:
+	vector<double> calculate(const vector<double> &x) override
+	{
+		assert(x.size() == 2);
+		double x1 = x[0];
+		double x2 = x[1];
+
+		return { (100.0 * (x1*x1 - x2) * (x1*x1 - x2) + (1.0 - x1)*(1.0 - x1)) };
+	}
+
+	void bounds(size_t dim, double &xMin, double &xMax) override
+	{
+		xMin = -2.048;
+		xMax = 2.048;
+	}
+};
+
+class Griewank : public BaseCalculation
+{
+public:
+	Griewank() : BaseCalculation(10, 1, 64, 2000) { }
+protected:
+	vector<double> calculate(const vector<double> &x) override
+	{
+		assert(x.size() == 10);
+		double s = 1.0;
+        for (size_t i = 0 ; i < 10 ; i++)
+            s+= x[i]*x[i]/4000.0;
+
+        double p = 1.0;
+        for (size_t i = 0 ; i < 10 ; i++)
+            p *= std::cos(x[i]/std::sqrt(i+1));
+        
+        return { s - p };
+	}
+
+	void bounds(size_t dim, double &xMin, double &xMax) override
+	{
+		xMin = -400.0;
+		xMax = 400.0;
+	}
 };
 
 class SCH : public BaseCalculation
@@ -424,6 +470,8 @@ int mainCxx(const vector<string> &args)
 	shared_ptr<RandomNumberGenerator> rng = make_shared<MersenneRandomNumberGenerator>(seed);
 
 	map<string, shared_ptr<BaseCalculation>> problems = {
+		{ "Rosenbrock", make_shared<Rosenbrock>() },
+		{ "Griewank", make_shared<Griewank>() },
 		{ "SCH", make_shared<SCH>() },
 		{ "FON", make_shared<FON>() },
 		{ "POL", make_shared<POL>() },

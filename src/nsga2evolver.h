@@ -100,8 +100,11 @@ public:
 	// Should be a vector wrapper individuals
 	static void calculateCrowdingDistances(const std::vector<std::shared_ptr<Individual>> &ndset, size_t numObjectives);
 protected:
-	virtual std::shared_ptr<NonDominatedSetCreator> allocatedNDSetCreator(const std::shared_ptr<FitnessComparison> &fitCmp, size_t numObjectives);
+	virtual std::shared_ptr<NonDominatedSetCreator> allocateNDSetCreator(const std::shared_ptr<FitnessComparison> &fitCmp, size_t numObjectives);
 private:
+	errut::bool_t createNewPopulation_Single(size_t generation, std::shared_ptr<Population> &population, size_t targetPopulationSize);
+	errut::bool_t createNewPopulation_Multi(size_t generation, std::shared_ptr<Population> &population, size_t targetPopulationSize);
+
 	std::shared_ptr<FitnessComparison> m_fitComp;
 	std::unique_ptr<SinglePopulationCrossover> m_crossover;
 	std::shared_ptr<Population> m_wrapperPop;

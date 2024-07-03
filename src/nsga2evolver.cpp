@@ -130,26 +130,39 @@ NSGA2Evolver::NSGA2Evolver(
 	const std::shared_ptr<FitnessComparison> &fitComp, size_t numObjectives,
 	bool alwaysRebuildWrapper
 	)
-	: m_numObjectives(numObjectives), m_alwaysRebuildWrapper(alwaysRebuildWrapper)
+	: m_fitComp(fitComp), m_numObjectives(numObjectives),
+	  m_alwaysRebuildWrapper(alwaysRebuildWrapper)
 {
-	m_fitOrigComp = make_shared<NSGA2FitnessWrapperOriginalComparison>(fitComp);
-	auto fitWrapComp = make_shared<NSGA2FitWrapperNDSetCrowdingComparison>();
-	double cloneFrac = 0; // TODO: allow cloning?
-	m_crossover = make_unique<SinglePopulationCrossover>(cloneFrac, true, 
-		make_shared<DummySelPop>(),
-		make_shared<TournamentParentSelection>(rng, 2, fitWrapComp),
-		genomeCrossover, genomeMutation, nullptr,
-		make_shared<RemainingTargetPopulationSizeIteration>(), rng);
+	if (numObjectives > 1)
+	{
+		m_fitOrigComp = make_shared<NSGA2FitnessWrapperOriginalComparison>(fitComp);
+		auto fitWrapComp = make_shared<NSGA2FitWrapperNDSetCrowdingComparison>();
+		double cloneFrac = 0; // TODO: allow cloning?
+		m_crossover = make_unique<SinglePopulationCrossover>(cloneFrac, true, 
+			make_shared<DummySelPop>(),
+			make_shared<TournamentParentSelection>(rng, 2, fitWrapComp),
+			genomeCrossover, genomeMutation, nullptr,
+			make_shared<RemainingTargetPopulationSizeIteration>(), rng);
 
-	m_wrapperPop = make_shared<Population>();
-	m_ndSetCreator = allocatedNDSetCreator(m_fitOrigComp, m_numObjectives);
+		m_wrapperPop = make_shared<Population>();
+		m_ndSetCreator = allocateNDSetCreator(m_fitOrigComp, m_numObjectives);
+	}
+	else
+	{
+		double cloneFrac = 0; // TODO: allow cloning?
+		m_crossover = make_unique<SinglePopulationCrossover>(cloneFrac, true, 
+			make_shared<DummySelPop>(),
+			make_shared<TournamentParentSelection>(rng, 2, fitComp),
+			genomeCrossover, genomeMutation, nullptr,
+			make_shared<RemainingTargetPopulationSizeIteration>(), rng);
+	}
 }
 
 NSGA2Evolver::~NSGA2Evolver()
 {
 }
 
-shared_ptr<NonDominatedSetCreator> NSGA2Evolver::allocatedNDSetCreator(const std::shared_ptr<FitnessComparison> &fitCmp, size_t numObjectives)
+shared_ptr<NonDominatedSetCreator> NSGA2Evolver::allocateNDSetCreator(const std::shared_ptr<FitnessComparison> &fitCmp, size_t numObjectives)
 {
 	return make_shared<FasterNonDominatedSetCreator>(fitCmp, numObjectives);
 	//return make_shared<BasicNonDominatedSetCreator>(fitCmp, numObjectives);
@@ -157,13 +170,10 @@ shared_ptr<NonDominatedSetCreator> NSGA2Evolver::allocatedNDSetCreator(const std
 
 bool_t NSGA2Evolver::check(const std::shared_ptr<Population> &population)
 {
-	if (m_numObjectives < 2)
-		return "Need at least two fitness objectives";
-
 	if (population->size() < 2)
 		return "Population size too small";
 
-	if (!m_ndSetCreator)
+	if (m_numObjectives > 1 && !m_ndSetCreator)
 		return "Need a non-dominated set creator!";
 
 	for (auto &ind : population->individuals())
@@ -173,16 +183,66 @@ bool_t NSGA2Evolver::check(const std::shared_ptr<Population> &population)
 			return "Fitness must consist of real values";
 	}
 
-	buildWrapperPopulation(*population, *m_wrapperPop);
-
 	bool_t r;
-	if (!(r = m_crossover->check(m_wrapperPop)))
-		return "Error checking final crossover: " + r.getErrorString();
+
+	if (m_numObjectives > 1)
+	{
+		buildWrapperPopulation(*population, *m_wrapperPop);
+
+		if (!(r = m_crossover->check(m_wrapperPop)))
+			return "Error checking final crossover: " + r.getErrorString();
+	}
+	else
+	{
+		if (!(r = m_crossover->check(population)))
+			return "Error checking internal crossover: " + r.getErrorString();
+	}
 
 	return true;
 }
 
 bool_t NSGA2Evolver::createNewPopulation(size_t generation, std::shared_ptr<Population> &population, size_t targetPopulationSize)
+{
+	if (m_numObjectives > 1)
+		return createNewPopulation_Multi(generation, population, targetPopulationSize);
+	return createNewPopulation_Single(generation, population, targetPopulationSize);
+}
+
+bool_t NSGA2Evolver::createNewPopulation_Single(size_t generation, std::shared_ptr<Population> &population, size_t targetPopulationSize)
+{
+	bool_t r;
+
+	sort(population->individuals().begin(), population->individuals().end(),
+		[this](const shared_ptr<Individual> &i1, const shared_ptr<Individual> &i2) {
+		return m_fitComp->isFitterThan(i1->fitnessRef(), i2->fitnessRef(), 0);
+	});
+
+	m_best.clear();
+	m_best.push_back(population->individual(0)->createCopy());
+
+	if (population->size() == targetPopulationSize)
+	{
+		if (generation != 0)
+			return "Expecting this population size only on generation 0";
+	}
+	else if (population->size() == targetPopulationSize*2)
+	{
+		if (generation == 0)
+			return "Unexpected double population size for generation 0";
+
+		population->individuals().resize(targetPopulationSize);
+	}
+	else
+		return "Unexpected population size " + to_string(population->size()) + " for target size " + to_string(targetPopulationSize);
+
+	assert(population->size() == targetPopulationSize);
+	if (!(r = m_crossover->createNewPopulation(generation, population, targetPopulationSize)))
+		return "Can't calculate genome crossover: " + r.getErrorString();
+
+	return true;
+}
+
+bool_t NSGA2Evolver::createNewPopulation_Multi(size_t generation, std::shared_ptr<Population> &population, size_t targetPopulationSize)
 {
 	// First generation (P_0):
 	//   Need to extend population with Q_0, but can't do much more on this step
