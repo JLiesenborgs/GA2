@@ -7,6 +7,7 @@
 #include "stopcriterion.h"
 #include "mersennerandomnumbergenerator.h"
 #include "vectorgenomedelikecrossover.h"
+#include "vectorgenomesimulatedbinarycrossover.h"
 #include <stdexcept>
 #include <limits>
 #include <cmath>
@@ -516,7 +517,9 @@ int mainCxx(const vector<string> &args)
 
 	IndCreation creation(problem, rng);
 	NSGA2Evolver evolver(rng,
-		make_shared<VectorGenomeDELikeCrossOver<double>>(rng, extraParent, F, CR), nullptr,
+		make_shared<VectorGenomeDELikeCrossOver<double>>(rng, extraParent, F, CR),
+		//make_shared<VectorGenomeSimulatedBinaryCrossover<double>>(rng, 1.0),
+		nullptr,
 		make_shared<VectorFitnessComparison<double>>(), problem->getObjectives());
 
 	SingleThreadedPopulationFitnessCalculation calc(problem);

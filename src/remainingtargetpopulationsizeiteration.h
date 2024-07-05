@@ -9,26 +9,22 @@ namespace eatk
 class RemainingTargetPopulationSizeIteration : public PopulationCrossoverIteration
 {
 public:
-	RemainingTargetPopulationSizeIteration() : m_remaining(0) { }
+	RemainingTargetPopulationSizeIteration() : m_target(0) { }
 	~RemainingTargetPopulationSizeIteration() { }
 	
 	void startNewIteration(const Population &newPopulation, size_t targetPopulationSize) override
 	{
-		if (targetPopulationSize < newPopulation.size())
-			m_remaining = 0;
-		else
-			m_remaining = targetPopulationSize - newPopulation.size();
+		m_target = targetPopulationSize;
 	}
 	
 	bool iterate(const Population &newPopulation) override
 	{
-		if (m_remaining == 0)
+		if (newPopulation.size() >= m_target)
 			return false;
-		m_remaining--;
 		return true;
 	}
 private:
-	size_t m_remaining;
+	size_t m_target;
 };
 
 }

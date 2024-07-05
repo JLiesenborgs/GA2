@@ -126,6 +126,7 @@ bool_t SinglePopulationCrossover::createNewPopulation(size_t generation,
 			return true;
 		};
 
+		//cerr << "Target population size is " << targetPopulationSize << endl;
 		m_popIteration->startNewIteration(*newPopulation, targetPopulationSize);
 		while(m_popIteration->iterate(*newPopulation))
 		{
@@ -150,6 +151,7 @@ bool_t SinglePopulationCrossover::createNewPopulation(size_t generation,
 				if (!(r = m_genomeCrossover->generateOffspring(parentGenomes, offspring)))
 					return "Error generating offspring: " + r.getErrorString();
 
+				//cerr << "Created " << offspring.size() << " offspring" << endl;
 				for (auto &g : offspring)
 				{
 					auto f = refFitness->createCopy(false);
@@ -160,10 +162,15 @@ bool_t SinglePopulationCrossover::createNewPopulation(size_t generation,
 			}
 		}
 
+		// TODO: resize newPopulation if exceeds target size?
+
+		//cerr << "size to add is " << newPopulation->size() << endl;
 		if (m_keepExistingPopulation)
 		{
 			for (auto &i : newPopulation->individuals())
 				population->append(i);
+
+			//cerr << "new population size is " << population->size() << endl;
 		}
 		else
 			std::swap(newPopulation, population);
