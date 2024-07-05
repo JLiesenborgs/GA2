@@ -518,7 +518,7 @@ int mainCxx(const vector<string> &args)
 	IndCreation creation(problem, rng);
 	NSGA2Evolver evolver(rng,
 		make_shared<VectorGenomeDELikeCrossOver<double>>(rng, extraParent, F, CR),
-		//make_shared<VectorGenomeSimulatedBinaryCrossover<double>>(rng, 1.0),
+		//make_shared<VectorGenomeSimulatedBinaryCrossover<double>>(rng, 2.0),
 		nullptr,
 		make_shared<VectorFitnessComparison<double>>(), problem->getObjectives());
 
