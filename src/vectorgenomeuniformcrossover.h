@@ -9,12 +9,12 @@ namespace eatk
 {
 
 template<class T>
-class UniformVectorGenomeCrossover : public GenomeCrossover
+class VectorGenomeUniformCrossover : public GenomeCrossover
 {
 public:
-	UniformVectorGenomeCrossover(const std::shared_ptr<RandomNumberGenerator> &rng, bool twoOffspring = false) 
+	VectorGenomeUniformCrossover(const std::shared_ptr<RandomNumberGenerator> &rng, bool twoOffspring = false) 
 		: m_rng(rng), m_twoOffspring(twoOffspring) { }
-	~UniformVectorGenomeCrossover() { }
+	~VectorGenomeUniformCrossover() { }
 	
 	errut::bool_t check(const std::vector<std::shared_ptr<Genome>> &parents) override
 	{

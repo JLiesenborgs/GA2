@@ -28,7 +28,7 @@ set(HEADERS
 	stopcriterion.h
 	tournamentparentselection.h
 	trackbestonlyselectionpopulation.h
-	uniformvectorgenomecrossover.h
+	vectorgenomeuniformcrossover.h
 	valuefitness.h
 	valuevector.h
 	vectorgenomefitness.h

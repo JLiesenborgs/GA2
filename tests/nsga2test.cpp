@@ -2,7 +2,6 @@
 #include "evolutionaryalgorithm.h"
 #include "vectorgenomefitness.h"
 #include "calculation.h"
-#include "uniformvectorgenomecrossover.h"
 #include "vectorgenomeuniformmutation.h"
 #include "singlethreadedpopulationfitnesscalculation.h"
 #include "stopcriterion.h"

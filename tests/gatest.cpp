@@ -1,7 +1,7 @@
 #include "evolutionaryalgorithm.h"
 #include "vectorgenomefitness.h"
 #include "mersennerandomnumbergenerator.h"
-#include "uniformvectorgenomecrossover.h"
+#include "vectorgenomeuniformcrossover.h"
 #include "singlethreadedpopulationfitnesscalculation.h"
 #include "multithreadedpopulationfitnesscalculation.h"
 #include "mpipopulationfitnesscalculation.h"
@@ -67,7 +67,7 @@ public:
 				make_shared<FitnessBasedDuplicateRemoval>(make_shared<ValueFitnessComparison<RealType>>(), 1)
 			),
 			make_shared<RankParentSelection>(2.5, rng),
-			make_shared<UniformVectorGenomeCrossover<RealType>>(rng, false),
+			make_shared<VectorGenomeUniformCrossover<RealType>>(rng, false),
 			mutation,
 			make_shared<SingleBestElitism>(true, mutation),
 			make_shared<RemainingTargetPopulationSizeIteration>(),

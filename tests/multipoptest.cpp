@@ -8,7 +8,7 @@
 #include "singlebestelitism.h"
 #include "remainingtargetpopulationsizeiteration.h"
 #include "singlethreadedpopulationfitnesscalculation.h"
-#include "uniformvectorgenomecrossover.h"
+#include "vectorgenomeuniformcrossover.h"
 #include "vectorgenomeflipmutation.h"
 #include "multipopulationevolver.h"
 #include "fasternondominatedsetcreator.h"
@@ -168,7 +168,7 @@ int main(int argc, char const *argv[])
 		auto cross = make_shared<SinglePopulationCrossover>(0.1, false,
 				make_shared<SimpleSortedPopulation>(fitnessComp),
 				make_shared<RankParentSelection>(2.5, rng),
-				make_shared<UniformVectorGenomeCrossover<int>>(rng, false),
+				make_shared<VectorGenomeUniformCrossover<int>>(rng, false),
 				mutation,
 				make_shared<SingleBestElitism>(true, mutation),
 				make_shared<RemainingTargetPopulationSizeIteration>(),
