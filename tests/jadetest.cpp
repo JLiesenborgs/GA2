@@ -7,6 +7,7 @@
 #include "valuefitness.h"
 #include "jadeevolver.h"
 #include "singlethreadedpopulationfitnesscalculation.h"
+#include "testfunctions.h"
 #include <random>
 
 using namespace std;

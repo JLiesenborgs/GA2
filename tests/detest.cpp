@@ -5,6 +5,7 @@
 #include "valuefitness.h"
 #include "differentialevolutionevolver.h"
 #include "singlethreadedpopulationfitnesscalculation.h"
+#include "testfunctions.h"
 #include <random>
 
 using namespace std;
