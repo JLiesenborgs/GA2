@@ -95,12 +95,12 @@ public:
 protected:
 	std::pair<std::vector<double>, std::vector<double>> getBoundsInternal() override
 	{
-		return { asVector(m_ipr.first), asVector(m_ipr.second) };
+		return { asVector(m_bounds.first), asVector(m_bounds.second) };
 	}
 
 	std::pair<std::vector<double>, std::vector<double>> getInitialParameterRangeInternal() override
 	{
-		return { asVector(m_bounds.first), asVector(m_bounds.second) };
+		return { asVector(m_ipr.first), asVector(m_ipr.second) };
 	}
 private:
 	double2_t m_ipr, m_bounds;
