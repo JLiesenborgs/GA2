@@ -41,6 +41,8 @@ class BaseCalculation : public VectorValueFitnessCalculation<double,double>
 public:
 	size_t getNumberOfEvaluations() const { return m_evaluations; }
 	void resetEvaluationCount() { m_evaluations = 0; }
+	virtual pair<vector<double>,vector<double>> getInitialParameterRange() = 0;
+	virtual pair<vector<double>,vector<double>> getBounds() = 0;
 };
 
 template <class T>
@@ -51,6 +53,8 @@ public:
 	TestFunctionTemplate(Args&&... args) : m_f(std::forward<Args>(args)...) { }
 
 	double calculate(const vector<double> &x) override { return m_f.calculate1(x); } 
+	pair<vector<double>,vector<double>> getInitialParameterRange() override { return m_f.getInitialParameterRange(); }
+	pair<vector<double>,vector<double>> getBounds() override { return m_f.getBounds(); }
 
 	T m_f;
 };
@@ -154,8 +158,6 @@ struct Test
 {
 	string name;
 	size_t popSize;
-	vector<double> bottom;
-	vector<double> top;
 	bool constrained;
 	double VTR; // Value to reach
 	bool recalc;
@@ -252,40 +254,40 @@ int main(int argc, char const *argv[])
 	shared_ptr<RandomNumberGenerator> rng = make_shared<MersenneRandomNumberGenerator>(seed);
 
 	vector<Test> tests {
-		{ "f1_Sphere_30", 100, vector<double>(30, -100), vector<double>(30, 100), false, 1e-8, false, 100000, make_shared<f1_Sphere>(30, pair(-100.0, 100.0)) },
-		{ "f1_Sphere_100", 400, vector<double>(100, -100), vector<double>(100, 100), false, 1e-8, false, 100000, make_shared<f1_Sphere>(100, pair(-100.0, 100.0)) },
-		{ "f2_30", 100, vector<double>(30, -10), vector<double>(30, 10), false, 1e-8, false, 100000, make_shared<f2>(30, pair(-10.0,10.0)) },
-		{ "f2_100", 400, vector<double>(100, -10), vector<double>(100, 10), false, 1e-8, false, 100000, make_shared<f2>(100, pair(-10.0,10.0)) },
-		{ "f3_30", 100, vector<double>(30, -100), vector<double>(30, 100), false, 1e-8, false, 100000, make_shared<f3>(30, pair(-100.0,100.0)) },
-		{ "f3_100", 400, vector<double>(100, -100), vector<double>(100, 100), false, 1e-8, false, 100000, make_shared<f3>(100, pair(-100.0,100.0)) },
-		{ "f4_30", 100, vector<double>(30, -100), vector<double>(30, 100), false, 1e-8, false, 100000, make_shared<f4>(30, pair(-100.0,100.0)) },
-		{ "f4_100", 400, vector<double>(100, -100), vector<double>(100, 100), false, 1e-8, false, 100000, make_shared<f4>(100, pair(-100.0,100.0)) },
-		{ "f5_30", 100, vector<double>(30, -30), vector<double>(30, 30), false, 1e-8, false, 100000, make_shared<f5>(30, pair(-30.0,30.0)) },
-		{ "f5_100", 400, vector<double>(100, -30), vector<double>(100, 30), false, 1e-8, false, 100000, make_shared<f5>(100, pair(-30.0,30.0)) },
-		{ "f6_30", 100, vector<double>(30, -100), vector<double>(30, 100), false, 1e-8, false, 100000, make_shared<f6>(30, pair(-100.0,100.0)) },
-		{ "f6_100", 400, vector<double>(100, -100), vector<double>(100, 100), false, 1e-8, false, 100000, make_shared<f6>(100, pair(-100.0,100.0)) },
+		{ "f1_Sphere_30", 100, false, 1e-8, false, 100000, make_shared<f1_Sphere>(30, pair(-100.0, 100.0)) },
+		{ "f1_Sphere_100", 400, false, 1e-8, false, 100000, make_shared<f1_Sphere>(100, pair(-100.0, 100.0)) },
+		{ "f2_30", 100, false, 1e-8, false, 100000, make_shared<f2>(30, pair(-10.0,10.0)) },
+		{ "f2_100", 400, false, 1e-8, false, 100000, make_shared<f2>(100, pair(-10.0,10.0)) },
+		{ "f3_30", 100, false, 1e-8, false, 100000, make_shared<f3>(30, pair(-100.0,100.0)) },
+		{ "f3_100", 400, false, 1e-8, false, 100000, make_shared<f3>(100, pair(-100.0,100.0)) },
+		{ "f4_30", 100, false, 1e-8, false, 100000, make_shared<f4>(30, pair(-100.0,100.0)) },
+		{ "f4_100", 400, false, 1e-8, false, 100000, make_shared<f4>(100, pair(-100.0,100.0)) },
+		{ "f5_30", 100, false, 1e-8, false, 100000, make_shared<f5>(30, pair(-30.0,30.0)) },
+		{ "f5_100", 400, false, 1e-8, false, 100000, make_shared<f5>(100, pair(-30.0,30.0)) },
+		{ "f6_30", 100, false, 1e-8, false, 100000, make_shared<f6>(30, pair(-100.0,100.0)) },
+		{ "f6_100", 400, false, 1e-8, false, 100000, make_shared<f6>(100, pair(-100.0,100.0)) },
 		// Doesn't seem to work??
-		// { "f7_30", 100, vector<double>(30, -1.28), vector<double>(30, 1.28), false, 1e-2, true, 100000, make_shared<f7>(30, rng, pair(-1.28,1.28)) },
-		// { "f7_100", 400, vector<double>(100, -1.28), vector<double>(100, 1.28), false, 1e-2, true, 100000, make_shared<f7>(100, rng, pair(-1.28,1.28)) },
-		{ "f8_30", 100, vector<double>(30, -500), vector<double>(30, 500), true, 1e-8, false, 100000, make_shared<f8>(30, pair(-500.0,500.0)) },
-		{ "f8_100", 400, vector<double>(100, -500), vector<double>(100, 500), true, 1e-8, false, 100000, make_shared<f8>(100, pair(-500.0,500.0)) },
-		{ "f9_30", 100, vector<double>(30, -5.12), vector<double>(30, 5.12), false, 1e-8, false, 100000, make_shared<f9>(30, pair(-5.12,5.12)) },
-		{ "f9_100", 400, vector<double>(100, -5.12), vector<double>(100, 5.12), false, 1e-8, false, 100000, make_shared<f9>(100, pair(-5.12,5.12)) },
-		{ "f10_30", 100, vector<double>(30, -32), vector<double>(30, 32), false, 1e-8, false, 100000, make_shared<f10>(30, pair(-32.0,32.0)) },
-		{ "f10_100", 400, vector<double>(100, -32), vector<double>(100, 32), false, 1e-8, false, 100000, make_shared<f10>(100, pair(-32.0,32.0)) },
-		{ "f11_30", 100, vector<double>(30, -600), vector<double>(30, 600), false, 1e-8, false, 100000, make_shared<f11>(30, pair(-600.0,600.0)) },
-		{ "f11_100", 400, vector<double>(100, -600), vector<double>(100, 600), false, 1e-8, false, 100000, make_shared<f11>(100, pair(-600.0,600.0)) },
-		{ "f12_30", 100, vector<double>(30, -50), vector<double>(30, 50), false, 1e-8, false, 100000, make_shared<f12>(30, pair(-50.0,50.0)) },
-		{ "f12_100", 400, vector<double>(100, -50), vector<double>(100, 50), false, 1e-8, false, 100000, make_shared<f12>(100, pair(-50.0,50.0)) },
-		{ "f13_30", 100, vector<double>(30, -50), vector<double>(30, 50), false, 1e-8, false, 100000, make_shared<f13>(30, pair(-50.0,50.0)) },
-		{ "f13_100", 400, vector<double>(100, -50), vector<double>(100, 50), false, 1e-8, false, 100000, make_shared<f13>(100, pair(-50.0,50.0)) },
-		{ "f14_Branin", 30, { -5.0, 0.0 }, { 10.0, 15.0 }, false,  0.3978873577 + 1e-8, false, 100000, make_shared<f14_Branin>(vector{-5.0,0.0},vector{10.0,15.0}) },
-		{ "f15_GoldsteinPrice", 30, { -2.0, -2.0 }, { 2.0, 2.0 }, false,  3.0 + 1e-8, false, 100000, make_shared<f15_GoldsteinPrice>(pair(-2.0,2.0)) },
-		{ "f16_Hartman3D", 30, { 0, 0, 0 }, { 1, 1, 1 }, false,  -3.862779787 + 1e-8, false, 100000, make_shared<f16_Hartman3D>(pair(0.0,1.0)) },
-		{ "f17_Hartman6D", 30, { 0, 0, 0, 0, 0, 0 }, { 1, 1, 1, 1, 1, 1 }, false,  -3.322368011 + 1e-8, false, 100000, make_shared<f17_Hartman6D>(pair(0.0, 1.0)) },
-		{ "f18_Shekel5", 30, { 0, 0, 0, 0 }, { 10, 10, 10, 10 }, false, -10.153199679 + 1e-8, false, 100000, make_shared<f_Shekel>(5, pair(0.0,1.0)) },
-		{ "f19_Shekel7", 30, { 0, 0, 0, 0 }, { 10, 10, 10, 10 }, false, -10.402915336 + 1e-8, false, 100000, make_shared<f_Shekel>(7, pair(0.0,1.0)) },
-		{ "f20_Shekel10", 30, { 0, 0, 0, 0 }, { 10, 10, 10, 10 }, false, -10.536443153 + 1e-8, false, 100000, make_shared<f_Shekel>(10, pair(0.0,1.0)) },
+		// { "f7_30", 100, false, 1e-2, true, 100000, make_shared<f7>(30, rng, pair(-1.28,1.28)) },
+		// { "f7_100", 400, false, 1e-2, true, 100000, make_shared<f7>(100, rng, pair(-1.28,1.28)) },
+		{ "f8_30", 100, true, 1e-8, false, 100000, make_shared<f8>(30, pair(-500.0,500.0), pair(-500.0,500.0)) },
+		{ "f8_100", 400, true, 1e-8, false, 100000, make_shared<f8>(100, pair(-500.0,500.0), pair(-500.0,500.0)) },
+		{ "f9_30", 100, false, 1e-8, false, 100000, make_shared<f9>(30, pair(-5.12,5.12)) },
+		{ "f9_100", 400, false, 1e-8, false, 100000, make_shared<f9>(100, pair(-5.12,5.12)) },
+		{ "f10_30", 100, false, 1e-8, false, 100000, make_shared<f10>(30, pair(-32.0,32.0)) },
+		{ "f10_100", 400, false, 1e-8, false, 100000, make_shared<f10>(100, pair(-32.0,32.0)) },
+		{ "f11_30", 100, false, 1e-8, false, 100000, make_shared<f11>(30, pair(-600.0,600.0)) },
+		{ "f11_100", 400, false, 1e-8, false, 100000, make_shared<f11>(100, pair(-600.0,600.0)) },
+		{ "f12_30", 100, false, 1e-8, false, 100000, make_shared<f12>(30, pair(-50.0,50.0)) },
+		{ "f12_100", 400, false, 1e-8, false, 100000, make_shared<f12>(100, pair(-50.0,50.0)) },
+		{ "f13_30", 100, false, 1e-8, false, 100000, make_shared<f13>(30, pair(-50.0,50.0)) },
+		{ "f13_100", 400, false, 1e-8, false, 100000, make_shared<f13>(100, pair(-50.0,50.0)) },
+		{ "f14_Branin", 30, false,  0.3978873577 + 1e-8, false, 100000, make_shared<f14_Branin>(vector{-5.0,0.0},vector{10.0,15.0}) },
+		{ "f15_GoldsteinPrice", 30, false,  3.0 + 1e-8, false, 100000, make_shared<f15_GoldsteinPrice>(pair(-2.0,2.0)) },
+		{ "f16_Hartman3D", 30, false,  -3.862779787 + 1e-8, false, 100000, make_shared<f16_Hartman3D>(pair(0.0,1.0)) },
+		{ "f17_Hartman6D", 30, false,  -3.322368011 + 1e-8, false, 100000, make_shared<f17_Hartman6D>(pair(0.0, 1.0)) },
+		{ "f18_Shekel5", 30, false, -10.153199679 + 1e-8, false, 100000, make_shared<f_Shekel>(5, pair(0.0,10.0)) },
+		{ "f19_Shekel7", 30, false, -10.402915336 + 1e-8, false, 100000, make_shared<f_Shekel>(7, pair(0.0,10.0)) },
+		{ "f20_Shekel10", 30, false, -10.536443153 + 1e-8, false, 100000, make_shared<f_Shekel>(10, pair(0.0,10.0)) },
 	};
 
 	auto comp = make_shared<ValueFitnessComparison<double>>();
@@ -311,11 +313,15 @@ int main(int argc, char const *argv[])
 			shared_ptr<VectorDifferentialEvolutionCrossover<double>> cross;
 			
 			if (test.constrained)
-				cross = make_shared<VectorDifferentialEvolutionCrossover<double>>(rng, test.bottom, test.top);
+			{
+				auto [ bottom, top ] = test.calculator->getBounds();
+				cross = make_shared<VectorDifferentialEvolutionCrossover<double>>(rng, bottom, top);
+			}
 			else
 				cross = make_shared<VectorDifferentialEvolutionCrossover<double>>(rng);
 			
-			VectorDifferentialEvolutionIndividualCreation<double,double> creation(test.bottom, test.top, rng);
+			auto [ bottom, top ] = test.calculator->getInitialParameterRange();
+			VectorDifferentialEvolutionIndividualCreation<double,double> creation(bottom, top, rng);
 			ValueToReachStop<double> stop(test.VTR, test.maxGenerations);
 		
 			MyJADE evolver(rng, mut, cross, comp, archive);
