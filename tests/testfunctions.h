@@ -259,15 +259,28 @@ public:
 					 double2_t ipr, double2_t bounds = unbounded())
 		: TestFunctionSimpleRanges(dim, ipr, bounds), m_rng(rng) { }
 
+	QuarticWithNoise(size_t dim, const std::shared_ptr<std::mt19937> &rng,
+					 double2_t ipr, double2_t bounds = unbounded())
+		: TestFunctionSimpleRanges(dim, ipr, bounds), m_rngStd(rng) { }
+
 	std::vector<double> calculateInternal(const std::vector<double> &x) override
 	{
 		double sum = 0;
 		for (size_t i = 0 ; i < x.size() ; i++)
 			sum += (i+1.0)*x[i]*x[i]*x[i]*x[i];
-		return { sum + m_rng->getRandomDouble() };
+		return { sum + uniform() };
 	}
 private:
+	double uniform()
+	{
+		if (m_rng)
+			return m_rng->getRandomDouble();
+		if (m_rngStd)
+			return (std::uniform_real_distribution<>(0,1))(*m_rngStd);
+		throw std::runtime_error("No random number generator was installed");
+	}
 	std::shared_ptr<RandomNumberGenerator> m_rng;
+	std::shared_ptr<std::mt19937> m_rngStd;
 };
 
 // Also f8 of JADE article
