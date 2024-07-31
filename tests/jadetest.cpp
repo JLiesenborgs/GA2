@@ -267,8 +267,8 @@ int main(int argc, char const *argv[])
 		{ "f6_30", 100, false, 1e-8, false, 100000, make_shared<f6>(30, pair(-100.0,100.0)) },
 		{ "f6_100", 400, false, 1e-8, false, 100000, make_shared<f6>(100, pair(-100.0,100.0)) },
 		// Doesn't seem to work??
-		// { "f7_30", 100, false, 1e-2, true, 100000, make_shared<f7>(30, rng, pair(-1.28,1.28)) },
-		// { "f7_100", 400, false, 1e-2, true, 100000, make_shared<f7>(100, rng, pair(-1.28,1.28)) },
+		//{ "f7_30", 100, false, 1e-2, true, 100000, make_shared<f7>(30, rng, false, pair(-1.28,1.28)) },
+		//{ "f7_100", 400, false, 1e-2, true, 100000, make_shared<f7>(100, rng, false, pair(-1.28,1.28)) },
 		{ "f8_30", 100, true, 1e-8, false, 100000, make_shared<f8>(30, pair(-500.0,500.0), pair(-500.0,500.0)) },
 		{ "f8_100", 400, true, 1e-8, false, 100000, make_shared<f8>(100, pair(-500.0,500.0), pair(-500.0,500.0)) },
 		{ "f9_30", 100, false, 1e-8, false, 100000, make_shared<f9>(30, pair(-5.12,5.12)) },

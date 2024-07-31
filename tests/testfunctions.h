@@ -255,20 +255,33 @@ public:
 class QuarticWithNoise : public TestFunctionSimpleRanges
 {
 public:
-	QuarticWithNoise(size_t dim, const std::shared_ptr<RandomNumberGenerator> &rng,
+	QuarticWithNoise(size_t dim, const std::shared_ptr<RandomNumberGenerator> &rng, bool rndInLoop,
 					 double2_t ipr, double2_t bounds = unbounded())
-		: TestFunctionSimpleRanges(dim, ipr, bounds), m_rng(rng) { }
+		: TestFunctionSimpleRanges(dim, ipr, bounds), m_rng(rng), m_rndInLoop(rndInLoop) { }
 
-	QuarticWithNoise(size_t dim, const std::shared_ptr<std::mt19937> &rng,
+	QuarticWithNoise(size_t dim, const std::shared_ptr<std::mt19937> &rng, bool rndInLoop,
 					 double2_t ipr, double2_t bounds = unbounded())
-		: TestFunctionSimpleRanges(dim, ipr, bounds), m_rngStd(rng) { }
+		: TestFunctionSimpleRanges(dim, ipr, bounds), m_rngStd(rng), m_rndInLoop(rndInLoop) { }
 
 	std::vector<double> calculateInternal(const std::vector<double> &x) override
 	{
 		double sum = 0;
-		for (size_t i = 0 ; i < x.size() ; i++)
-			sum += (i+1.0)*x[i]*x[i]*x[i]*x[i];
-		return { sum + uniform() };
+		if (!m_rndInLoop)
+		{
+			for (size_t i = 0 ; i < x.size() ; i++)
+				sum += (i+1.0)*x[i]*x[i]*x[i]*x[i];
+			sum += uniform();
+		}
+		else
+		{
+			for (size_t i = 0 ; i < x.size() ; i++)
+			{
+				double xSquared = x[i]*x[i];
+				double xFourth = xSquared*xSquared;
+				sum += (i+1.0)*xFourth + uniform();
+			}
+		}
+		return { sum };
 	}
 private:
 	double uniform()
@@ -281,6 +294,7 @@ private:
 	}
 	std::shared_ptr<RandomNumberGenerator> m_rng;
 	std::shared_ptr<std::mt19937> m_rngStd;
+	bool m_rndInLoop;
 };
 
 // Also f8 of JADE article
@@ -586,6 +600,90 @@ private:
 	const size_t m_m;
 	std::vector<double> beta;
 	std::vector<std::vector<double>> C;
+};
+
+class Foxholes : public TestFunctionSimpleRanges
+{
+public:
+	Foxholes(double2_t ipr, double2_t bounds = unbounded())
+		: TestFunctionSimpleRanges(2, ipr, bounds)
+	{
+		a = { 
+            { -32, -16, 0, 16, 32, -32, -16, 0, 16, 32, -32, -16, 0, 16, 32,-32, -16, 0, 16, 32,-32, -16, 0, 16, 32},
+            { -32, -32, -32, -32, -32, -16, -16, -16, -16, -16, 0,0,0,0,0, 16,16,16,16,16, 32,32,32,32,32 }      
+        };
+	}
+
+	std::vector<double> calculateInternal(const std::vector<double> &x) override
+	{
+		double s = 0.002;
+        for (size_t i = 0 ; i < 25 ; i++)
+        {
+            double term = i + 1.0;
+
+            double diff0 = x[0] - a[0][i];
+            double diff1 = x[1] - a[1][i];
+
+            term += diff0*diff0*diff0*diff0*diff0*diff0;
+            term += diff1*diff1*diff1*diff1*diff1*diff1;
+
+            s += 1.0/term;
+        }
+        return { 1.0/s };
+	}
+	
+	std::vector<std::vector<double>> a;
+};
+
+class Corana : public TestFunctionSimpleRanges
+{
+public:
+	Corana(double2_t ipr, double2_t bounds = unbounded())
+		: TestFunctionSimpleRanges(4, ipr, bounds) { }
+	
+	std::vector<double> calculateInternal(const std::vector<double> &x) override
+	{
+		static const double d[] = {1,1000,10,100};
+        auto sign = [](double x) -> double
+        {
+            if (x > 0)
+                return 1.0;
+            if (x < 0)
+                return -1.0;
+            return 0.0;
+        };
+
+        double s = 0;
+        for (size_t i = 0 ; i < 4 ; i++)
+        {
+            double z = std::floor(std::abs(x[i]/0.2) + 0.49999)*sign(x[i])*0.2;
+            if (std::abs(x[i] - z) < 0.05)
+                s += 0.15*(z-0.05*sign(z))*(z-0.05*sign(z))*d[i];
+            else
+                s += d[i]*x[i]*x[i];
+        }
+        return { s };
+	}
+};
+
+class Zimmermann : public TestFunctionSimpleRanges
+{
+public:
+	Zimmermann(double2_t ipr, double2_t bounds = unbounded())
+		: TestFunctionSimpleRanges(2, ipr, bounds) { }
+
+	std::vector<double> calculateInternal(const std::vector<double> &x) override
+	{
+		double f = 9.0 - x[0] - x[1];
+        double constraint1 = (x[0] - 3.0)*(x[0] - 3.0) + (x[1] - 2.0)*(x[1] - 2.0);
+        double constraint2 =  x[0]*x[1];
+
+        if (constraint1 > 16)
+            f += 100 + 100*(constraint1 - 16);
+        if (constraint2 > 14)
+            f += 100 + 100*(constraint2 - 14);
+        return { f };
+	}
 };
 
 } // end namespace testfunctions

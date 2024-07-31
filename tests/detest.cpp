@@ -41,176 +41,25 @@ public:
 	void resetEvaluationCount() { m_evaluations = 0; }
 };
 
-class f1_Sphere : public BaseCalculation
+template <class T>
+class TemplateCalculation : public BaseCalculation
 {
 public:
-	double calculate(const vector<double> &x) override
-	{
-		assert(x.size() == 3);
-		double sumSquared = 0;
-		for (auto v : x)
-			sumSquared += v*v;
-		return sumSquared;
-	}
+	template<typename... Args>
+	TemplateCalculation(Args&&... args) : m_f(std::forward<Args>(args)...) { }
+
+	double calculate(const vector<double> &x) override { return m_f.calculate1(x); }
+	T m_f;
 };
 
-class f2_Rosenbrock : public BaseCalculation
-{
-public:
-	double calculate(const vector<double> &x) override
-	{
-		assert(x.size() == 2);
-		double x1 = x[0];
-		double x2 = x[1];
-
-		return (100.0 * (x1*x1 - x2) * (x1*x1 - x2) + (1.0 - x1)*(1.0 - x1));
-	}
-};
-
-class f3_Mod3rdDeJong : public BaseCalculation
-{
-public:
-	double calculate(const vector<double> &x) override
-	{
-		assert(x.size() == 5);
-		double r = 30.0;
-		for (auto v : x)
-		{
-			if (std::abs(v) < 5.12)
-				r += std::floor(v);
-			else if (v > 5.12)
-				r += 30.0*(v - 5.12);
-			else
-				r += 30.0*(5.12 - v);
-		}
-		return r;
-	}
-};
-
-class f4_Mod4thDeJong_quartic : public BaseCalculation
-{
-public:
-	f4_Mod4thDeJong_quartic(const shared_ptr<RandomNumberGenerator> &rng) : m_rng(rng) { }
-	static vector<double> lower() { return vector<double>(30, -1.28); }
-	static vector<double> upper() { return vector<double>(30, 1.28); }
-
-	double calculate(const vector<double> &x) override
-	{
-		assert(x.size() == 30);
-		double r = 0;
-	
-		for (size_t i = 0 ; i < 30 ; i++)
-		{
-			double j = i+1.0;
-			double eta = m_rng->getRandomDouble();
-			double xSquared = x[i]*x[i];
-			double xFourth = xSquared*xSquared;
-			r += j*xFourth + eta;
-		}
-		return r;
-	};
-private:
-	shared_ptr<RandomNumberGenerator> m_rng;
-};
-
-class f5_Foxholes : public BaseCalculation
-{
-public:
-	f5_Foxholes()
-	{
-		a = { 
-            { -32, -16, 0, 16, 32, -32, -16, 0, 16, 32, -32, -16, 0, 16, 32,-32, -16, 0, 16, 32,-32, -16, 0, 16, 32},
-            { -32, -32, -32, -32, -32, -16, -16, -16, -16, -16, 0,0,0,0,0, 16,16,16,16,16, 32,32,32,32,32 }      
-        };
-	}
-
-	double calculate(const vector<double> &x) override
-	{
-		assert(x.size() == 2);
-        double s = 0.002;
-        for (size_t i = 0 ; i < 25 ; i++)
-        {
-            double term = i + 1.0;
-
-            double diff0 = x[0] - a[0][i];
-            double diff1 = x[1] - a[1][i];
-
-            term += diff0*diff0*diff0*diff0*diff0*diff0;
-            term += diff1*diff1*diff1*diff1*diff1*diff1;
-
-            s += 1.0/term;
-        }
-        return 1.0/s;
-	}
-private:
-    vector<vector<double>> a;
-};
-
-class f6_Corana : public BaseCalculation
-{
-public:
-	double calculate(const vector<double> &x) override
-	{
-		assert(x.size() == 4);
-
-		static const double d[] = {1,1000,10,100};
-        auto sign = [](double x) -> double
-        {
-            if (x > 0)
-                return 1.0;
-            if (x < 0)
-                return -1.0;
-            return 0.0;
-        };
-
-        double s = 0;
-        for (size_t i = 0 ; i < 4 ; i++)
-        {
-            double z = std::floor(std::abs(x[i]/0.2) + 0.49999)*sign(x[i])*0.2;
-            if (std::abs(x[i] - z) < 0.05)
-                s += 0.15*(z-0.05*sign(z))*(z-0.05*sign(z))*d[i];
-            else
-                s += d[i]*x[i]*x[i];
-        }
-        return s;
-	}
-};
-
-class f7_Griewangk : public BaseCalculation
-{
-public:
-	double calculate(const vector<double> &x) override
-	{
-		assert(x.size() == 10);
-		double s = 1.0;
-        for (size_t i = 0 ; i < 10 ; i++)
-            s+= x[i]*x[i]/4000.0;
-
-        double p = 1.0;
-        for (size_t i = 0 ; i < 10 ; i++)
-            p *= std::cos(x[i]/std::sqrt(i+1));
-        
-        return s - p;
-	}
-};
-
-class f8_Zimmermann : public BaseCalculation
-{
-public:
-	double calculate(const vector<double> &x) override
-	{
-		assert(x.size() == 2);
-        double f = 9.0 - x[0] - x[1];
-        double constraint1 = (x[0] - 3.0)*(x[0] - 3.0) + (x[1] - 2.0)*(x[1] - 2.0);
-        double constraint2 =  x[0]*x[1];
-
-        if (constraint1 > 16)
-            f += 100 + 100*(constraint1 - 16);
-        if (constraint2 > 14)
-            f += 100 + 100*(constraint2 - 14);
-        return f;
-	}
-};
+typedef TemplateCalculation<testfunctions::Sphere> f1_Sphere;
+typedef TemplateCalculation<testfunctions::Rosenbrock> f2_Rosenbrock;
+typedef TemplateCalculation<testfunctions::Mod3rdDeJong> f3_Mod3rdDeJong;
+typedef TemplateCalculation<testfunctions::QuarticWithNoise> f4_Mod4thDeJong_quartic;
+typedef TemplateCalculation<testfunctions::Foxholes> f5_Foxholes;
+typedef TemplateCalculation<testfunctions::Corana> f6_Corana;
+typedef TemplateCalculation<testfunctions::Griewank> f7_Griewangk;
+typedef TemplateCalculation<testfunctions::Zimmermann> f8_Zimmermann;
 
 class f9_k4_Poly : public BaseCalculation
 {
@@ -472,14 +321,14 @@ int main(int argc, char const *argv[])
 	shared_ptr<RandomNumberGenerator> rng = make_shared<MersenneRandomNumberGenerator>(seed);
 
 	vector<Test> tests {
-		{ "f1_Sphere", 10, 0.5, 0.3, { -5.12, -5.12, -5.12 }, { 5.12, 5.12, 5.12 }, 1e-6, 100000, make_shared<f1_Sphere>() },
-		{ "f2_Rosenbrock", 10, 0.9, 0.9, { -2.048, -2.048 }, { 2.048, 2.048 }, 1e-6, 100000, make_shared<f2_Rosenbrock>() },
-		{ "f3_Mod3rdDeJong_step", 10, 0.9, 0, { -5.12, -5.12, -5.12, -5.12, -5.12 }, { 5.12, 5.12, 5.12, 5.12, 5.12 }, 1e-6, 100000, make_shared<f3_Mod3rdDeJong>() },
-		//{ "f4_Mod4thDeJong_quartic", 10, 0.9, 0, f4_Mod4thDeJong_quartic::lower(), f4_Mod4thDeJong_quartic::upper(), 0, 100000, make_shared<f4_Mod4thDeJong_quartic>(rng) },
-		{ "f5_Foxholes", 15, 0.9, 0, { -65.536, -65.536}, { 65.536, 65.536 }, 0.998005, 100000, make_shared<f5_Foxholes>() },
-		{ "f6_Corana", 10, 0.5, 0, { -1000, -1000, -1000, -1000}, { 1000, 1000, 1000, 1000}, 1e-6, 100000, make_shared<f6_Corana>() },
-		{ "f7_Griewangk", 25, 0.5, 0.2, vector<double>(10, -400), vector<double>(10, 400), 1e-6, 100000, make_shared<f7_Griewangk>() },
-		{ "f8_Zimmermann", 10, 0.9, 0.9, { 0.0, 0.0 }, { 100.0, 100.0 }, 1e-6, 100000, make_shared<f8_Zimmermann>() },
+		{ "f1_Sphere", 10, 0.5, 0.3, { -5.12, -5.12, -5.12 }, { 5.12, 5.12, 5.12 }, 1e-6, 100000, make_shared<f1_Sphere>(3, pair(-5.12, 5.12)) },
+		{ "f2_Rosenbrock", 10, 0.9, 0.9, { -2.048, -2.048 }, { 2.048, 2.048 }, 1e-6, 100000, make_shared<f2_Rosenbrock>(pair(-2.048,2.048)) },
+		{ "f3_Mod3rdDeJong_step", 10, 0.9, 0, { -5.12, -5.12, -5.12, -5.12, -5.12 }, { 5.12, 5.12, 5.12, 5.12, 5.12 }, 1e-6, 100000, make_shared<f3_Mod3rdDeJong>(pair(-5.12,5.12)) },
+		//{ "f4_Mod4thDeJong_quartic", 10, 0.9, 0, vector<double>(30, -1.28), vector<double>(30, 1.28), 0, 100000, make_shared<f4_Mod4thDeJong_quartic>(30, rng, true, pair(-1.28,1.28)) },
+		{ "f5_Foxholes", 15, 0.9, 0, { -65.536, -65.536}, { 65.536, 65.536 }, 0.998005, 100000, make_shared<f5_Foxholes>(pair(-65.536,65.536)) },
+		{ "f6_Corana", 10, 0.5, 0, { -1000, -1000, -1000, -1000}, { 1000, 1000, 1000, 1000}, 1e-6, 100000, make_shared<f6_Corana>(pair(-1000.0, 1000.0)) },
+		{ "f7_Griewangk", 25, 0.5, 0.2, vector<double>(10, -400), vector<double>(10, 400), 1e-6, 100000, make_shared<f7_Griewangk>(10, pair(-400.0,400.0)) },
+		{ "f8_Zimmermann", 10, 0.9, 0.9, { 0.0, 0.0 }, { 100.0, 100.0 }, 1e-6, 100000, make_shared<f8_Zimmermann>(pair(0.0,100.0)) },
 		{ "f9_k4_Poly", 60, 0.6, 1, vector<double>(9,-100), vector<double>(9,100), 1e-6, 100000, make_shared<f9_k4_Poly>() },
 		{ "f9_k8_Poly", 100, 0.6, 1, vector<double>(17,-1000), vector<double>(17,1000), 1e-6, 100000, make_shared<f9_k8_Poly>() },
 		{ "f11_HyperEllipsoid_30", 20, 0.5, 0.1, vector<double>(30, -1), vector<double>(30, 1), 1e-10, 100000, make_shared<f11_HyperEllipsoid>(30) },
