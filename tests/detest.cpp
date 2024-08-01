@@ -60,163 +60,10 @@ typedef TemplateCalculation<testfunctions::Foxholes> f5_Foxholes;
 typedef TemplateCalculation<testfunctions::Corana> f6_Corana;
 typedef TemplateCalculation<testfunctions::Griewank> f7_Griewangk;
 typedef TemplateCalculation<testfunctions::Zimmermann> f8_Zimmermann;
-
-class f9_k4_Poly : public BaseCalculation
-{
-private:
-    vector<double> z;
-public:
-    f9_k4_Poly()
-    {
-        z.push_back(-1.2);
-        for (size_t i = 0 ; i < 60 ; i++)
-            z.push_back(i*2.0/(60-1) + (-1.0));
-        z.push_back(1.2);
-    }
-
-	double calculate(const vector<double> &x) override
-    {
-        auto T8 = [](double z) 
-        {
-            if (z == 1.2 || z == -1.2)
-                return 72.6606669;
-
-            double z2 = z*z;
-            double z4 = z2*z2; 
-            double z6 = z4*z2;
-            double z8 = z4*z4;
-            return 1.0 - 32.0*z2 + 160.0*z4 -256.0*z6 + 128.0*z8;
-        };
-
-        auto f9 = [](const vector<double> &x, double z)
-        {
-            double s = 0;
-            double zj = 1.0;
-            for (auto v : x)
-            {
-                s += v*zj;
-                zj *= z;
-            }
-            return s;
-        };
-
-        double sumDiff = 0;
-        for (auto zz : z)
-        {
-            double pred = f9(x, zz);
-            double real = T8(zz);
-            double diff = (pred-real);
-            double diffSquared = diff*diff;
-            sumDiff += diffSquared;
-        }
-        return sumDiff;
-    }
-};
-
-class f9_k8_Poly : public BaseCalculation
-{
-private:
-    vector<double> z;
-public:
-    f9_k8_Poly()
-    {
-        z.push_back(-1.2);
-        for (size_t i = 0 ; i < 60 ; i++)
-            z.push_back(i*2.0/(60-1) + (-1.0));
-        z.push_back(1.2);
-    }
-
-	double calculate(const vector<double> &x) override
-    {
-        auto T16 = [](double z) 
-        {
-            if (z == 1.2 || z == -1.2)
-                return 10558.1450229;
-
-            double z2 = z*z;
-            double z4 = z2*z2; 
-            double z6 = z4*z2;
-            double z8 = z4*z4;
-            double z10 = z4*z6;
-            double z12 = z6*z6;
-            double z14 = z8*z6;
-            double z16 = z8*z8;
-            return 1.0 - 128.0*z2 + 2688.0*z4 -21504.0*z6 + 84480.0*z8
-                  -180224.0*z10 + 212992.0*z12 -131072.0*z14 + 32768.0*z16;
-        };
-
-        auto f9 = [](const vector<double> &x, double z)
-        {
-            double s = 0;
-            double zj = 1.0;
-            for (auto v : x)
-            {
-                s += v*zj;
-                zj *= z;
-            }
-            return s;
-        };
-
-        double sumDiff = 0;
-        for (auto zz : z)
-        {
-            double pred = f9(x, zz);
-            double real = T16(zz);
-            double diff = (pred-real);
-            double diffSquared = diff*diff;
-            sumDiff += diffSquared;
-        }
-        return sumDiff;
-    }
-};
-
-class f11_HyperEllipsoid : public BaseCalculation
-{
-private:
-    const size_t m_D;
-public:
-    f11_HyperEllipsoid(size_t D) : m_D(D) { }
-
-	double calculate(const vector<double> &x) override
-    {
-        double s = 0;
-
-        for (size_t j = 0 ; j < m_D ; j++)
-            s += (j+1.0)*(j+1.0)*x[j]*x[j];
-
-        return s;
-    }
-};
-
-class f12_Katsuura : public BaseCalculation
-{
-private:
-    const size_t m_D;
-public:
-    f12_Katsuura(size_t D) : m_D(D) { }
-
-    double calculate(const vector<double> &x) override
-    {
-        double p = 1.0;
-
-        for (size_t j = 0 ; j < m_D ; j++)
-        {
-            double s = 0.0;
-            double twok = 2.0;
-            for (size_t k = 1 ; k < 33 ; k++)
-            {
-                s += std::floor(std::abs(twok*x[j]))/twok;
-                twok *= 2.0;
-            }
-
-            s *= (j+1.0);
-            s += 1.0;
-
-            p *= s;
-        }
-        return p;
-    }
-};
+typedef TemplateCalculation<testfunctions::k4_Poly> f9_k4_Poly;
+typedef TemplateCalculation<testfunctions::k8_Poly> f9_k8_Poly;
+typedef TemplateCalculation<testfunctions::HyperEllipsoid> f11_HyperEllipsoid;
+typedef TemplateCalculation<testfunctions::Katsuura> f12_Katsuura;
 
 template<class T>
 class ValueToReachStop : public StopCriterion
@@ -329,12 +176,12 @@ int main(int argc, char const *argv[])
 		{ "f6_Corana", 10, 0.5, 0, { -1000, -1000, -1000, -1000}, { 1000, 1000, 1000, 1000}, 1e-6, 100000, make_shared<f6_Corana>(pair(-1000.0, 1000.0)) },
 		{ "f7_Griewangk", 25, 0.5, 0.2, vector<double>(10, -400), vector<double>(10, 400), 1e-6, 100000, make_shared<f7_Griewangk>(10, pair(-400.0,400.0)) },
 		{ "f8_Zimmermann", 10, 0.9, 0.9, { 0.0, 0.0 }, { 100.0, 100.0 }, 1e-6, 100000, make_shared<f8_Zimmermann>(pair(0.0,100.0)) },
-		{ "f9_k4_Poly", 60, 0.6, 1, vector<double>(9,-100), vector<double>(9,100), 1e-6, 100000, make_shared<f9_k4_Poly>() },
-		{ "f9_k8_Poly", 100, 0.6, 1, vector<double>(17,-1000), vector<double>(17,1000), 1e-6, 100000, make_shared<f9_k8_Poly>() },
-		{ "f11_HyperEllipsoid_30", 20, 0.5, 0.1, vector<double>(30, -1), vector<double>(30, 1), 1e-10, 100000, make_shared<f11_HyperEllipsoid>(30) },
-		{ "f11_HyperEllipsoid_100", 20, 0.5, 0.1, vector<double>(100, -1), vector<double>(100, 1), 1e-10, 100000, make_shared<f11_HyperEllipsoid>(100) },
-		{ "f12_Katsuura_10", 15, 0.5, 0.1, vector<double>(10, -1000), vector<double>(10, 1000), 1.05, 100000, make_shared<f12_Katsuura>(10) },
-		{ "f12_Katsuura_30", 15, 0.5, 0.1, vector<double>(30, -1000), vector<double>(30, 1000), 1.05, 100000, make_shared<f12_Katsuura>(30) },
+		{ "f9_k4_Poly", 60, 0.6, 1, vector<double>(9,-100), vector<double>(9,100), 1e-6, 100000, make_shared<f9_k4_Poly>(pair(-100.0,100.0)) },
+		{ "f9_k8_Poly", 100, 0.6, 1, vector<double>(17,-1000), vector<double>(17,1000), 1e-6, 100000, make_shared<f9_k8_Poly>(pair(-1000.0,1000.0)) },
+		{ "f11_HyperEllipsoid_30", 20, 0.5, 0.1, vector<double>(30, -1), vector<double>(30, 1), 1e-10, 100000, make_shared<f11_HyperEllipsoid>(30, pair(-1.0,1.0)) },
+		{ "f11_HyperEllipsoid_100", 20, 0.5, 0.1, vector<double>(100, -1), vector<double>(100, 1), 1e-10, 100000, make_shared<f11_HyperEllipsoid>(100, pair(-1.0,1.0)) },
+		{ "f12_Katsuura_10", 15, 0.5, 0.1, vector<double>(10, -1000), vector<double>(10, 1000), 1.05, 100000, make_shared<f12_Katsuura>(10, pair(-1000.0,1000.0)) },
+		{ "f12_Katsuura_30", 15, 0.5, 0.1, vector<double>(30, -1000), vector<double>(30, 1000), 1.05, 100000, make_shared<f12_Katsuura>(30, pair(-1000.0,1000.0)) },
 	};
 
 	auto comp = make_shared<ValueFitnessComparison<double>>();

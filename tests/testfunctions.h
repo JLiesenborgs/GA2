@@ -686,6 +686,164 @@ public:
 	}
 };
 
+class k4_Poly : public TestFunctionSimpleRanges
+{
+public:
+	k4_Poly(double2_t ipr, double2_t bounds = unbounded())
+		: TestFunctionSimpleRanges(9, ipr, bounds)
+	{
+        z.push_back(-1.2);
+        for (size_t i = 0 ; i < 60 ; i++)
+            z.push_back(i*2.0/(60-1) + (-1.0));
+        z.push_back(1.2);
+	}
+
+	std::vector<double> calculateInternal(const std::vector<double> &x) override
+	{	
+		        auto T8 = [](double z) 
+        {
+            if (z == 1.2 || z == -1.2)
+                return 72.6606669;
+
+            double z2 = z*z;
+            double z4 = z2*z2; 
+            double z6 = z4*z2;
+            double z8 = z4*z4;
+            return 1.0 - 32.0*z2 + 160.0*z4 -256.0*z6 + 128.0*z8;
+        };
+
+        auto f9 = [](const std::vector<double> &x, double z)
+        {
+            double s = 0;
+            double zj = 1.0;
+            for (auto v : x)
+            {
+                s += v*zj;
+                zj *= z;
+            }
+            return s;
+        };
+
+        double sumDiff = 0;
+        for (auto zz : z)
+        {
+            double pred = f9(x, zz);
+            double real = T8(zz);
+            double diff = (pred-real);
+            double diffSquared = diff*diff;
+            sumDiff += diffSquared;
+        }
+        return { sumDiff };
+	}
+
+    std::vector<double> z;
+};
+
+class k8_Poly : public TestFunctionSimpleRanges
+{
+public:
+	k8_Poly(double2_t ipr, double2_t bounds = unbounded())
+		: TestFunctionSimpleRanges(17, ipr, bounds)
+	{
+		z.push_back(-1.2);
+        for (size_t i = 0 ; i < 60 ; i++)
+            z.push_back(i*2.0/(60-1) + (-1.0));
+        z.push_back(1.2);
+	}
+
+	std::vector<double> calculateInternal(const std::vector<double> &x) override
+	{
+		auto T16 = [](double z) 
+        {
+            if (z == 1.2 || z == -1.2)
+                return 10558.1450229;
+
+            double z2 = z*z;
+            double z4 = z2*z2; 
+            double z6 = z4*z2;
+            double z8 = z4*z4;
+            double z10 = z4*z6;
+            double z12 = z6*z6;
+            double z14 = z8*z6;
+            double z16 = z8*z8;
+            return 1.0 - 128.0*z2 + 2688.0*z4 -21504.0*z6 + 84480.0*z8
+                  -180224.0*z10 + 212992.0*z12 -131072.0*z14 + 32768.0*z16;
+        };
+
+        auto f9 = [](const std::vector<double> &x, double z)
+        {
+            double s = 0;
+            double zj = 1.0;
+            for (auto v : x)
+            {
+                s += v*zj;
+                zj *= z;
+            }
+            return s;
+        };
+
+        double sumDiff = 0;
+        for (auto zz : z)
+        {
+            double pred = f9(x, zz);
+            double real = T16(zz);
+            double diff = (pred-real);
+            double diffSquared = diff*diff;
+            sumDiff += diffSquared;
+        }
+        return { sumDiff };
+	}
+
+	std::vector<double> z;
+};
+
+class HyperEllipsoid : public TestFunctionSimpleRanges
+{
+public:
+	HyperEllipsoid(size_t dim, double2_t ipr, double2_t bounds = unbounded())
+		: TestFunctionSimpleRanges(dim, ipr, bounds) { }
+
+	std::vector<double> calculateInternal(const std::vector<double> &x) override
+	{
+		double s = 0;
+
+        for (size_t j = 0 ; j < x.size() ; j++)
+            s += (j+1.0)*(j+1.0)*x[j]*x[j];
+
+        return { s };
+	}
+};
+
+class Katsuura : public TestFunctionSimpleRanges
+{
+public:
+	Katsuura(size_t dim, double2_t ipr, double2_t bounds = unbounded())
+		: TestFunctionSimpleRanges(dim, ipr, bounds) { }
+
+	std::vector<double> calculateInternal(const std::vector<double> &x) override
+	{
+		double p = 1.0;
+
+        for (size_t j = 0 ; j < x.size() ; j++)
+        {
+            double s = 0.0;
+            double twok = 2.0;
+            for (size_t k = 1 ; k < 33 ; k++)
+            {
+                s += std::floor(std::abs(twok*x[j]))/twok;
+                twok *= 2.0;
+            }
+
+            s *= (j+1.0);
+            s += 1.0;
+
+            p *= s;
+        }
+
+		return { p };
+	}
+};
+
 } // end namespace testfunctions
 
 } // end namespace eatk
