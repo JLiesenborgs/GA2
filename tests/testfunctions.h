@@ -334,7 +334,10 @@ class AckleyFunction1 : public TestFunctionSimpleRanges
 {
 public:
 	AckleyFunction1(size_t dim, double2_t ipr, double2_t bounds = unbounded())
-		: TestFunctionSimpleRanges(dim, ipr, bounds) { }
+		: TestFunctionSimpleRanges(dim, ipr, bounds), m_sqrtFactor(-0.2) { }
+
+	AckleyFunction1(size_t dim, double sqrtFactor, double2_t ipr, double2_t bounds = unbounded())
+		: TestFunctionSimpleRanges(dim, ipr, bounds), m_sqrtFactor(sqrtFactor) { }
 
 	std::vector<double> calculateInternal(const std::vector<double> &x) override
 	{
@@ -346,8 +349,10 @@ public:
 			sum2 += std::cos(2.0*M_PI*v);
 		}
 
-		return { -20.0*std::exp(-0.2*std::sqrt(sum1/m_dim)) - std::exp(sum2/m_dim) + 20.0 + std::exp(1) };
+		return { -20.0*std::exp(m_sqrtFactor*std::sqrt(sum1/m_dim)) - std::exp(sum2/m_dim) + 20.0 + std::exp(1) };
 	}
+private:
+	double m_sqrtFactor;
 };
 
 // Also f11 in JADE article
