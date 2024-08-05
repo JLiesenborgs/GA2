@@ -7,6 +7,7 @@
 #include <memory>
 #include <algorithm>
 #include <string>
+#include "testfunctions.h"
 
 using namespace std;
 
@@ -21,520 +22,53 @@ struct Problem
 	virtual double evaluate(const vector<double> &trial) = 0;
 };
 
-struct f1_Sphere : public Problem // Parameters from deshort1.ps
+template <class T>
+struct TestProblemTemplate : public Problem
 {
-	size_t NP() override { return 5; }
-	size_t D() override { return 3; }
+	template <typename... Args>
+	TestProblemTemplate(size_t NP, double F, double CR, double VTR, Args&&... args)
+		: m_NP(NP), m_F(F), m_CR(CR), m_VTR(VTR), m_f(std::forward<Args>(args)...) { }
 	vector<vector<double>> IPR() override
 	{
-		return { { -5.12, 5.12 }, { -5.12, 5.12 }, { -5.12, 5.12 } };
-	}
-	double F() override { return 0.9; }
-	double CR() override { return 0.1; }
-	double VTR() override { return 1e-6; }
-	double evaluate(const vector<double> &x) override
-	{
-		return x[0]*x[0] + x[1]*x[1] + x[2]*x[2];
-	}
-};
+		auto [ lower, upper ] = m_f.getInitialParameterRange();
+		if (lower.size() != upper.size())
+			throw runtime_error("Internal error: IPR ranges of different length");
 
-struct f2_Rosenbrock : public Problem
-{
-	size_t NP() override { return 10; }
-	size_t D() override { return 2; }
-	vector<vector<double>> IPR() override
-	{
-		return { { -2.048, 2.048 }, { -2.048, 2.048 } };
-	}
-	double F() override { return 0.9; }
-	double CR() override { return 0.9; }
-	double VTR() override { return 1e-6; }
-	double evaluate(const vector<double> &x) override
-	{
-		return 100.0*(x[0]*x[0] - x[1])*(x[0]*x[0] - x[1]) + (1.0-x[0])*(1.0-x[0]);
-	}
-};
-
-struct f3_Step : public Problem
-{
-	size_t NP() override { return 10; }
-	size_t D() override { return 5; }
-	vector<vector<double>> IPR() override
-	{
 		vector<vector<double>> ipr;
-		for (size_t i = 0 ; i < 5 ; i++)
-			ipr.push_back({-5.12, 5.12});
+		for (size_t i = 0 ; i < lower.size() ; i++)
+			ipr.push_back({lower[i], upper[i]});
+
 		return ipr;
 	}
-	double F() override { return 0.9; }
-	double CR() override { return 0.0; }
-	double VTR() override { return 1e-6; }
-	double evaluate(const vector<double> &x) override
-	{
-		double r = 30;
-		for (double c: x)
-		{
-			if (std::abs(c) <= 5.12)
-				r += std::floor(c);
-			else if (c > 5.12)
-				r += 30.0*(c-5.12);
-			else
-				r += 30.0*(5.12-c);
-		}
-		return r;
-	}
+
+	size_t NP() override { return m_NP; }
+	double F() override { return m_F; }
+	double CR() override { return m_CR; }
+	double VTR() override { return m_VTR; }
+
+	size_t D() override { return m_f.getDimensions(); }
+	double evaluate(const vector<double> &trial) override { return m_f.calculate1(trial); }
+
+	T m_f;
+	size_t m_NP;
+	double m_F, m_CR, m_VTR;
 };
 
-struct f4_Quartic : public Problem // Is this right?
-{
-	f4_Quartic(mt19937 &rng) : m_rng(rng) { }
-
-	size_t NP() override { return 10; }
-	size_t D() override { return 30; }
-	vector<vector<double>> IPR() override
-	{
-		vector<vector<double>> ipr;
-		for (size_t i = 0 ; i < 30 ; i++)
-			ipr.push_back({-1.28, 1.28});
-		return ipr;
-	}
-	double F() override { return 0.9; }
-	double CR() override { return 0.0; }
-	double VTR() override { return 15.0; }
-	double evaluate(const vector<double> &x) override
-	{
-		uniform_real_distribution<> dist(0, 1);
-
-		double s = 0;
-		for (size_t j = 0 ; j < 30 ; j++)
-		{
-			double eta = dist(m_rng);
-			s += (x[j]*x[j]*x[j]*x[j]*(j+1) + eta);
-		}
-		return s;
-
-	}
-
-	mt19937 &m_rng;
-};
-
-struct f5_Foxholes : public Problem
-{
-	vector<vector<double>> a;
-	f5_Foxholes()
-	{
-		a = { 
-			{ -32, -16, 0, 16, 32, -32, -16, 0, 16, 32, -32, -16, 0, 16, 32,-32, -16, 0, 16, 32,-32, -16, 0, 16, 32},
-			{ -32, -32, -32, -32, -32, -16, -16, -16, -16, -16, 0,0,0,0,0, 16,16,16,16,16, 32,32,32,32,32 }	  
-		};
-	}
-	size_t NP() override { return 15; }
-	size_t D() override { return 2; }
-	vector<vector<double>> IPR() override
-	{
-		return { { -65.536, 65.536 }, { -65.536, 65.536 } };
-	}
-	double F() override { return 0.9; }
-	double CR() override { return 0; }
-	double VTR() override { return 0.998005; }
-	double evaluate(const vector<double> &x) override
-	{
-		double s = 0.002;
-		for (size_t i = 0 ; i < 25 ; i++)
-		{
-			double term = i + 1.0;
-
-			double diff0 = x[0] - a[0][i];
-			double diff1 = x[1] - a[1][i];
-
-			term += diff0*diff0*diff0*diff0*diff0*diff0;
-			term += diff1*diff1*diff1*diff1*diff1*diff1;
-
-			s += 1.0/term;
-		}
-		return 1.0/s;
-	}
-};
-
-struct f6_Corana : public Problem
-{
-	size_t NP() override { return 10; }
-	size_t D() override { return 4; }
-	vector<vector<double>> IPR() override
-	{
-		return { { -1000, 1000 }, { -1000, 1000 }, { -1000, 1000 }, { -1000, 1000 } };
-	}
-	double F() override { return 0.5; }
-	double CR() override { return 0; }
-	double VTR() override { return 1e-6; }
-	double evaluate(const vector<double> &x) override
-	{
-		static const double d[] = {1,1000,10,100};
-		auto sign = [](double x) -> double
-		{
-			if (x > 0)
-				return 1.0;
-			if (x < 0)
-				return -1.0;
-			return 0.0;
-		};
-
-		double s = 0;
-		for (size_t i = 0 ; i < 4 ; i++)
-		{
-			double z = std::floor(std::abs(x[i]/0.2) + 0.49999)*sign(x[i])*0.2;
-			if (std::abs(x[i] - z) < 0.05)
-				s += 0.15*(z-0.05*sign(z))*(z-0.05*sign(z))*d[i];
-			else
-				s += d[i]*x[i]*x[i];
-		}
-		return s;
-	}
-};
-
-struct f7_Griewangk : public Problem
-{
-	size_t NP() override { return 25; }
-	size_t D() override { return 10; }
-	vector<vector<double>> IPR() override
-	{
-		vector<vector<double>> ipr;
-		for (size_t i = 0 ; i < 10 ; i++)
-			ipr.push_back({-400,400});
-		return ipr;
-	}
-	double F() override { return 0.5; }
-	double CR() override { return 0.2; }
-	double VTR() override { return 1e-6; }
-	double evaluate(const vector<double> &x) override
-	{
-		double s = 1.0;
-		for (size_t i = 0 ; i < 10 ; i++)
-			s+= x[i]*x[i]/4000.0;
-
-		double p = 1.0;
-		for (size_t i = 0 ; i < 10 ; i++)
-			p *= std::cos(x[i]/std::sqrt(i+1));
-		
-		return s - p;
-	}
-};
-
-struct f8_Zimmermann : public Problem // (settings from deshort1.ps) back to settings from paper
-{
-	size_t NP() override { return 10; }
-	size_t D() override { return 2; }
-	vector<vector<double>> IPR() override
-	{
-		return { { 0, 100 }, { 0, 100 } };
-	}
-	double F() override { return 0.9; }
-	double CR() override { return 0.9; }
-	double VTR() override { return 1e-6; }
-	double evaluate(const vector<double> &x) override
-	{
-		double f = 9.0 - x[0] - x[1];
-		double constraint1 = (x[0] - 3.0)*(x[0] - 3.0) + (x[1] - 2.0)*(x[1] - 2.0);
-		double constraint2 =  x[0]*x[1];
-
-		if (constraint1 > 16)
-			f += 100 + 100*(constraint1 - 16);
-		if (constraint2 > 14)
-			f += 100 + 100*(constraint2 - 14);
-		return f;
-	}
-};
-
-struct f9_k4_Poly : public Problem
-{
-	vector<double> z;
-
-	f9_k4_Poly()
-	{
-		z.push_back(-1.2);
-		for (size_t i = 0 ; i < 60 ; i++)
-			z.push_back(i*2.0/(60-1) + (-1.0));
-		z.push_back(1.2);
-	}
-	size_t NP() override { return 60; }
-	size_t D() override { return 9; }
-	vector<vector<double>> IPR() override
-	{
-		vector<vector<double>> ipr;
-		for (size_t i = 0 ; i < 9 ; i ++)
-			ipr.push_back({ -100, 100});
-		return ipr;
-	}
-	double F() override { return 0.6; }
-	double CR() override { return 1; }
-	double VTR() override { return 1e-6; }
-	double evaluate(const vector<double> &x) override
-	{
-		auto T8 = [](double z) 
-		{
-			if (z == 1.2 || z == -1.2)
-				return 72.6606669;
-
-			double z2 = z*z;
-			double z4 = z2*z2; 
-			double z6 = z4*z2;
-			double z8 = z4*z4;
-			return 1.0 - 32.0*z2 + 160.0*z4 -256.0*z6 + 128.0*z8;
-		};
-
-		auto f9 = [](const vector<double> &x, double z)
-		{
-			double s = 0;
-			double zj = 1.0;
-			for (auto v : x)
-			{
-				s += v*zj;
-				zj *= z;
-			}
-			return s;
-		};
-
-		double sumDiff = 0;
-		for (auto zz : z)
-		{
-			double pred = f9(x, zz);
-			double real = T8(zz);
-			double diff = (pred-real);
-			double diffSquared = diff*diff;
-			sumDiff += diffSquared;
-		}
-		return sumDiff;
-	}
-};
-
-struct f9_k8_Poly : public Problem
-{
-	vector<double> z;
-
-	f9_k8_Poly()
-	{
-		z.push_back(-1.2);
-		for (size_t i = 0 ; i < 60 ; i++)
-			z.push_back(i*2.0/(60-1) + (-1.0));
-		z.push_back(1.2);
-	}
-	size_t NP() override { return 100; }
-	size_t D() override { return 17; }
-	vector<vector<double>> IPR() override
-	{
-		vector<vector<double>> ipr;
-		for (size_t i = 0 ; i < 17 ; i ++)
-			ipr.push_back({ -1000, 1000});
-		return ipr;
-	}
-	double F() override { return 0.6; }
-	double CR() override { return 1; }
-	double VTR() override { return 1e-6; }
-	double evaluate(const vector<double> &x) override
-	{
-		auto T16 = [](double z) 
-		{
-			if (z == 1.2 || z == -1.2)
-				return 10558.1450229;
-
-			double z2 = z*z;
-			double z4 = z2*z2; 
-			double z6 = z4*z2;
-			double z8 = z4*z4;
-			double z10 = z4*z6;
-			double z12 = z6*z6;
-			double z14 = z8*z6;
-			double z16 = z8*z8;
-			return 1.0 - 128.0*z2 + 2688.0*z4 -21504.0*z6 + 84480.0*z8
-				  -180224.0*z10 + 212992.0*z12 -131072.0*z14 + 32768.0*z16;
-		};
-
-		auto f9 = [](const vector<double> &x, double z)
-		{
-			double s = 0;
-			double zj = 1.0;
-			for (auto v : x)
-			{
-				s += v*zj;
-				zj *= z;
-			}
-			return s;
-		};
-
-		double sumDiff = 0;
-		for (auto zz : z)
-		{
-			double pred = f9(x, zz);
-			double real = T16(zz);
-			double diff = (pred-real);
-			double diffSquared = diff*diff;
-			sumDiff += diffSquared;
-		}
-		return sumDiff;
-	}
-};
-
-struct f11_HyperEllipsoid : public Problem
-{
-	const size_t m_D;
-
-	f11_HyperEllipsoid(size_t D) : m_D(D) { }
-
-	size_t NP() override { return 20; }
-	size_t D() override { return m_D; }
-	vector<vector<double>> IPR() override
-	{
-		vector<vector<double>> ipr;
-		for (size_t i = 0 ; i < m_D ; i ++)
-			ipr.push_back({ -1, 1 });
-		return ipr;
-	}
-	double F() override { return 0.5; }
-	double CR() override { return 0.1; }
-	double VTR() override { return 1e-10; }
-	double evaluate(const vector<double> &x) override
-	{
-		double s = 0;
-
-		for (size_t j = 0 ; j < m_D ; j++)
-			s += (j+1.0)*(j+1.0)*x[j]*x[j];
-
-		return s;
-	}
-};
-
-struct f12_Katsuura : public Problem
-{
-	const size_t m_D;
-
-	f12_Katsuura(size_t D) : m_D(D) { }
-
-	size_t NP() override { return 15; }
-	size_t D() override { return m_D; }
-	vector<vector<double>> IPR() override
-	{
-		vector<vector<double>> ipr;
-		for (size_t i = 0 ; i < m_D ; i ++)
-			ipr.push_back({ -1000, 1000 });
-		return ipr;
-	}
-	double F() override { return 0.5; }
-	double CR() override { return 0.1; }
-	double VTR() override { return 1.05; }
-	double evaluate(const vector<double> &x) override
-	{
-		double p = 1.0;
-
-		for (size_t j = 0 ; j < m_D ; j++)
-		{
-			double s = 0.0;
-			double twok = 2.0;
-			for (size_t k = 1 ; k < 33 ; k++)
-			{
-				s += std::floor(std::abs(twok*x[j]))/twok;
-				twok *= 2.0;
-			}
-
-			s *= (j+1.0);
-			s += 1.0;
-
-			p *= s;
-		}
-		return p;
-	}
-};
-
-struct f13_Rastrigin : public Problem
-{
-	const size_t m_D;
-
-	f13_Rastrigin(size_t D) : m_D(D) { }
-
-	size_t NP() override { return 25; }
-	size_t D() override { return m_D; }
-	vector<vector<double>> IPR() override
-	{
-		vector<vector<double>> ipr;
-		for (size_t i = 0 ; i < m_D ; i ++)
-			ipr.push_back({ -600, 600 });
-		return ipr;
-	}
-	double F() override { return 0.5; }
-	double CR() override { return 0.0; }
-	double VTR() override { return 0.9; }
-	double evaluate(const vector<double> &x) override
-	{
-		double s = 10.0*m_D;
-		for (size_t j = 0 ; j < m_D ; j++)
-			s += ( x[j]*x[j] - 10.0*std::cos(2.0*M_PI*x[j]) );
-
-		return s;
-	}
-};
-
-struct f14_Griewangk : public Problem
-{
-	const size_t m_D;
-
-	f14_Griewangk(size_t D) : m_D(D) { }
-
-	size_t NP() override { return 20; }
-	size_t D() override { return m_D; }
-	vector<vector<double>> IPR() override
-	{
-		vector<vector<double>> ipr;
-		for (size_t i = 0 ; i < m_D ; i++)
-			ipr.push_back({-600,600});
-		return ipr;
-	}
-	double F() override { return 0.5; }
-	double CR() override { return 0.1; }
-	double VTR() override { return 1e-3; }
-	double evaluate(const vector<double> &x) override
-	{
-		double s = 1.0;
-		for (size_t i = 0 ; i < m_D ; i++)
-			s+= x[i]*x[i]/4000.0;
-
-		double p = 1.0;
-		for (size_t i = 0 ; i < m_D ; i++)
-			p *= std::cos(x[i]/std::sqrt(i+1));
-		
-		return s - p;
-	}
-};
-
-struct f15_Ackley : public Problem
-{
-	const size_t m_D;
-
-	f15_Ackley(size_t D) : m_D(D) { }
-
-	size_t NP() override { return 20; }
-	size_t D() override { return m_D; }
-	vector<vector<double>> IPR() override
-	{
-		vector<vector<double>> ipr;
-		for (size_t i = 0 ; i < m_D ; i++)
-			ipr.push_back({-30,30});
-		return ipr;
-	}
-	double F() override { return 0.5; } // settings from article don't seem to work well?
-	double CR() override { return 0.1; }
-	double VTR() override { return 1e-3; }
-	double evaluate(const vector<double> &x) override
-	{
-		double squaredSum = 0.0;
-		double cosSum = 0.0;
-		for (size_t i = 0 ; i < m_D ; i++)
-		{
-			squaredSum += x[i]*x[i];
-			cosSum += std::cos(2.0*M_PI*x[i]);
-		}
-
-		return -20.0*std::exp(-0.02*std::sqrt(squaredSum/m_D)) - std::exp(cosSum/m_D) + 20.0 + std::exp(1.0);
-	}
-};
+typedef TestProblemTemplate<eatk::testfunctions::Sphere> f1_Sphere;
+typedef TestProblemTemplate<eatk::testfunctions::Rosenbrock> f2_Rosenbrock;
+typedef TestProblemTemplate<eatk::testfunctions::Mod3rdDeJong> f3_Step;
+typedef TestProblemTemplate<eatk::testfunctions::QuarticWithNoise> f4_Quartic;
+typedef TestProblemTemplate<eatk::testfunctions::Foxholes> f5_Foxholes;
+typedef TestProblemTemplate<eatk::testfunctions::Corana> f6_Corana;
+typedef TestProblemTemplate<eatk::testfunctions::Griewank> f7_Griewangk;
+typedef TestProblemTemplate<eatk::testfunctions::Zimmermann> f8_Zimmermann;
+typedef TestProblemTemplate<eatk::testfunctions::k4_Poly> f9_k4_Poly;
+typedef TestProblemTemplate<eatk::testfunctions::k8_Poly> f9_k8_Poly;
+typedef TestProblemTemplate<eatk::testfunctions::HyperEllipsoid> f11_HyperEllipsoid;
+typedef TestProblemTemplate<eatk::testfunctions::Katsuura> f12_Katsuura;
+typedef TestProblemTemplate<eatk::testfunctions::Rastrigin> f13_Rastrigin;
+typedef TestProblemTemplate<eatk::testfunctions::Griewank> f14_Griewangk;
+typedef TestProblemTemplate<eatk::testfunctions::AckleyFunction1> f15_Ackley;
 
 struct f16_Goldstein : public Problem
 {
@@ -1047,29 +581,33 @@ bool runDEonProblem(mt19937 &rng, Problem &problem)
 int main(int argc, char *argv[])
 {
 	random_device rd;
-	mt19937 rng(rd());
+	unsigned int seed = rd();
+	if (getenv("SEED"))
+		seed = (unsigned int)stoul(getenv("SEED"));
+
+	auto rng = make_shared<mt19937>(seed);
 	
 	map<string, shared_ptr<Problem>> problems {
-		{ "f1", make_shared<f1_Sphere>() },
-		{ "f2", make_shared<f2_Rosenbrock>() },
-		{ "f3", make_shared<f3_Step>() },
-		// { "f4", make_shared<f4_Quartic>(rng) },
-		{ "f5", make_shared<f5_Foxholes>() },
-		{ "f6", make_shared<f6_Corana>() },
-		{ "f7", make_shared<f7_Griewangk>() },
-		{ "f8", make_shared<f8_Zimmermann>() },
-		{ "f9_k4", make_shared<f9_k4_Poly>() },
-		{ "f9_k8", make_shared<f9_k8_Poly>() },
-		{ "f11_30", make_shared<f11_HyperEllipsoid>(30) },
-		{ "f11_100", make_shared<f11_HyperEllipsoid>(100) },
-		{ "f12_10", make_shared<f12_Katsuura>(10) },
-		{ "f12_30", make_shared<f12_Katsuura>(30) },
-		{ "f13_20", make_shared<f13_Rastrigin>(20) },
-		{ "f13_100", make_shared<f13_Rastrigin>(100) },
-		{ "f14_20", make_shared<f14_Griewangk>(20) },
-		{ "f14_100", make_shared<f14_Griewangk>(100) },
-		{ "f15_30", make_shared<f15_Ackley>(30) },
-		{ "f15_100", make_shared<f15_Ackley>(100) },
+		{ "f1", make_shared<f1_Sphere>(5, 0.9, 0.1, 1e-6, 3, pair(-5.12, 5.12)) },
+		{ "f2", make_shared<f2_Rosenbrock>(10, 0.9, 0.9, 1e-6, pair(-2.048, 2.048)) },
+		{ "f3", make_shared<f3_Step>(10, 0.9, 0.0, 1e-6, pair(-5.12, 5.12)) },
+		//{ "f4", make_shared<f4_Quartic>(10, 0.9, 0.0, 15.0, 30, rng, true, pair(-1.28, 1.28)) },
+		{ "f5", make_shared<f5_Foxholes>(15, 0.9, 0.0, 0.998005, pair(-65.536, 65.536)) },
+		{ "f6", make_shared<f6_Corana>(10, 0.5, 0.0, 1e-6, pair(-1000.0, 1000.0)) },
+		{ "f7", make_shared<f7_Griewangk>(25, 0.5, 0.2, 1e-6, 10, pair(-400.0,400.0)) },
+		{ "f8", make_shared<f8_Zimmermann>(10, 0.9, 0.9, 1e-6, pair(0.0, 100.0)) },
+		{ "f9_k4", make_shared<f9_k4_Poly>(60, 0.6, 1.0, 1e-6, pair(-100.0, 100.0)) },
+		{ "f9_k8", make_shared<f9_k8_Poly>(100, 0.6, 1.0, 1e-6, pair(-1000.0, 1000.0)) },
+		{ "f11_30", make_shared<f11_HyperEllipsoid>(20, 0.5, 0.1, 1e-10, 30, pair(-1.0, 1.0)) },
+		{ "f11_100", make_shared<f11_HyperEllipsoid>(20, 0.5, 0.1, 1e-10, 100, pair(-1.0, 1.0)) },
+		{ "f12_10", make_shared<f12_Katsuura>(15, 0.5, 0.1, 1.05, 10, pair(-1000.0, 1000.0)) },
+		{ "f12_30", make_shared<f12_Katsuura>(15, 0.5, 0.1, 1.05, 30, pair(-1000.0, 1000.0)) },
+		{ "f13_20", make_shared<f13_Rastrigin>(25, 0.5, 0.0, 0.9, 20, pair(-600.0, 600.0)) },
+		{ "f13_100", make_shared<f13_Rastrigin>(25, 0.5, 0.0, 0.9, 100, pair(-600.0, 600.0)) },
+		{ "f14_20", make_shared<f14_Griewangk>(20, 0.5, 0.1, 1e-3, 20, pair(-600.0, 600.0)) },
+		{ "f14_100", make_shared<f14_Griewangk>(20, 0.5, 0.1, 1e-3, 100, pair(-600.0, 600.0)) },
+		{ "f15_30", make_shared<f15_Ackley>(20, 0.5, 0.1, 1e-3, 30, pair(-30.0, 30.0)) },
+		{ "f15_100", make_shared<f15_Ackley>(20, 0.5, 0.1, 1e-3, 100, pair(-30.0, 30.0)) },
 		{ "f16", make_shared<f16_Goldstein>() },
 		{ "f17", make_shared<f17_PenalizedShubert>() },
 		{ "f18", make_shared<f18_2DPenalizedShubert>() },
@@ -1155,8 +693,6 @@ int main(int argc, char *argv[])
 		vector<string> names;
 		for (auto it : problems)
 			names.push_back(it.first);
-		sort(names.begin(), names.end());
-		cerr << "Available function names:" << endl;
 		for (auto &n : names)
 			cerr << "    " << n << endl;
 	};
@@ -1176,7 +712,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	if (!(runDEonProblem(rng, *(it->second))))
+	if (!(runDEonProblem(*rng, *(it->second))))
 		return -1;
 	return 0;
 }
