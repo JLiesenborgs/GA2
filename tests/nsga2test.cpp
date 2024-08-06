@@ -8,6 +8,7 @@
 #include "mersennerandomnumbergenerator.h"
 #include "vectorgenomedelikecrossover.h"
 #include "vectorgenomesimulatedbinarycrossover.h"
+#include "testfunctions.h"
 #include <stdexcept>
 #include <limits>
 #include <cmath>
@@ -97,270 +98,92 @@ private:
 	size_t m_N, m_M, m_popSize, m_numGen;
 };
 
-class Rosenbrock : public BaseCalculation
+template <class T>
+class BaseCalculationTemplate : public BaseCalculation
 {
 public:
-	Rosenbrock() : BaseCalculation(2, 1, 64, 2000) { }
-protected:
-	vector<double> calculate(const vector<double> &x) override
-	{
-		assert(x.size() == 2);
-		double x1 = x[0];
-		double x2 = x[1];
-
-		return { (100.0 * (x1*x1 - x2) * (x1*x1 - x2) + (1.0 - x1)*(1.0 - x1)) };
-	}
-
+	template <typename ... Args>
+	BaseCalculationTemplate(size_t dim, size_t numObj, size_t popSize, size_t numGen,
+							Args&& ... args)
+		: BaseCalculation(dim, numObj, popSize, numGen), m_f(std::forward<Args>(args)...) { }
+	
+	vector<double> calculate(const vector<double> &x) override { return m_f.calculate(x); }
 	void bounds(size_t dim, double &xMin, double &xMax) override
 	{
-		xMin = -2.048;
-		xMax = 2.048;
+		auto [lower,upper] = m_f.getInitialParameterRange();
+		xMin = lower.at(dim);
+		xMax = upper.at(dim);
 	}
+private:
+	T m_f;
 };
 
-class Griewank : public BaseCalculation
+class Rosenbrock : public BaseCalculationTemplate<eatk::testfunctions::Rosenbrock>
 {
 public:
-	Griewank() : BaseCalculation(10, 1, 64, 2000) { }
-protected:
-	vector<double> calculate(const vector<double> &x) override
-	{
-		assert(x.size() == 10);
-		double s = 1.0;
-        for (size_t i = 0 ; i < 10 ; i++)
-            s+= x[i]*x[i]/4000.0;
-
-        double p = 1.0;
-        for (size_t i = 0 ; i < 10 ; i++)
-            p *= std::cos(x[i]/std::sqrt(i+1));
-        
-        return { s - p };
-	}
-
-	void bounds(size_t dim, double &xMin, double &xMax) override
-	{
-		xMin = -400.0;
-		xMax = 400.0;
-	}
+	Rosenbrock() : BaseCalculationTemplate(2, 1, 64, 2000, pair(-2.048, 2.048)) { }
 };
 
-class SCH : public BaseCalculation
+class Griewank : public BaseCalculationTemplate<eatk::testfunctions::Griewank>
 {
 public:
-	SCH() : BaseCalculation(1, 2, 64, 2000) { }
-protected:
-	vector<double> calculate(const vector<double> &x) override
-	{
-		double x0 = x[0];
-		double f1 = x0 * x0;
-		double f2 = (x0 - 2.0) * (x0 - 2.0);
-		return {f1, f2};
-	}
-
-	void bounds(size_t dim, double &xMin, double &xMax) override
-	{
-		xMin = -1000.0;
-		xMax = 1000.0;
-	}
+	Griewank() : BaseCalculationTemplate(10, 1, 64, 2000, 10, pair(-400.0, 400.0)) { }
 };
 
-class FON : public BaseCalculation
+class SCH : public BaseCalculationTemplate<eatk::testfunctions::Schaffer>
 {
 public:
-	FON() : BaseCalculation(3, 2, 64, 2000) { }
-protected:
-	vector<double> calculate(const vector<double> &x) override
-	{
-		double f1 = 0, f2 = 0;
-		for (size_t i = 0 ; i < 3 ; i++)
-		{
-			f1 += pow((x[i] - 1.0/sqrt(3.0)), 2);
-			f2 += pow((x[i] + 1.0/sqrt(3.0)), 2);
-		}
-
-		f1 = 1.0-exp(-f1);
-		f2 = 1.0-exp(-f2);
-		return { f1, f2 };
-	}
-
-	void bounds(size_t dim, double &xMin, double &xMax) override
-	{
-		xMin = -4.0;
-		xMax = 4.0;
-	}
+	SCH() : BaseCalculationTemplate(1, 2, 64, 2000, pair(-1000.0, 1000.0)) { }
 };
 
-class POL : public BaseCalculation
+class FON : public BaseCalculationTemplate<eatk::testfunctions::FonsecaFleming>
 {
 public:
-	POL() : BaseCalculation(2, 2, 64, 2000) { }
-protected:
-	vector<double> calculate(const vector<double> &x) override
-	{
-		double A1 = 0.5*sin(1.0) - 2.0*cos(1.0) + sin(2.0) - 1.5*cos(2.0);
-		double A2 = 1.5*sin(1.0) - cos(1.0) + 2.0*sin(2.0) - 0.5*cos(2.0);
-		double B1 = 0.5*sin(x[0]) - 2.0*cos(x[0]) + sin(x[1]) - 1.5*cos(x[1]);
-		double B2 = 1.5*sin(x[0]) - cos(x[0]) + 2.0*sin(x[1]) - 0.5*cos(x[1]);
-		double f1 = 1.0 + pow(A1-B1,2) + pow(A2-B2,2);
-		double f2 = pow(x[0]+3.0, 2) + pow(x[1]+1.0, 2);
-		return { f1, f2 };
-	}
-
-	void bounds(size_t dim, double &xMin, double &xMax) override
-	{
-		xMin = -M_PI;
-		xMax = M_PI;
-	}
+	FON() : BaseCalculationTemplate(3, 2, 64, 2000, pair(-4.0, 4.0)) { }
 };
 
-class KUR : public BaseCalculation
+class POL : public BaseCalculationTemplate<eatk::testfunctions::Poloni>
 {
 public:
-	KUR() : BaseCalculation(3, 2, 64, 2000) { }
-protected:
-	vector<double> calculate(const vector<double> &x) override
-	{
-		double f1 = 0, f2 = 0;
-		for (size_t i = 0 ; i < 2 ; i++)
-			f1 += -10.0*exp(-0.2*sqrt(x[i]*x[i] + x[i+1]*x[i+1]));
-		for (size_t i = 0 ; i < 3 ; i++)
-			f2 += std::pow(std::abs(x[i]), 0.8) + 5.0*sin(x[i]*x[i]*x[i]);
-		return { f1, f2 };
-	}
-
-	void bounds(size_t dim, double &xMin, double &xMax) override
-	{
-		xMin = -5.0;
-		xMax = 5.0;
-	}
+	POL() : BaseCalculationTemplate(2, 2, 64, 2000, pair(-M_PI, M_PI)) { }
 };
 
-class ZDT1 : public BaseCalculation
+class KUR : public BaseCalculationTemplate<eatk::testfunctions::Kursawe>
 {
 public:
-	ZDT1() : BaseCalculation(30, 2, 128, 2000) { }
-protected:
-	vector<double> calculate(const vector<double> &x) override
-	{
-		double f1 = x[0];
-		double g = 0;
-		for (size_t i = 1 ; i < x.size() ; i++)
-			g += x[i];
-
-		g = 1.0 + 9.0*g/(double)(x.size() - 1);
-		double f2 = g*(1.0-sqrt(x[0]/g));
-		return { f1, f2 };
-	}
-
-	void bounds(size_t dim, double &xMin, double &xMax) override
-	{
-		xMin = 0.0;
-		xMax = 1.0;
-	}
+	KUR() : BaseCalculationTemplate(3, 2, 64, 2000, pair(-5.0, 5.0)) { }
 };
 
-class ZDT2 : public BaseCalculation
+class ZDT1 : public BaseCalculationTemplate<eatk::testfunctions::ZitzlerDebThiele1>
 {
 public:
-	ZDT2() : BaseCalculation(30, 2, 256, 2000) { }
-protected:
-	vector<double> calculate(const vector<double> &x) override
-	{
-		double f1 = x[0];
-		double g = 0;
-		for (size_t i = 1 ; i < x.size() ; i++)
-			g += x[i];
-
-		g = 1.0 + 9.0*g/(double)(x.size() - 1);
-		double f2 = g*(1.0-pow(x[0]/g, 2));
-		return { f1, f2 };
-	}
-
-	void bounds(size_t dim, double &xMin, double &xMax) override
-	{
-		xMin = 0.0;
-		xMax = 1.0;
-	}
+	ZDT1() : BaseCalculationTemplate(30, 2, 128, 2000, pair(0.0, 1.0)) { }
 };
 
-class ZDT3 : public BaseCalculation
+class ZDT2 : public BaseCalculationTemplate<eatk::testfunctions::ZitzlerDebThiele2>
 {
 public:
-	ZDT3() : BaseCalculation(30, 2, 128, 2000) { }
-protected:
-	vector<double> calculate(const vector<double> &x) override
-	{
-		double f1 = x[0];
-		double g = 0;
-		for (size_t i = 1 ; i < x.size() ; i++)
-			g += x[i];
-
-		g = 1.0 + 9.0*g/(double)(x.size() - 1);
-		double f2 = g*(1.0 - sqrt(x[0]/g) - (x[0]/g)*sin(10.0*M_PI*x[0]));
-		return { f1, f2 };
-	}
-
-	void bounds(size_t dim, double &xMin, double &xMax) override
-	{
-		xMin = 0.0;
-		xMax = 1.0;
-	}
+	ZDT2() : BaseCalculationTemplate(30, 2, 256, 2000, pair(0.0, 1.0)) { }
 };
 
-class ZDT4 : public BaseCalculation
+class ZDT3 : public BaseCalculationTemplate<eatk::testfunctions::ZitzlerDebThiele3>
 {
 public:
-	ZDT4() : BaseCalculation(10, 2, 128, 2000) { }
-protected:
-	vector<double> calculate(const vector<double> &x) override
-	{
-		double f1 = x[0];
-		double g = 0.0;
-		for (size_t i = 1 ; i < x.size() ; i++)
-			g += pow(x[i], 2) - 10.0*cos(4.0*M_PI*x[i]);
-
-		g = 1.0 + 10.0*((double)x.size()-1.0) + g;
-		double f2 = g*(1.0-sqrt(x[0]/g));
-		return { f1, f2 };
-	}
-
-	void bounds(size_t dim, double &xMin, double &xMax) override
-	{
-		if (dim == 0)
-		{
-			xMin = 0.0;
-			xMax = 1.0;
-		}
-		else
-		{
-			xMin = -5.0;
-			xMax = 5.0;
-		}
-	}
+	ZDT3() : BaseCalculationTemplate(30, 2, 128, 2000, pair(0.0, 1.0)) { }
 };
 
-class ZDT6 : public BaseCalculation
+class ZDT4 : public BaseCalculationTemplate<eatk::testfunctions::ZitzlerDebThiele4>
 {
 public:
-	ZDT6() : BaseCalculation(10, 2, 128, 2000) { }
-protected:
-	vector<double> calculate(const vector<double> &x) override
-	{
-		double f1 = 1.0 - exp(-4.0*x[0])*pow(sin(6.0*M_PI*x[0]), 6);
-		double g = 0.0;
-		for (size_t i = 1 ; i < x.size() ; i++)
-			g += x[i];
+	ZDT4() : BaseCalculationTemplate(10, 2, 128, 2000, 
+		vector{0.0,-5.0,-5.0,-5.0,-5.0,-5.0,-5.0,-5.0,-5.0,-5.0 },
+		vector{1.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0 }) { }
+};
 
-		g = 1.0 + 9.0*pow(g/((double)x.size() - 1.0), 0.25);
-		double f2 = g*(1.0-pow(f1/g, 2));
-		return { f1, f2 };
-	}
-
-	void bounds(size_t dim, double &xMin, double &xMax) override
-	{
-		xMin = 0.0;
-		xMax = 1.0;
-	}
+class ZDT6 : public BaseCalculationTemplate<eatk::testfunctions::ZitzlerDebThiele6>
+{
+public:
+	ZDT6() : BaseCalculationTemplate(10, 2, 128, 2000, pair(0.0, 1.0)) { }
 };
 
 // TODO: copied this for now, put in common file

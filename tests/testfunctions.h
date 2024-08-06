@@ -1,3 +1,8 @@
+// See also
+//  "A Literature Survey of Benchmark Functions For Global Optimization Problems" (Jamil & Yang)
+//  "Evolutionary Programming Made Faster" (Yao, Liu & Lin)
+//  Very useful site: https://al-roomi.org/benchmarks
+
 #include "eatkconfig.h"
 #include "randomnumbergenerator.h"
 #include <vector>
@@ -848,6 +853,202 @@ public:
 		return { p };
 	}
 };
+
+//
+// Multi-objective
+//
+
+// "SCH"
+class Schaffer : public TestFunctionSimpleRanges
+{
+public:
+	Schaffer(double2_t ipr, double2_t bounds = unbounded())
+		: TestFunctionSimpleRanges(1, ipr, bounds, 2) { }
+
+	std::vector<double> calculateInternal(const std::vector<double> &x) override
+	{
+		double x0 = x[0];
+		double f1 = x0 * x0;
+		double f2 = (x0 - 2.0) * (x0 - 2.0);
+		return {f1, f2};
+	}
+};
+
+// "FON"
+class FonsecaFleming : public TestFunctionSimpleRanges
+{
+public:
+	FonsecaFleming(double2_t ipr, double2_t bounds = unbounded())
+		: TestFunctionSimpleRanges(3, ipr, bounds, 2) { }
+
+	std::vector<double> calculateInternal(const std::vector<double> &x) override
+	{
+		double f1 = 0, f2 = 0;
+		for (size_t i = 0 ; i < 3 ; i++)
+		{
+			f1 += pow((x[i] - 1.0/sqrt(3.0)), 2);
+			f2 += pow((x[i] + 1.0/sqrt(3.0)), 2);
+		}
+
+		f1 = 1.0-exp(-f1);
+		f2 = 1.0-exp(-f2);
+		return { f1, f2 };
+	}
+};
+
+// "POL"
+class Poloni : public TestFunctionSimpleRanges
+{
+public:
+	Poloni(double2_t ipr, double2_t bounds = unbounded())
+		: TestFunctionSimpleRanges(2, ipr, bounds, 2) { }
+	
+	std::vector<double> calculateInternal(const std::vector<double> &x) override
+	{
+		double A1 = 0.5*sin(1.0) - 2.0*cos(1.0) + sin(2.0) - 1.5*cos(2.0);
+		double A2 = 1.5*sin(1.0) - cos(1.0) + 2.0*sin(2.0) - 0.5*cos(2.0);
+		double B1 = 0.5*sin(x[0]) - 2.0*cos(x[0]) + sin(x[1]) - 1.5*cos(x[1]);
+		double B2 = 1.5*sin(x[0]) - cos(x[0]) + 2.0*sin(x[1]) - 0.5*cos(x[1]);
+		double f1 = 1.0 + pow(A1-B1,2) + pow(A2-B2,2);
+		double f2 = pow(x[0]+3.0, 2) + pow(x[1]+1.0, 2);
+		return { f1, f2 };
+	}
+};
+
+// "KUR"
+class Kursawe : public TestFunctionSimpleRanges
+{
+public:
+	Kursawe(double2_t ipr, double2_t bounds = unbounded())
+		: TestFunctionSimpleRanges(3, ipr, bounds, 2) { }
+
+	std::vector<double> calculateInternal(const std::vector<double> &x) override
+	{
+		double f1 = 0, f2 = 0;
+		for (size_t i = 0 ; i < 2 ; i++)
+			f1 += -10.0*exp(-0.2*sqrt(x[i]*x[i] + x[i+1]*x[i+1]));
+		for (size_t i = 0 ; i < 3 ; i++)
+			f2 += std::pow(std::abs(x[i]), 0.8) + 5.0*sin(x[i]*x[i]*x[i]);
+		return { f1, f2 };
+	}
+};
+
+// ZDT1
+class ZitzlerDebThiele1 : public TestFunctionSimpleRanges
+{
+public:
+	ZitzlerDebThiele1(double2_t ipr, double2_t bounds = unbounded())
+		: TestFunctionSimpleRanges(30, ipr, bounds, 2) { }
+	
+	std::vector<double> calculateInternal(const std::vector<double> &x) override
+	{
+		double f1 = x[0];
+		double g = 0;
+		for (size_t i = 1 ; i < x.size() ; i++)
+			g += x[i];
+
+		g = 1.0 + 9.0*g/(double)(x.size() - 1);
+		double f2 = g*(1.0-sqrt(x[0]/g));
+		return { f1, f2 };
+	}
+};
+
+// ZDT2
+class ZitzlerDebThiele2 : public TestFunctionSimpleRanges
+{
+public:
+	ZitzlerDebThiele2(double2_t ipr, double2_t bounds = unbounded())
+		: TestFunctionSimpleRanges(30, ipr, bounds, 2) { }
+	
+	std::vector<double> calculateInternal(const std::vector<double> &x) override
+	{
+		double f1 = x[0];
+		double g = 0;
+		for (size_t i = 1 ; i < x.size() ; i++)
+			g += x[i];
+
+		g = 1.0 + 9.0*g/(double)(x.size() - 1);
+		double f2 = g*(1.0-std::pow(x[0]/g, 2));
+		return { f1, f2 };
+	}
+};
+
+// ZDT3
+class ZitzlerDebThiele3 : public TestFunctionSimpleRanges
+{
+public:
+	ZitzlerDebThiele3(double2_t ipr, double2_t bounds = unbounded())
+		: TestFunctionSimpleRanges(30, ipr, bounds, 2) { }
+	
+	std::vector<double> calculateInternal(const std::vector<double> &x) override
+	{
+		double f1 = x[0];
+		double g = 0;
+		for (size_t i = 1 ; i < x.size() ; i++)
+			g += x[i];
+
+		g = 1.0 + 9.0*g/(double)(x.size() - 1);
+		double f2 = g*(1.0 - sqrt(x[0]/g) - (x[0]/g)*sin(10.0*M_PI*x[0]));
+		return { f1, f2 };
+	}
+};
+
+// ZDT4
+class ZitzlerDebThiele4 : public TestFunction
+{
+public:
+	ZitzlerDebThiele4(std::vector<double> lowerIpr, std::vector<double> upperIpr,
+		   std::vector<double> lowerBound = { -infinity(), -infinity() },
+		   std::vector<double> upperBound = { infinity(), infinity() })
+		: TestFunction(10, 2), m_iprLow(lowerIpr), m_iprHigh(upperIpr), 
+		  m_boundLow(lowerBound), m_boundHigh(upperBound) { }
+private:
+	std::vector<double> calculateInternal(const std::vector<double> &x) override
+	{
+		double f1 = x[0];
+		double g = 0.0;
+		for (size_t i = 1 ; i < x.size() ; i++)
+			g += pow(x[i], 2) - 10.0*cos(4.0*M_PI*x[i]);
+
+		g = 1.0 + 10.0*((double)x.size()-1.0) + g;
+		double f2 = g*(1.0-sqrt(x[0]/g));
+		return { f1, f2 };
+	}
+	std::pair<std::vector<double>, std::vector<double>> getBoundsInternal() override
+	{
+		return { m_boundLow, m_boundHigh };
+	}
+
+	std::pair<std::vector<double>, std::vector<double>> getInitialParameterRangeInternal() override
+	{
+		return { m_iprLow, m_iprHigh };
+	}
+
+	std::vector<double> m_boundLow, m_boundHigh;
+	std::vector<double> m_iprLow, m_iprHigh;
+};
+
+// ZDT6
+class ZitzlerDebThiele6 : public TestFunctionSimpleRanges
+{
+public:
+	ZitzlerDebThiele6(double2_t ipr, double2_t bounds = unbounded())
+		: TestFunctionSimpleRanges(10, ipr, bounds, 2) { }
+	
+	std::vector<double> calculateInternal(const std::vector<double> &x) override
+	{
+		double f1 = 1.0 - exp(-4.0*x[0])*pow(sin(6.0*M_PI*x[0]), 6);
+		double g = 0.0;
+		for (size_t i = 1 ; i < x.size() ; i++)
+			g += x[i];
+
+		g = 1.0 + 9.0*pow(g/((double)x.size() - 1.0), 0.25);
+		double f2 = g*(1.0-pow(f1/g, 2));
+		return { f1, f2 };
+	}
+};
+
+
 
 } // end namespace testfunctions
 
