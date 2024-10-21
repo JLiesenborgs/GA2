@@ -39,8 +39,34 @@ bool_t MPIPopulationFitnessCalculation::init(const Genome &referenceGenome, cons
 	m_localPopulationFitnessCalculation = popCalc;
 	m_localPop = make_shared<Population>();
 
-	bool_t r = m_referenceGenome->MPI_BroadcastLayout(m_root, m_comm);
-	if (!r)
+	auto checkTypeStr = [this](const auto &genomeOrFitness) -> bool_t
+	{
+		string refType(typeid(genomeOrFitness).name());
+		vector<char> refTypeChars(refType.length() + 1);
+
+		memcpy(refTypeChars.data(), refType.c_str(), refType.length());
+		refType[refTypeChars.size()-1] = 0;
+
+		int len = refTypeChars.size();
+		MPI_Bcast(&len, 1, MPI_INT, m_root, m_comm);
+
+		refTypeChars.resize(len);
+		MPI_Bcast(refTypeChars.data(), len, MPI_CHAR, m_root, m_comm);
+		refTypeChars[refTypeChars.size()-1] = 0;
+
+		string refTypeCompare(refTypeChars.data());
+		if (refTypeCompare != refType)
+			return "Mismatch in types between root and workers: '" + refType + "' != '" + refTypeCompare + "'";
+		return true;
+	};
+
+	bool_t r;
+	if (!(r = checkTypeStr(referenceGenome)))
+		return "Error checking reference genome: " + r.getErrorString();
+	if (!(r = checkTypeStr(referenceFitness)))
+		return "Error checking reference fitness: " + r.getErrorString();
+
+	if (!(r = m_referenceGenome->MPI_BroadcastLayout(m_root, m_comm)))
 		return "Error broadcasting genome layout: " + r.getErrorString();
 	if (!(r = m_referenceFitness->MPI_BroadcastLayout(m_root, m_comm)))
 		return "Error broadcasting fitness layout: " + r.getErrorString();
