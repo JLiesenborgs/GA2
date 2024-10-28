@@ -46,6 +46,7 @@ set(HEADERS
 	migrationstrategy.h
 	nsga2evolver.h
 	vectorgenomedelikecrossover.h
+	goodmanweareevolver.h
 	"${PROJECT_BINARY_DIR}/src/eatkconfig.h" )
 
 set(SOURCES
@@ -74,6 +75,7 @@ set(SOURCES
 	multipopulationevolver.cpp
 	migrationstrategy.cpp
 	nsga2evolver.cpp
+	goodmanweareevolver.cpp
 	)
 
 if (MSVC)

@@ -37,3 +37,6 @@ target_link_libraries(multipoptest eatk-static "${EATK_LINK_LIBS}")
 add_executable(nsga2test nsga2test.cpp)
 target_link_libraries(nsga2test eatk-static "${EATK_LINK_LIBS}")
 
+add_executable(gwtest gwtest.cpp)
+target_link_libraries(gwtest eatk-static "${EATK_LINK_LIBS}")
+
