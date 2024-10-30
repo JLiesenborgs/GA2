@@ -9,8 +9,8 @@ namespace eatk
 {
 
 GoodmanWeareEvolver::GoodmanWeareEvolver(const shared_ptr<RandomNumberGenerator> &rng,
-                                         bool isLog, double a)
-	: m_rng(rng), m_isLog(isLog), m_a(a)
+                                         ProbType t, double a)
+	: m_rng(rng), m_probType(t), m_a(a)
 {
 	m_aScale = std::sqrt(m_a) - 1.0/std::sqrt(m_a);
 	m_aOffset = 1.0/std::sqrt(m_a);
@@ -109,7 +109,7 @@ inline void calculateNewPositions(size_t generation, Population &pop, size_t N, 
 }
 
 inline void checkAccept(RandomNumberGenerator &rng, Population &pop, bool compareFirstHalf,
-                        bool isLog, size_t N, size_t dim, const vector<double> &zValues)
+                        GoodmanWeareEvolver::ProbType probType, size_t N, size_t dim, const vector<double> &zValues)
 {
 	assert(pop.size() == (N*3)/2);
 	assert(N%2 == 0);
@@ -135,6 +135,11 @@ inline void checkAccept(RandomNumberGenerator &rng, Population &pop, bool compar
 			return true;
 
 		return false;
+	};
+
+	auto acceptTestNegLog = [&acceptTestLog](double pNew, double pOld, double z)
+	{
+		return acceptTestLog(-pNew, -pOld, z);
 	};
 
 	auto acceptTestNoLog = [&rng, dim](double pNew, double pOld, double z)
@@ -171,10 +176,14 @@ inline void checkAccept(RandomNumberGenerator &rng, Population &pop, bool compar
 		pop.individuals().resize(N); // Remove the ones that were added for comparison
 	};
 
-	if (isLog)
-		checkAcceptLoop(acceptTestLog);
-	else
+	if (probType == GoodmanWeareEvolver::Regular)
 		checkAcceptLoop(acceptTestNoLog);
+	else if (probType == GoodmanWeareEvolver::Log)
+		checkAcceptLoop(acceptTestLog);
+	else if (probType == GoodmanWeareEvolver::NegativeLog)
+		checkAcceptLoop(acceptTestNegLog);
+	else
+		throw runtime_error("Internal error: Invalid probability type");
 }
 
 bool_t GoodmanWeareEvolver::createNewPopulation(size_t generation, shared_ptr<Population> &population, size_t targetPopulationSize)
@@ -199,7 +208,9 @@ bool_t GoodmanWeareEvolver::createNewPopulation(size_t generation, shared_ptr<Po
 
 	auto checkBest = [this, &pop](size_t startIdx, size_t stopIdx)
 	{
-		double bestFitness = -numeric_limits<double>::infinity();
+		double bestFitness = (m_probType == NegativeLog)?numeric_limits<double>::infinity():-numeric_limits<double>::infinity();
+		auto comp = (m_probType == NegativeLog)?[](double a, double b) { return a < b; }:[](double a, double b) { return a > b; };
+
 		if (m_bestIndividual.size() > 0)
 		{
 			assert(m_bestIndividual.size() == 1);
@@ -211,7 +222,7 @@ bool_t GoodmanWeareEvolver::createNewPopulation(size_t generation, shared_ptr<Po
 		{
 			assert(i < pop.size());
 			double fit = pop.individual(i)->fitness()->getRealValue(0); // TODO: make objective configurable
-			if (fit > bestFitness)
+			if (comp(fit, bestFitness))
 			{
 				bestIdx = i;
 				bestFitness = fit;
@@ -254,7 +265,7 @@ bool_t GoodmanWeareEvolver::createNewPopulation(size_t generation, shared_ptr<Po
 		bool walkFirstHalf = (generation%2 == 0);
 
 		// Check if we should accept the new genomes, then resize pop to N
-		checkAccept(rng, pop, compareFirstHalf, m_isLog, N, dim, m_zValues);
+		checkAccept(rng, pop, compareFirstHalf, m_probType, N, dim, m_zValues);
 
 		// Calculate new walk		
 		calculateNewPositions_General(walkFirstHalf);

@@ -12,11 +12,20 @@ using namespace std;
 using namespace eatk;
 using namespace errut;
 
+inline void printOnce(const string &s)
+{
+	static bool shown = false;
+	if (shown)
+		return;
+	shown = true;
+	cout << s << endl;
+}
+
 class MyGW : public GoodmanWeareEvolver
 {
 public:
-	MyGW(const std::shared_ptr<RandomNumberGenerator> &rng, bool isLog = true, double a = 2.0)
-		: GoodmanWeareEvolver(rng, isLog, a) {} 
+	MyGW(const std::shared_ptr<RandomNumberGenerator> &rng, ProbType probType, double a = 2.0)
+		: GoodmanWeareEvolver(rng, probType, a) {} 
 
 	void onSamples(const std::vector<std::shared_ptr<Individual>> &samples)
 	{
@@ -29,7 +38,7 @@ template<class T>
 class ProbCalc : public GenomeFitnessCalculation
 {
 public:
-	ProbCalc(bool isLog) : m_isLog(isLog) { }
+	ProbCalc(GoodmanWeareEvolver::ProbType probType) : m_probType(probType) { }
 	bool_t calculate(const Genome &genome0, Fitness &fitness0)
 	{
 		assert(dynamic_cast<ValueFitness<T>*>(&fitness0));
@@ -43,27 +52,38 @@ public:
 
 		assert(x.size() == mu.size() && x.size() == sigma.size());
 		T prob;
-		if (m_isLog)
+		if (m_probType == GoodmanWeareEvolver::Log)
 		{
+			printOnce("GoodmanWeareEvolver::Log");
 			prob = 0;
 			for (size_t i = 0 ; i < x.size() ; i++)
 				prob += -(x[i]-mu[i])*(x[i]-mu[i])/((T)2.0*sigma[i]*sigma[i]);
 		}
-		else
+		else if (m_probType == GoodmanWeareEvolver::NegativeLog)
 		{
+			printOnce("GoodmanWeareEvolver::NegativeLog");
+			prob = 0;
+			for (size_t i = 0 ; i < x.size() ; i++)
+				prob += (x[i]-mu[i])*(x[i]-mu[i])/((T)2.0*sigma[i]*sigma[i]);
+		}
+		else if (m_probType == GoodmanWeareEvolver::Regular)
+		{
+			printOnce("GoodmanWeareEvolver::Regular");
 			prob = 1;
 			for (size_t i = 0 ; i < x.size() ; i++)
 				prob *= std::exp(-(x[i]-mu[i])*(x[i]-mu[i])/((T)2.0*sigma[i]*sigma[i]));
 		}
+		else
+			throw runtime_error("Invalid prob type");
 		f.setValue(prob);
 		return true;
 	}
 private:
-	bool m_isLog;
+	GoodmanWeareEvolver::ProbType m_probType;
 };
 
 template<class T>
-int templateMain(bool isLog)
+int templateMain(GoodmanWeareEvolver::ProbType probType)
 {
 	random_device rndDev;
 	unsigned int seed = rndDev();
@@ -74,8 +94,8 @@ int templateMain(bool isLog)
 	VectorDifferentialEvolutionIndividualCreation<T,T> creation({-10, -10}, {10, 10} , rng);
 
 	EvolutionaryAlgorithm ea;
-	MyGW gw(rng, isLog);
-	auto prob = make_shared<ProbCalc<T>>(isLog);
+	MyGW gw(rng, probType);
+	auto prob = make_shared<ProbCalc<T>>(probType);
 	SingleThreadedPopulationFitnessCalculation popCalc(prob);
 	FixedGenerationsStopCriterion stop(1000);
 	size_t N = 512;
@@ -92,5 +112,5 @@ int templateMain(bool isLog)
 
 int main(void)
 {
-	return templateMain<double>(true);
+	return templateMain<double>(GoodmanWeareEvolver::NegativeLog);
 }

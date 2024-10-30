@@ -13,7 +13,9 @@ namespace eatk
 class GoodmanWeareEvolver : public PopulationEvolver
 {
 public:
-	GoodmanWeareEvolver(const std::shared_ptr<RandomNumberGenerator> &rng, bool isLog = true, double a = 2.0);
+	enum ProbType { Regular, Log, NegativeLog };
+
+	GoodmanWeareEvolver(const std::shared_ptr<RandomNumberGenerator> &rng, ProbType t = Regular, double a = 2.0);
 	~GoodmanWeareEvolver();
 
 	errut::bool_t check(const std::shared_ptr<Population> &population) override;
@@ -40,7 +42,7 @@ protected:
 private:
 	std::shared_ptr<RandomNumberGenerator> m_rng;
 	double m_a = 0, m_aScale, m_aOffset;
-	bool m_isLog = true;
+	ProbType m_probType = Regular;
 	bool m_doubleGenomes = false;
 	std::vector<double> m_zValues;
 
