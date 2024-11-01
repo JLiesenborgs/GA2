@@ -109,7 +109,8 @@ inline void calculateNewPositions(size_t generation, Population &pop, size_t N, 
 }
 
 inline void checkAccept(RandomNumberGenerator &rng, Population &pop, bool compareFirstHalf,
-                        GoodmanWeareEvolver::ProbType probType, size_t N, size_t dim, const vector<double> &zValues)
+                        GoodmanWeareEvolver::ProbType probType, size_t N, size_t dim, const vector<double> &zValues,
+						double alpha)
 {
 	assert(pop.size() == (N*3)/2);
 	assert(N%2 == 0);
@@ -118,7 +119,7 @@ inline void checkAccept(RandomNumberGenerator &rng, Population &pop, bool compar
 
 	assert(zValues.size() == N2);
 
-	auto acceptTestLog = [&rng, dim](double pNew, double pOld, double z)
+	auto acceptTestLog = [&rng, dim](double pNew, double pOld, double z, double alpha)
 	{
 		if (pOld == -numeric_limits<double>::infinity())
 			return true; // try to get away from bad region
@@ -126,7 +127,7 @@ inline void checkAccept(RandomNumberGenerator &rng, Population &pop, bool compar
 		if (pNew == -numeric_limits<double>::infinity())
 			return false; // try to stay away from bad region
 		
-		double logQ = (double)(dim-1) * std::log(z) + pNew - pOld;
+		double logQ = (double)(dim-1) * std::log(z) + alpha*(pNew - pOld);
 		if (logQ >= 0) // means prob >= 1
 			return true;
 
@@ -137,19 +138,19 @@ inline void checkAccept(RandomNumberGenerator &rng, Population &pop, bool compar
 		return false;
 	};
 
-	auto acceptTestNegLog = [&acceptTestLog](double pNew, double pOld, double z)
+	auto acceptTestNegLog = [&acceptTestLog](double pNew, double pOld, double z, double alpha)
 	{
-		return acceptTestLog(-pNew, -pOld, z);
+		return acceptTestLog(-pNew, -pOld, z, alpha);
 	};
 
-	auto acceptTestNoLog = [&rng, dim](double pNew, double pOld, double z)
+	auto acceptTestNoLog = [&rng, dim](double pNew, double pOld, double z, double alpha)
 	{
 		if (pOld == 0)
 			return true; // try to move away from bad region
 		if (pNew == 0)
 			return false; // try to stay away from bad region
 
-		double q = std::pow(z, dim-1) * (pNew/pOld); // accept prob
+		double q = std::pow(z, dim-1) * std::pow(pNew/pOld, alpha); // accept prob
 		
 		if (q >= 1.0)
 			return true;
@@ -160,7 +161,7 @@ inline void checkAccept(RandomNumberGenerator &rng, Population &pop, bool compar
 		return false;
 	};
 
-	auto checkAcceptLoop = [&pop, N, &c, &zValues](auto &shouldAcceptFunction)
+	auto checkAcceptLoop = [&pop, N, &c, &zValues, alpha](auto &shouldAcceptFunction)
 	{
 		for (size_t n = N, zIdx = 0 ; n < pop.size() ; n++, c++, zIdx++)
 		{
@@ -169,7 +170,7 @@ inline void checkAccept(RandomNumberGenerator &rng, Population &pop, bool compar
 			double pOld = pop.individual(c)->fitness()->getRealValue(0);
 			double z = zValues[zIdx];
 
-			if (shouldAcceptFunction(pNew, pOld, z))
+			if (shouldAcceptFunction(pNew, pOld, z, alpha))
 				pop.individual(c) = pop.individual(n); // accept, replace old with new
 		}
 
@@ -265,7 +266,7 @@ bool_t GoodmanWeareEvolver::createNewPopulation(size_t generation, shared_ptr<Po
 		bool walkFirstHalf = (generation%2 == 0);
 
 		// Check if we should accept the new genomes, then resize pop to N
-		checkAccept(rng, pop, compareFirstHalf, m_probType, N, dim, m_zValues);
+		checkAccept(rng, pop, compareFirstHalf, m_probType, N, dim, m_zValues, m_alpha);
 
 		// Calculate new walk		
 		calculateNewPositions_General(walkFirstHalf);

@@ -35,6 +35,8 @@ public:
 	// The idea here is to keep track of the individual with the highest
 	// logprob/prob (fitness)
 	const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const override { return m_bestIndividual; }
+
+	void setAnnealingExponent(double alpha) { m_alpha = alpha; } // to use prob^alpha
 protected:
 	// These are the actual individuals, not copies, for efficiency
 	// TODO: change this?
@@ -45,6 +47,7 @@ private:
 	ProbType m_probType = Regular;
 	bool m_doubleGenomes = false;
 	std::vector<double> m_zValues;
+	double m_alpha = 1.0;
 
 	const size_t m_objectiveNumber = 0;
 
