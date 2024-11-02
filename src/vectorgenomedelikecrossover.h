@@ -83,8 +83,8 @@ public:
 		}
 
 		auto result = parents[0]->createCopy();
-		float CR = (isnan(m_CR))?m_rng->getRandomFloat():m_CR;
-		float F = (isnan(m_F))?m_rng->getRandomFloat():m_F;
+		float CR = (std::isnan(m_CR))?m_rng->getRandomFloat():m_CR;
+		float F = (std::isnan(m_F))?m_rng->getRandomFloat():m_F;
 
 		size_t dimensions = GS::getSize(*result);
 		size_t rndIdx = (size_t)m_rng->getRandomUint32() % dimensions;
