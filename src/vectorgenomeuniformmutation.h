@@ -39,22 +39,22 @@ public:
 
 		errut::bool_t r;
 
-		if (!(r = resizeToGenomeLength(s, m_minValues)) || !(r = resizeToGenomeLength(s, m_maxValues)))
+		if (!(r = resizeToGenomeLength(s, m_minValues, "minimum")) || !(r = resizeToGenomeLength(s, m_maxValues, "maximum")))
 			return r;
 
 		return true;
 	}
 
 protected:
-	static errut::bool_t resizeToGenomeLength(size_t s, std::vector<T> &v)
+	static errut::bool_t resizeToGenomeLength(size_t s, std::vector<T> &v, const std::string &arrayTypeName)
 	{
 		if (v.size() == 0)
-			return "No min or max values set";
+			return "No " + arrayTypeName + " values set";
 
 		if (v.size() > 1)
 		{
 			if (v.size() != s)
-				return "Genome length is incompatible with min/max length";
+				return "Genome length is incompatible with " + arrayTypeName + " values array length";
 			return true;
 		}
 

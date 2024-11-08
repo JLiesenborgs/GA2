@@ -50,9 +50,9 @@ public:
 			return "Genome is not of the expected type";
 
 		size_t s = pGenome->getValues().size();
-		if (useReferenceSizes)
+		if constexpr (useReferenceSizes)
 		{
-			if (!(r = resizeToGenomeLength(s, m_referenceSizes)))
+			if (!(r = VectorGenomeMutationBase<T>::resizeToGenomeLength(s, m_referenceSizes, "scale")))
 				return r;
 		}
 		else
@@ -83,10 +83,10 @@ public:
 				assert(oldValue >= hardMinValues[i] && oldValue <= hardMaxValues[i]);
 
 				T newValue;
-				if (!useReferenceSizes)
-					newValue = FractionalAdjuster::adjustValue(oldValue, hardMinValues[i], hardMaxValues[i], *VectorGenomeMutationBase<T>::m_rng);
-				else
+				if constexpr (useReferenceSizes)
 					newValue = FractionalAdjuster::adjustValue(oldValue, m_referenceSizes[i], hardMinValues[i], hardMaxValues[i], *VectorGenomeMutationBase<T>::m_rng);
+				else
+					newValue = FractionalAdjuster::adjustValue(oldValue, hardMinValues[i], hardMaxValues[i], *VectorGenomeMutationBase<T>::m_rng);
 
 				if (newValue < hardMinValues[i])
 					newValue = hardMinValues[i] + (oldValue - hardMinValues[i])/(T)2;

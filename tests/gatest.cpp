@@ -17,6 +17,7 @@
 #include "basicnondominatedsetcreator.h"
 #include "fitnessbasedduplicateremoval.h"
 #include "populationreusecreation.h"
+#include "testfunctions.h"
 #include <cassert>
 #include <iostream>
 
@@ -92,6 +93,21 @@ protected:
 	}
 };
 
+struct AdjustClass
+{
+	static double adjustValue(double oldVal, double hardMin, double hardMax, RandomNumberGenerator &rng)
+	{
+		double r = rng.getRandomDouble(0.9, 1.1);
+		return oldVal * r;
+	}
+
+	static double adjustValue(double oldVal, double refScale, double hardMin, double hardMax, RandomNumberGenerator &rng)
+	{
+		double r = rng.getRandomDouble(-refScale/2.0, refScale/2.0);
+		return oldVal + r;
+	}
+};
+
 class TestFactory : public IndividualCreation
 {
 public:
@@ -99,7 +115,11 @@ public:
 	{
 		m_rng = make_shared<MersenneRandomNumberGenerator>(seed);
 		m_mutation = make_shared<VectorGenomeUniformMutation<RealType>>(0.2, 0, 100, m_rng);
+		m_smallerMutation = make_shared<VectorGenomeFractionalMutation<RealType,AdjustClass,false>>(0.2, m_rng);
+		m_smallerMutationRefScale = make_shared<VectorGenomeFractionalMutation<RealType,AdjustClass,true>>(0.2, 0.1, m_rng);
 		m_crossover = make_shared<MyCrossOver>(m_rng, m_mutation);
+		m_crossoverSmallerMut = make_shared<MyCrossOver>(m_rng, m_smallerMutation);
+		m_crossoverSmallerMutRefScale = make_shared<MyCrossOver>(m_rng, m_smallerMutationRefScale);
 	}
 
 	shared_ptr<Genome> createInitializedGenome() override
@@ -121,10 +141,22 @@ public:
 		return m_crossover;
 	}
 
+	shared_ptr<PopulationEvolver> getPopulationCrossoverSmallerMutation()
+	{
+		return m_crossoverSmallerMut;
+	}
+
+	shared_ptr<PopulationEvolver> getPopulationCrossoverSmallerMutationRefScale()
+	{
+		return m_crossoverSmallerMutRefScale;
+	}
+
 private:
 	shared_ptr<RandomNumberGenerator> m_rng;
 	shared_ptr<SinglePopulationCrossover> m_crossover;
-	shared_ptr<VectorGenomeUniformMutation<RealType>> m_mutation;
+	shared_ptr<SinglePopulationCrossover> m_crossoverSmallerMut, m_crossoverSmallerMutRefScale;
+	shared_ptr<GenomeMutation> m_mutation;
+	shared_ptr<GenomeMutation> m_smallerMutation, m_smallerMutationRefScale;
 };
 
 class TestFitnessCalculation : public GenomeFitnessCalculation
@@ -143,6 +175,7 @@ public:
 
 		ValueFitness<RealType> &vf = static_cast<ValueFitness<RealType> &>(f);
 
+#if 0
 		RealType x = vg.getValues()[0];
 		RealType y = vg.getValues()[1];
 		RealType dx = x - (RealType)30;
@@ -150,6 +183,11 @@ public:
 
 		//vf.getValues()[0] = dx*dx + dy*dy;
 		vf.setValue(dx*dx + dy*dy);
+#else
+		eatk::testfunctions::Rosenbrock tf({-10.0,10.0});
+		double val = tf.calculate1(vg.getValues());
+		vf.setValue(val);
+#endif
 		return true;
 	}
 };
@@ -233,6 +271,8 @@ bool_t real_main(int argc, char *argv[], int rank)
 	else
 		return "Unknown calculation type " + to_string(calcType);
 
+	size_t numGenerations = 1000;
+	size_t popSize = 128;
 	if (rank == 0) // Should also work for the non MPI versions
 	{
 		#ifdef EATKCONFIG_MPISUPPORT
@@ -248,16 +288,54 @@ bool_t real_main(int argc, char *argv[], int rank)
 		auto cleanup = [](){};
 		#endif // EATKCONFIG_MPISUPPORT
 
-		FixedGenerationsStopCriterion stop(10);
-		MyGA ga;
+		shared_ptr<PopulationReuseCreation> reuseCreation;
 
-		r = ga.run(factory,
-				   *factory.getPopulationCrossover(),
-				   *calc, stop, 16, 0, 34);
-		if (!r)
 		{
-			cleanup();
-			return "Error running GA: " + r.getErrorString();
+			FixedGenerationsStopCriterion stop(numGenerations);
+			MyGA ga;
+
+			r = ga.run(factory,
+					   *factory.getPopulationCrossover(),
+					   *calc, stop, popSize, 0, popSize*2+2);
+			if (!r)
+			{
+				cleanup();
+				return "Error running GA: " + r.getErrorString();
+			}
+
+			reuseCreation = make_shared<PopulationReuseCreation>(ga.getPopulation());
+		}
+
+		// Run a second time with smaller mutations, continuing from the previous population
+		{
+			FixedGenerationsStopCriterion stop(numGenerations);
+			MyGA ga;
+
+			r = ga.run(*reuseCreation,
+					   *factory.getPopulationCrossoverSmallerMutationRefScale(),
+					   *calc, stop, popSize, 0, popSize*2+2);
+			if (!r)
+			{
+				cleanup();
+				return "Error running second GA: " + r.getErrorString();
+			}
+
+			reuseCreation = make_shared<PopulationReuseCreation>(ga.getPopulation());
+		}
+
+		// And a third time with other smalr mutations, continuing from the previous population
+		{
+			FixedGenerationsStopCriterion stop(numGenerations);
+			MyGA ga;
+
+			r = ga.run(*reuseCreation,
+					   *factory.getPopulationCrossoverSmallerMutation(),
+					   *calc, stop, popSize, 0, popSize*2+2);
+			if (!r)
+			{
+				cleanup();
+				return "Error running second GA: " + r.getErrorString();
+			}
 		}
 
 		cleanup();
