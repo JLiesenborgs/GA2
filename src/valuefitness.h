@@ -96,9 +96,10 @@ public:
 		const ValueFitness<T> &f1 = static_cast<const ValueFitness<T> &>(first);
 		const ValueFitness<T> &f2 = static_cast<const ValueFitness<T> &>(second);
 
-		if (minimum)
+		if constexpr (minimum)
 			return (f1.getValue() < f2.getValue());
-		return (f1.getValue() > f2.getValue());
+		else
+			return (f1.getValue() > f2.getValue());
 	}
 };
 

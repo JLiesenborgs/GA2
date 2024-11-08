@@ -94,9 +94,10 @@ public:
 		assert(objectiveNumber >= 0 && objectiveNumber < v1.size());
 		assert(v1.size() == v2.size());
 
-		if (minimum)
+		if constexpr (minimum)
 			return (v1[objectiveNumber] < v2[objectiveNumber]);
-		return (v1[objectiveNumber] > v2[objectiveNumber]);
+		else
+			return (v1[objectiveNumber] > v2[objectiveNumber]);
 	}
 };
 
