@@ -11,6 +11,7 @@
 #include "singlebestelitism.h"
 #include "valuefitness.h"
 #include "vectorgenomeuniformmutation.h"
+#include "vectorgenomefractionalmutation.h"
 #include "remainingtargetpopulationsizeiteration.h"
 #include "ndsortedpopulation.h"
 #include "basicnondominatedsetcreator.h"

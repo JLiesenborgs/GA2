@@ -34,6 +34,7 @@ set(HEADERS
 	vectorgenomefitness.h
 	vectorgenomeflipmutation.h
 	vectorgenomeuniformmutation.h
+	vectorgenomefractionalmutation.h
 	differentialevolutionevolver.h
 	vectordifferentialevolution.h
 	jadeevolver.h
