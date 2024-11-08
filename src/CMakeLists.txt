@@ -48,6 +48,7 @@ set(HEADERS
 	nsga2evolver.h
 	vectorgenomedelikecrossover.h
 	goodmanweareevolver.h
+	populationreusecreation.h
 	"${PROJECT_BINARY_DIR}/src/eatkconfig.h" )
 
 set(SOURCES

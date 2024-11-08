@@ -16,6 +16,7 @@
 #include "ndsortedpopulation.h"
 #include "basicnondominatedsetcreator.h"
 #include "fitnessbasedduplicateremoval.h"
+#include "populationreusecreation.h"
 #include <cassert>
 #include <iostream>
 
