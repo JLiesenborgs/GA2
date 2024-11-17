@@ -48,6 +48,7 @@ public:
 		: m_lower(lower), m_upper(upper), m_rng(rng) { 	}
 
 	std::shared_ptr<Genome> createInitializedGenome() override;
+	std::shared_ptr<Genome> createUnInitializedGenome() override;
 	std::shared_ptr<Fitness> createEmptyFitness() override { return std::make_shared<ValueFitness<FT>>(); }
 private:
 	std::vector<VT> m_lower, m_upper;
@@ -164,5 +165,20 @@ inline std::shared_ptr<Genome> VectorDifferentialEvolutionIndividualCreation<VT,
 	return genome;
 }
 
+template<class VT, class FT>
+inline std::shared_ptr<Genome> VectorDifferentialEvolutionIndividualCreation<VT,FT>::createUnInitializedGenome()
+{
+	if (m_lower.size() != m_upper.size())
+		return nullptr;
+	if (m_lower.size() == 0)
+		return nullptr;
+	
+	std::shared_ptr<VectorGenome<VT>> genome = std::make_shared<VectorGenome<VT>>(m_lower.size());
+	std::vector<VT> &values = genome->getValues();
+	for (size_t i = 0 ; i < values.size() ; i++)
+		values[i] = std::numeric_limits<VT>::quiet_NaN();
+	
+	return genome;
+}
 
 }
