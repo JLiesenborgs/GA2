@@ -18,7 +18,12 @@ public:
 	// genomesForPopulationCalculator is e.g. the number that needs to be calculated across threads
 	// The MPI implementation itself uses a different local calculator, so doesn't call this itself
 	// This means that it's mainly a multi-thread thing
-	virtual errut::bool_t onNewCalculationStart(size_t genomesForThisCalculator, size_t genomesForPopulationCalculator)  { return true; }
+	//
+	// 'iteration' is meant to be a count for each time calculatePopulationFitness is called. This will
+	// mostly match the generation number, but if the calculator is used for several different EAs,
+	// then this may deviate. The main idea is to have some kind of identifier to be able to check if
+	// some initialization needs to be done when a new iteration starts
+	virtual errut::bool_t onNewCalculationStart(size_t iteration, size_t genomesForThisCalculator, size_t genomesForPopulationCalculator)  { return true; }
 	virtual errut::bool_t onCalculationStarted() { return true; }
 	virtual errut::bool_t onCalculationEnded() { return true; }
 

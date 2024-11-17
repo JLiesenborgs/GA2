@@ -18,6 +18,7 @@ public:
 private:
 	std::shared_ptr<GenomeFitnessCalculation> m_genomeFitnessCalculation;
 	std::vector<Individual*> m_tmpIndividuals;
+	size_t m_iteration;
 };
 
 }

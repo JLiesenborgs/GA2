@@ -12,7 +12,8 @@ namespace eatk
 {
 
 MultiThreadedPopulationFitnessCalculation::MultiThreadedPopulationFitnessCalculation()
- : m_totalThreads(0)
+	: m_totalThreads(0),
+	  m_iteration(0)
 {
 }
 
@@ -107,7 +108,7 @@ bool_t MultiThreadedPopulationFitnessCalculation::workerCalculatePopulationFitne
 	auto pGenomeCalc = m_threadGenomeCalculations[workerIdx].get();
 	bool_t r;
 
-	if (!(r = pGenomeCalc->onNewCalculationStart(m_helperGenomes[workerIdx].size(), m_genomesToCalculateInThisIteration)))
+	if (!(r = pGenomeCalc->onNewCalculationStart(m_iteration, m_helperGenomes[workerIdx].size(), m_genomesToCalculateInThisIteration)))
 		return "Error signalling new calculation iteration start: " + r.getErrorString();
 
 	for (auto &gf : m_helperGenomes[workerIdx])
@@ -186,6 +187,8 @@ bool_t MultiThreadedPopulationFitnessCalculation::calculatePopulationFitness(con
 
 	if (m_totalThreads > 1)
 		m_allThreadsWaiter->wait();
+
+	m_iteration++;
 
 	// Check our own error
 	set<string> errors;

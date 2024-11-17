@@ -7,7 +7,8 @@ namespace eatk
 {
 
 SingleThreadedPopulationFitnessCalculation::SingleThreadedPopulationFitnessCalculation(const shared_ptr<GenomeFitnessCalculation> &genomeFitCalc)
-	: m_genomeFitnessCalculation(genomeFitCalc)
+	: m_genomeFitnessCalculation(genomeFitCalc),
+	  m_iteration(0)
 { 
 }
 
@@ -37,8 +38,10 @@ bool_t SingleThreadedPopulationFitnessCalculation::calculatePopulationFitness(co
 			if (!i->fitnessRef().isCalculated())
 				m_tmpIndividuals.push_back(i.get());
 
-	if (!(r = m_genomeFitnessCalculation->onNewCalculationStart(m_tmpIndividuals.size(), m_tmpIndividuals.size())))
+	if (!(r = m_genomeFitnessCalculation->onNewCalculationStart(m_iteration, m_tmpIndividuals.size(), m_tmpIndividuals.size())))
 		return "Can't signal new calculation start: " + r.getErrorString();
+
+	m_iteration++;
 
 	for (auto i : m_tmpIndividuals)
 	{

@@ -35,7 +35,7 @@ private:
 
 	std::vector<std::vector<std::pair<Genome *, Fitness *>>> m_helperGenomes;
 	size_t m_genomesToCalculateInThisIteration;
-
+	size_t m_iteration;
 
 	class ThreadsReadyWaiter
 	{
