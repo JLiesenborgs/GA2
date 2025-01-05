@@ -49,6 +49,7 @@ set(HEADERS
 	vectorgenomedelikecrossover.h
 	goodmanweareevolver.h
 	populationreusecreation.h
+	metropolishastingsevolver.h
 	"${PROJECT_BINARY_DIR}/src/eatkconfig.h" )
 
 set(SOURCES
@@ -78,6 +79,7 @@ set(SOURCES
 	migrationstrategy.cpp
 	nsga2evolver.cpp
 	goodmanweareevolver.cpp
+	metropolishastingsevolver.cpp
 	)
 
 if (MSVC)

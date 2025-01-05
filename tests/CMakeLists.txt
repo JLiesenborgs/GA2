@@ -40,3 +40,6 @@ target_link_libraries(nsga2test eatk-static "${EATK_LINK_LIBS}")
 add_executable(gwtest gwtest.cpp)
 target_link_libraries(gwtest eatk-static "${EATK_LINK_LIBS}")
 
+add_executable(mhtest mhtest.cpp)
+target_link_libraries(mhtest eatk-static "${EATK_LINK_LIBS}")
+
