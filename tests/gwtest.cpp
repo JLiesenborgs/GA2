@@ -24,14 +24,21 @@ inline void printOnce(const string &s)
 class MyGW : public GoodmanWeareEvolver
 {
 public:
-	MyGW(const std::shared_ptr<RandomNumberGenerator> &rng, ProbType probType, double a = 2.0)
-		: GoodmanWeareEvolver(rng, probType, a) {} 
+	MyGW(const std::shared_ptr<RandomNumberGenerator> &rng, ProbType probType, size_t burnin, double a = 2.0)
+		: GoodmanWeareEvolver(rng, probType, a), m_burnin(burnin) {} 
 
 	void onSamples(const std::vector<std::shared_ptr<Individual>> &samples)
 	{
+		m_gen++;
+		if (m_gen < m_burnin/2) // takes two real generations to get a bunch of samples
+			return;
+
 		for (auto &i : samples)
 			cerr << i->genome()->toString() << endl;
 	}
+
+	size_t m_burnin = 0;
+	size_t m_gen = 0;
 };
 
 template<class T>
@@ -94,10 +101,12 @@ int templateMain(GoodmanWeareEvolver::ProbType probType)
 	VectorDifferentialEvolutionIndividualCreation<T,T> creation({-10, -10}, {10, 10} , rng);
 
 	EvolutionaryAlgorithm ea;
-	MyGW gw(rng, probType);
+	size_t totalGen = 10000;
+	size_t burnin = totalGen/2;
+	MyGW gw(rng, probType, burnin);
 	auto prob = make_shared<ProbCalc<T>>(probType);
 	SingleThreadedPopulationFitnessCalculation popCalc(prob);
-	FixedGenerationsStopCriterion stop(1000);
+	FixedGenerationsStopCriterion stop(totalGen);
 	size_t N = 512;
 
 	bool_t r;

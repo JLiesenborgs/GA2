@@ -50,6 +50,7 @@ set(HEADERS
 	goodmanweareevolver.h
 	populationreusecreation.h
 	metropolishastingsevolver.h
+	samplingevolver.h
 	"${PROJECT_BINARY_DIR}/src/eatkconfig.h" )
 
 set(SOURCES
@@ -80,6 +81,7 @@ set(SOURCES
 	nsga2evolver.cpp
 	goodmanweareevolver.cpp
 	metropolishastingsevolver.cpp
+	samplingevolver.cpp
 	)
 
 if (MSVC)

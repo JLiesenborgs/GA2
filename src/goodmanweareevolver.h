@@ -1,7 +1,7 @@
 #pragma once
 
 #include "eatkconfig.h"
-#include "populationevolver.h"
+#include "samplingevolver.h"
 #include "randomnumbergenerator.h"
 
 namespace eatk
@@ -10,11 +10,9 @@ namespace eatk
 // based on https://research.edm.uhasselt.be/~jori/page/Misc/MeanWalker.html and
 // on parallelization info in "emcee: The MCMC Hammer" (https://doi.org/10.1086/670067)
 
-class GoodmanWeareEvolver : public PopulationEvolver
+class GoodmanWeareEvolver : public SamplingEvolver
 {
 public:
-	enum ProbType { Regular, Log, NegativeLog };
-
 	GoodmanWeareEvolver(const std::shared_ptr<RandomNumberGenerator> &rng, ProbType t = Regular, double a = 2.0);
 	~GoodmanWeareEvolver();
 
@@ -31,25 +29,9 @@ public:
 	// which need to be replaced. The first N are always the actual samples
 	// (how best to report this?)
 	errut::bool_t createNewPopulation(size_t generation, std::shared_ptr<Population> &population, size_t targetPopulationSize) override;
-
-	// The idea here is to keep track of the individual with the highest
-	// logprob/prob (fitness)
-	const std::vector<std::shared_ptr<Individual>> &getBestIndividuals() const override { return m_bestIndividual; }
-
-	void setAnnealingExponent(double alpha) { m_alpha = alpha; } // to use prob^alpha
-protected:
-	// These are the actual individuals, not copies, for efficiency
-	// TODO: change this?
-	virtual void onSamples(const std::vector<std::shared_ptr<Individual>> &samples) { }
 private:
-	std::shared_ptr<RandomNumberGenerator> m_rng;
 	double m_a = 0, m_aScale, m_aOffset;
-	ProbType m_probType = Regular;
-	bool m_doubleGenomes = false;
 	std::vector<double> m_zValues;
-	double m_alpha = 1.0;
-
-	std::vector<std::shared_ptr<Individual>> m_bestIndividual;
 	std::vector<std::shared_ptr<Individual>> m_samples;
 };
 

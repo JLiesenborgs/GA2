@@ -11,7 +11,7 @@ namespace eatk
 MetropolisHastingsEvolver::MetropolisHastingsEvolver(const shared_ptr<RandomNumberGenerator> &rng,
 										 const std::vector<double> &stepScales,
                                          ProbType t)
-	: m_rng(rng), m_stepScales(stepScales), m_probType(t)
+	: SamplingEvolver(rng, t), m_stepScales(stepScales)
 {
 }
 
@@ -19,36 +19,21 @@ MetropolisHastingsEvolver::~MetropolisHastingsEvolver()
 {
 }
 
-// TODO: move this to common base class!
 bool_t MetropolisHastingsEvolver::check(const shared_ptr<Population> &population)
 {
-	// check genome and fitness type, float or double
-	for (auto &i : population->individuals())
-	{
-		if (dynamic_cast<const FloatVectorGenome *>(i->genomePtr()))
-			m_doubleGenomes = false;
-		else
-		{
-			if (dynamic_cast<const DoubleVectorGenome *>(i->genomePtr()))
-				m_doubleGenomes = true;
-			else
-				return "Genome type should be either a FloatVectorGenome or DoubleVectorGenome, but is " + string(typeid(i->genomeRef()).name());
-		}
+	bool_t r = SamplingEvolver::check(population);
+	if (!r)
+		return r;
 
-		if (!i->fitnessRef().hasRealValues())
-			return "Fitness should be interpretable as a real value (is prob/logprob)";
+	// check m_stepScales size against individuals
+	for (const auto &ind : population->individuals())
+	{
+		size_t dim = getDimension(ind->genomeRef());
+		if (dim != m_stepScales.size())
+			return "Number of entries in the step scales (" + to_string(m_stepScales.size()) + ") does not equal number of parameters in individual (" + to_string(dim) + ")";
 	}
 
-	// TODO: check m_stepScales size against individuals!
-
 	return true;
-}
-
-template <class T>
-inline size_t getNumVars(const Genome &g0)
-{
-	assert(dynamic_cast<const VectorGenome<T> *>(&g0));
-	return VectorGenome<T>::getSize(g0);
 }
 
 template<class T>
@@ -91,8 +76,6 @@ inline void checkAccept(RandomNumberGenerator &rng, Population &pop,
                         MetropolisHastingsEvolver::ProbType probType, size_t N, double alpha)
 {
 	assert(pop.size() == N*2);
-
-	// TODO: use alpha!
 
 	auto acceptTestLog = [&rng](double pNew, double pOld, double alpha)
 	{
@@ -169,46 +152,14 @@ bool_t MetropolisHastingsEvolver::createNewPopulation(size_t generation, shared_
 	size_t curPopSize = pop.size();
 	RandomNumberGenerator &rng = *m_rng;
 
-	const Genome &refGenome = pop.individual(0)->genomeRef();
-	size_t dim = (m_doubleGenomes)?getNumVars<double>(refGenome):getNumVars<float>(refGenome);
+	size_t dim = getDimension(pop.individual(0)->genomeRef());
 
 	auto appendNew = [this, &pop, N, dim, generation]()
 	{
-		if (m_doubleGenomes)
+		if (haveDoubleGenomes())
 			appendNewIndividuals<double>(*m_rng, pop, m_stepScales, N, dim, generation);
 		else
 			appendNewIndividuals<float>(*m_rng, pop, m_stepScales, N, dim, generation);
-	};
-
-	// TODO: copied from GoodmanWeareEvolver, use common code!
-	auto checkBest = [this, &pop](size_t startIdx, size_t stopIdx)
-	{
-		double bestFitness = (m_probType == NegativeLog)?numeric_limits<double>::infinity():-numeric_limits<double>::infinity();
-		auto comp = (m_probType == NegativeLog)?[](double a, double b) { return a < b; }:[](double a, double b) { return a > b; };
-
-		if (m_bestIndividual.size() > 0)
-		{
-			assert(m_bestIndividual.size() == 1);
-			bestFitness = m_bestIndividual[0]->fitness()->getRealValue(0); // TODO: make objective configurable?
-		}
-
-		size_t bestIdx = numeric_limits<size_t>::max();
-		for (size_t i = startIdx ; i < stopIdx ; i++)
-		{
-			assert(i < pop.size());
-			double fit = pop.individual(i)->fitness()->getRealValue(0); // TODO: make objective configurable
-			if (comp(fit, bestFitness))
-			{
-				bestIdx = i;
-				bestFitness = fit;
-			}
-		}
-
-		if (bestIdx < stopIdx) // We found a better one
-		{
-			m_bestIndividual.clear();
-			m_bestIndividual.push_back(pop.individual(bestIdx)->createCopy());
-		}
 	};
 
 	if (generation == 0)
@@ -219,7 +170,7 @@ bool_t MetropolisHastingsEvolver::createNewPopulation(size_t generation, shared_
 		if (pop.size() != N)
 			return "For the initial generation the number of indiviuals is expected to be " + to_string(N) + ", but is " + to_string(pop.size()); 
 
-		checkBest(0, N);
+		checkBest(pop, 0, N);
 
 		appendNew();
 	}
@@ -233,9 +184,9 @@ bool_t MetropolisHastingsEvolver::createNewPopulation(size_t generation, shared_
 		if (pop.size() != 2*N)
 			return "For this generation the number of individuals is expected to be 2*" + to_string(N) + ", but is " + to_string(pop.size());
 
-		checkBest(N, 2*N);
+		checkBest(pop, N, 2*N);
 
-		checkAccept(*m_rng, pop, m_probType, N, m_alpha);
+		checkAccept(*m_rng, pop, getProbabilityType(), N, getAnnealingExponent());
 
 		appendNew();
 	}

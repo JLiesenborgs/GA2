@@ -10,7 +10,7 @@ namespace eatk
 
 GoodmanWeareEvolver::GoodmanWeareEvolver(const shared_ptr<RandomNumberGenerator> &rng,
                                          ProbType t, double a)
-	: m_rng(rng), m_probType(t), m_a(a)
+	: SamplingEvolver(rng, t), m_a(a)
 {
 	m_aScale = std::sqrt(m_a) - 1.0/std::sqrt(m_a);
 	m_aOffset = 1.0/std::sqrt(m_a);
@@ -22,33 +22,14 @@ GoodmanWeareEvolver::~GoodmanWeareEvolver()
 
 bool_t GoodmanWeareEvolver::check(const shared_ptr<Population> &population)
 {
+	bool_t r = SamplingEvolver::check(population);
+	if (!r)
+		return r;
+
 	if (m_a <= 1)
 		return "The 'a' parameter must be larger than one";
 
-	// check genome and fitness type, float or double
-	for (auto &i : population->individuals())
-	{
-		if (dynamic_cast<const FloatVectorGenome *>(i->genomePtr()))
-			m_doubleGenomes = false;
-		else
-		{
-			if (dynamic_cast<const DoubleVectorGenome *>(i->genomePtr()))
-				m_doubleGenomes = true;
-			else
-				return "Genome type should be either a FloatVectorGenome or DoubleVectorGenome, but is " + string(typeid(i->genomeRef()).name());
-		}
-
-		if (!i->fitnessRef().hasRealValues())
-			return "Fitness should be interpretable as a real value (is prob/logprob)";
-	}
 	return true;
-}
-
-template <class T>
-inline size_t getNumVars(const Genome &g0)
-{
-	assert(dynamic_cast<const VectorGenome<T> *>(&g0));
-	return VectorGenome<T>::getSize(g0);
 }
 
 inline double pickZ(RandomNumberGenerator &rng, double aScale, double aOffset)
@@ -201,44 +182,13 @@ bool_t GoodmanWeareEvolver::createNewPopulation(size_t generation, shared_ptr<Po
 
 	auto calculateNewPositions_General = [this, &pop, N, &rng, generation](bool walkFirstHalf) 
 	{
-		if (m_doubleGenomes)
+		if (haveDoubleGenomes())
 			calculateNewPositions<double>(generation, pop, N, walkFirstHalf, rng, m_aScale, m_aOffset, m_zValues);
 		else
 			calculateNewPositions<float>(generation, pop, N, walkFirstHalf, rng, m_aScale, m_aOffset, m_zValues);
 	};
 
-	auto checkBest = [this, &pop](size_t startIdx, size_t stopIdx)
-	{
-		double bestFitness = (m_probType == NegativeLog)?numeric_limits<double>::infinity():-numeric_limits<double>::infinity();
-		auto comp = (m_probType == NegativeLog)?[](double a, double b) { return a < b; }:[](double a, double b) { return a > b; };
-
-		if (m_bestIndividual.size() > 0)
-		{
-			assert(m_bestIndividual.size() == 1);
-			bestFitness = m_bestIndividual[0]->fitness()->getRealValue(0); // TODO: make objective configurable?
-		}
-
-		size_t bestIdx = numeric_limits<size_t>::max();
-		for (size_t i = startIdx ; i < stopIdx ; i++)
-		{
-			assert(i < pop.size());
-			double fit = pop.individual(i)->fitness()->getRealValue(0); // TODO: make objective configurable
-			if (comp(fit, bestFitness))
-			{
-				bestIdx = i;
-				bestFitness = fit;
-			}
-		}
-
-		if (bestIdx < stopIdx) // We found a better one
-		{
-			m_bestIndividual.clear();
-			m_bestIndividual.push_back(pop.individual(bestIdx)->createCopy());
-		}
-	};
-
-	const Genome &refGenome = pop.individual(0)->genomeRef();
-	size_t dim = (m_doubleGenomes)?getNumVars<double>(refGenome):getNumVars<float>(refGenome);
+	size_t dim = getDimension(pop.individual(0)->genomeRef());
 
 	if (curPopSize == targetPopulationSize)
 	{
@@ -248,7 +198,7 @@ bool_t GoodmanWeareEvolver::createNewPopulation(size_t generation, shared_ptr<Po
 		if (N <= dim)
 			return "The number of walkers must be at least one more as the dimension of the problem";
 
-		checkBest(0, N);
+		checkBest(pop, 0, N);
 		calculateNewPositions_General(true);
 
 		// TODO: check all feasible?
@@ -259,14 +209,14 @@ bool_t GoodmanWeareEvolver::createNewPopulation(size_t generation, shared_ptr<Po
 
 		// We've just calculated fitnesses in the upper part, see if we need
 		// to update the best one
-		checkBest(N, curPopSize);
+		checkBest(pop, N, curPopSize);
 
 		// On generation 1 we need to compare the new fitnesses to the first half
 		bool compareFirstHalf = (generation%2 == 1);
 		bool walkFirstHalf = (generation%2 == 0);
 
 		// Check if we should accept the new genomes, then resize pop to N
-		checkAccept(rng, pop, compareFirstHalf, m_probType, N, dim, m_zValues, m_alpha);
+		checkAccept(rng, pop, compareFirstHalf, getProbabilityType(), N, dim, m_zValues, getAnnealingExponent());
 
 		// Calculate new walk		
 		calculateNewPositions_General(walkFirstHalf);
