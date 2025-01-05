@@ -73,12 +73,17 @@ void appendNewIndividuals(RandomNumberGenerator &rng, Population &pop, const vec
 
 		assert(Xv.size() == dim && Yv.size() == dim);
 		
-		// TODO: use gaussian step?
 		for (size_t j = 0 ; j < dim ; j++)
-			Yv[j] = Xv[j] + (T)rng.getRandomDouble(-stepScales[j]*0.5, stepScales[j]*0.5);
+		{
+			//Yv[j] = Xv[j] + (T)rng.getRandomDouble(-stepScales[j]*0.5, stepScales[j]*0.5);
+			double z = rng.getRandomDouble();
+			if (z != 0)
+				Yv[j] = Xv[j] + (T)(-stepScales[j]/std::tan(z*M_PI)); // from meanwalker code, should be lorenzian
+			else
+				Yv[j] = Xv[j] + (T)((z-0.5)*stepScales[j]);
+		}
 
 		pop.append(refInd->createNew(Ygen, Yfit, generation));
-
 	}
 }
 
@@ -97,7 +102,7 @@ inline void checkAccept(RandomNumberGenerator &rng, Population &pop,
 		if (pNew == -numeric_limits<double>::infinity())
 			return false; // try to stay away from bad region
 		
-		double logQ = pNew-pOld;
+		double logQ = alpha*(pNew-pOld);
 		if (logQ >= 0) // means prob >= 1
 			return true;
 
@@ -120,8 +125,7 @@ inline void checkAccept(RandomNumberGenerator &rng, Population &pop,
 		if (pNew == 0)
 			return false; // try to stay away from bad region
 
-		double q = pNew/pOld;
-		
+		double q = std::pow(pNew/pOld, alpha);
 		if (q >= 1.0)
 			return true;
 
