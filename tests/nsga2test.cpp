@@ -1,3 +1,4 @@
+#define _USE_MATH_DEFINES
 #include "nsga2evolver.h"
 #include "evolutionaryalgorithm.h"
 #include "vectorgenomefitness.h"

@@ -1,4 +1,4 @@
-
+#define _USE_MATH_DEFINES
 #include "vectordifferentialevolution.h"
 #include "evolutionaryalgorithm.h"
 #include "mersennerandomnumbergenerator.h"

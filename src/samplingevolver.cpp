@@ -43,8 +43,11 @@ bool_t SamplingEvolver::check(const shared_ptr<Population> &population)
 void SamplingEvolver::checkBest(Population &pop, size_t startIdx, size_t stopIdx)
 {
 	double bestFitness = (m_probType == NegativeLog)?numeric_limits<double>::infinity():-numeric_limits<double>::infinity();
+#ifndef _WIN32
 	auto comp = (m_probType == NegativeLog)?[](double a, double b) { return a < b; }:[](double a, double b) { return a > b; };
-
+#else
+	auto comp = [this](double a, double b) { if (m_probType == NegativeLog) return a < b; return a > b; };
+#endif // _WIN32
 	if (m_bestIndividual.size() > 0)
 	{
 		assert(m_bestIndividual.size() == 1);

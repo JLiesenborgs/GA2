@@ -1,3 +1,4 @@
+#define _USE_MATH_DEFINES
 #include "metropolishastingsevolver.h"
 #include "vectorgenomefitness.h"
 #include <cmath>

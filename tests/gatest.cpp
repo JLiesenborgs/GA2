@@ -1,3 +1,4 @@
+#define _USE_MATH_DEFINES
 #include "evolutionaryalgorithm.h"
 #include "vectorgenomefitness.h"
 #include "mersennerandomnumbergenerator.h"
